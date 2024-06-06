@@ -1,12 +1,14 @@
 import logging
 import requests
 import base64
+
 from socketdev.dependencies import Dependencies
 from socketdev.npm import NPM
 from socketdev.openapi import OpenAPI
 from socketdev.org import Orgs
 from socketdev.quota import Quota
 from socketdev.report import Report
+from socketdev.sbom import Sbom
 from socketdev.repositories import Repositories
 from socketdev.settings import Settings
 from socketdev.socket_classes import Dependency, Org, Response
@@ -86,5 +88,6 @@ class SocketDev:
         self.org = Orgs()
         self.quota = Quota()
         self.report = Report()
+        self.sbom = Sbom()
         self.repositories = Repositories()
         self.settings = Settings()
