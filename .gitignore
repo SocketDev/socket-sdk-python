@@ -5,3 +5,4 @@ venv
 .DS_Store
 *.zip
 *.pyc
+test.py
