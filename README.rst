@@ -215,3 +215,45 @@ Retrieve the Socket Organization Settings
     from socketdev import SocketDev
     socket = SocketDev("REPLACE_ME")
     print(socket.settings.get())
+
+sbom.view(report_id)
+""""""""""""""""""""""
+Retrieve the information for a SBOM Report
+
+**Usage:**
+
+.. code-block::
+
+    from socketdev import SocketDev
+    socket = SocketDev("REPLACE_ME")
+    print(socket.sbom.view("report_id"))
+
+**PARAMETERS:**
+
+- **report_id (str)** - The report ID of the report to view
+
+purl.post(license, components)
+""""""""""""""""""""""
+Retrieve the package information for a purl post
+
+**Usage:**
+
+.. code-block::
+
+    from socketdev import SocketDev
+    socket = SocketDev("REPLACE_ME")
+    license = "true"
+    components = [
+        {
+        "purl": "pkg:pypi/pyonepassword@5.0.0"
+        },
+        {
+        "purl": "pkg:pypi/socketsecurity"
+        }
+    ]
+    print(socket.purl.post(license, components))
+
+**PARAMETERS:**
+
+- **license (str)** - The license parameter, default is true
+- **components (array{dict})** - The components list of packages urls
