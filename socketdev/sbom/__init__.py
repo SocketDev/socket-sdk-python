@@ -16,7 +16,7 @@ class Sbom:
                 if line != '"' and line != "" and line is not None:
                     item = json.loads(line)
                     sbom.append(item)
-            for key, val in enumerate(sbom):
+            for val in sbom:
                 sbom_dict[val['id']] = val
         else:
             sbom_dict = {}
