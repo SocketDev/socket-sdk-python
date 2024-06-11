@@ -255,5 +255,5 @@ Retrieve the package information for a purl post
 
 **PARAMETERS:**
 
-- **license (str)** - The license parameter, default is true
+- **license (str)** - The license parameter if enabled will show alerts and license information. If disabled will only show the basic package metadata and scores. Default is true
 - **components (array{dict})** - The components list of packages urls
