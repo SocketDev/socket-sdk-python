@@ -4,7 +4,7 @@ import json
 
 class Purl:
     @staticmethod
-    def post(license="true", components=[]) -> dict:
+    def post(license: str="true", components: list=[]) -> dict:
         path = "purl?" + "license="+license
         components = {"components":components}
         components = json.dumps(components)
@@ -24,7 +24,7 @@ class Purl:
                 if line != '"' and line != "" and line is not None:
                     item = json.loads(line)
                     purl.append(item)
-            for key, val in enumerate(purl):
+            for val in purl:
                 purl_dict[val['id']] = val
         else:
             purl_dict = {}
