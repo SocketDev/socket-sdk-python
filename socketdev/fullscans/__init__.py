@@ -1,7 +1,8 @@
 import socketdev
 from socketdev.tools import load_files
 
-class Fullscans:
+
+class FullScans:
     @staticmethod
     def get(org_slug: str) -> dict:
         path = "orgs/"+org_slug+"/full-scans"
@@ -18,7 +19,16 @@ class Fullscans:
         else:
             result = {}
         return result
-    
+
+    @staticmethod
+    def create_params_string(params: dict) -> str:
+        param_str = ""
+        for name in params:
+            value = params[name]
+            param_str += f"&{name}={value}"
+        param_str = "?" + param_str.lstrip("&")
+        return param_str
+
     @staticmethod
     def post(
             files: list, 
@@ -27,26 +37,7 @@ class Fullscans:
         
         loaded_files = []
         loaded_files = load_files(files, loaded_files)
-
-        params_arg = "?"
-        params_arg  = params_arg +"repo="+params["repo"]
-        if params["branch"]:
-            params_arg  = params_arg +"&branch="+params["branch"]
-        if params["commit_message"]:
-            params_arg  = params_arg +"&commit_message="+params["commit_message"]
-        if params["commit_hash"]:
-            params_arg  = params_arg +"&commit_hash="+params["commit_hash"]
-        if params["pull_request"]:
-            params_arg  = params_arg +"&pull_request="+params["pull_request"]
-        if params["committers"]:
-            params_arg  = params_arg +"&committers="+params["committers"]
-        if params["make_default_branch"]:
-            params_arg  = params_arg +"&make_default_branch="+params["make_default_branch"]
-        if params["set_as_pending_head"]:
-            params_arg  = params_arg +"&set_as_pending_head="+params["set_as_pending_head"]
-        if params["tmp"]:
-            params_arg  = params_arg +"&tmp="+params["tmp"]
-
+        params_arg = FullScans.create_params_string(params)
         path = "orgs/"+params["org_slug"]+"/full-scans"+params_arg
 
         response = socketdev.do_request(
