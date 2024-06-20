@@ -312,26 +312,26 @@ Create a full scan from a set of package manifest files. Returns a full scan inc
 +------------------------+------------+-------------------------------------------------------------------------------+
 | Parameter              | Required   | Description                                                                   |
 +========================+============+===============================================================================+
-| --org_slug             | True       | The string name in a git approved name for organization.                      |
+| org_slug               | True       | The string name in a git approved name for organization.                      |
 +------------------------+------------+-------------------------------------------------------------------------------+
-| --repo                 | True       | The string name in a git approved name for repositories.                      |
+| repo                   | True       | The string name in a git approved name for repositories.                      |
 +------------------------+------------+-------------------------------------------------------------------------------+
-| --branch               | False      | The string name in a git approved name for branches.                          |
+| branch                 | False      | The string name in a git approved name for branches.                          |
 +------------------------+------------+-------------------------------------------------------------------------------+
-| --committers           | False      | The string name of the person doing the commit or running the CLI.            |
+| committers             | False      | The string name of the person doing the commit or running the CLI.            |
 |                        |            | Can be specified multiple times to have more than one committer.              |
 +------------------------+------------+-------------------------------------------------------------------------------+
-| --pull_request         | False      | The integer for the PR or MR number.                                          |
+| pull_request           | False      | The integer for the PR or MR number.                                          |
 +------------------------+------------+-------------------------------------------------------------------------------+
-| --commit_message       | False      | The string for a commit message if there is one.                              |
+| commit_message         | False      | The string for a commit message if there is one.                              |
 +------------------------+------------+-------------------------------------------------------------------------------+
-| --make_default_branch  | False      | If the flag is specified this will signal that this is the default branch.    |
+| make_default_branch    | False      | If the flag is specified this will signal that this is the default branch.    |
 +------------------------+------------+-------------------------------------------------------------------------------+
-| --commit_hash          | False      | Optional git commit hash                                                      |
+| commit_hash            | False      | Optional git commit hash                                                      |
 +------------------------+------------+-------------------------------------------------------------------------------+
-| --set_as_pending_head  | False      |                                                                               |
+| set_as_pending_head    | False      |                                                                               |
 +------------------------+------------+-------------------------------------------------------------------------------+
-| --tmp                  | False      |                                                                               |
+| tmp                    | False      |                                                                               |
 +------------------------+------------+-------------------------------------------------------------------------------+
 
 fullscans.delete(org_slug, full_scan_id)
