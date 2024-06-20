@@ -3,33 +3,45 @@ from socketdev.tools import load_files
 import json
 
 class FullScans:
+
     @staticmethod
-    def create_params_string(params: dict) -> str:
+    def create_params_string(
+                            params: dict
+                            ) -> str:
+        
         param_str = ""
+
         for name in params:
             value = params[name]
             if value:
                 param_str += f"&{name}={value}"
+
         param_str = "?" + param_str.lstrip("&")
+
         return param_str
     
     @staticmethod
-    def get(org_slug: str, params: dict) -> dict:
-        params_arg = create_params_string(params)
+    def get(
+            org_slug: str, 
+            params: dict) -> dict:
+        
+        params_arg = FullScans.create_params_string(params)
 
         path = "orgs/" + org_slug + "/full-scans" + str(params_arg)
         headers = None
         payload = None
-        print(path)
+
         response = socketdev.do_request(
             path=path,
             headers=headers,
             payload=payload
         )
+
         if response.status_code == 200:
             result = response.json()
         else:
             result = {}
+            
         return result
 
     @staticmethod
@@ -41,7 +53,7 @@ class FullScans:
         loaded_files = []
         loaded_files = load_files(files, loaded_files)
 
-        params_arg = create_params_string(params)
+        params_arg = FullScans.create_params_string(params)
 
         path = "orgs/" + str(params["org_slug"]) + "/full-scans" + str(params_arg)
 
@@ -57,12 +69,15 @@ class FullScans:
             print(f"Error posting {files} to the Fullscans API")
             print(response.text)
             result = response.text
+
         return result
     
     @staticmethod
-    def delete(org_slug: str, full_scan_id: str) -> dict:
+    def delete(org_slug: str, 
+               full_scan_id: str) -> dict:
+        
         path = "orgs/" + org_slug + "/full-scans/" + full_scan_id
-        print(path)
+
         response = socketdev.do_request(
             path=path,
             method="DELETE"
@@ -72,27 +87,43 @@ class FullScans:
             result = response.json()
         else:
             result = {}
+            
         return result
 
     @staticmethod
-    def stream(org_slug: str, full_scan_id: str) -> dict:
+    def stream(org_slug: str, 
+               full_scan_id: str) -> dict:
+        
         path = "orgs/" + org_slug + "/full-scans/" + full_scan_id
-        print(path)
+
         response = socketdev.do_request(
             path=path,
             method="GET"
         )
 
         if response.status_code == 200:
-            result = response.json()
+            stream_str = []
+            stream_dict = {}
+            result = response.text
+            result.strip('"')
+            result.strip()
+            for line in result.split("\n"):
+                if line != '"' and line != "" and line is not None:
+                    item = json.loads(line)
+                    stream_str.append(item)
+            for val in stream_str:
+                stream_dict[val['id']] = val
         else:
-            result = {}
-        return result
+            stream_dict = {}
+
+        return stream_dict
     
     @staticmethod
-    def metadata(org_slug: str, full_scan_id: str) -> dict:
+    def metadata(org_slug: str, 
+                 full_scan_id: str) -> dict:
+        
         path = "orgs/" + org_slug + "/full-scans/" + full_scan_id + "/metadata"
-        print(path)
+
         response = socketdev.do_request(
             path=path,
             method="GET"
@@ -102,4 +133,5 @@ class FullScans:
             result = response.json()
         else:
             result = {}
+
         return result

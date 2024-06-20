@@ -6,6 +6,7 @@ Purpose
 -------
 
 The Socket.dev Python SDK provides a wrapper around the Socket.dev REST API to simplify making calls to the API from Python.
+Socket API v0 - https://docs.socket.dev/reference/introduction-to-socket-api
 
 Initializing the module
 -----------------------
@@ -319,3 +320,54 @@ Create a full scan from a set of package manifest files. Returns a full scan inc
 | --commit_hash         | False    | Optional git commit hash                                                                                                                                   |
 | --set_as_pending_head | False    |                                                                                                                                                            |                                                                                                                                   
 | --tmp                 | False    |                                                                                                                                                            |
+
+fullscans.delete(org_slug, full_scan_id)
+""""""""""""""""""""""
+Delete an existing full scan.
+
+**Usage:**
+
+.. code-block::
+
+    from socketdev import SocketDev
+    socket = SocketDev("REPLACE_ME")
+    print(socket.fullscans.delete(org_slug, full_scan_id))
+
+**PARAMETERS:**
+
+- **org_slug (str)** - The organization name 
+- **full_scan_id (str)** - The ID of the full scan
+
+fullscans.stream(org_slug, full_scan_id)
+""""""""""""""""""""""
+Stream all SBOM artifacts for a full scan.
+
+**Usage:**
+
+.. code-block::
+
+    from socketdev import SocketDev
+    socket = SocketDev("REPLACE_ME")
+    print(socket.fullscans.stream(org_slug, full_scan_id))
+
+**PARAMETERS:**
+
+- **org_slug (str)** - The organization name 
+- **full_scan_id (str)** - The ID of the full scan
+
+fullscans.metadata(org_slug, full_scan_id)
+""""""""""""""""""""""
+Get metadata for a single full scan
+
+**Usage:**
+
+.. code-block::
+
+    from socketdev import SocketDev
+    socket = SocketDev("REPLACE_ME")
+    print(socket.fullscans.metadata(org_slug, full_scan_id))
+
+**PARAMETERS:**
+
+- **org_slug (str)** - The organization name 
+- **full_scan_id (str)** - The ID of the full scan
