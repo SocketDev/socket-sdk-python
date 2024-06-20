@@ -1,13 +1,21 @@
 import socketdev
 from socketdev.tools import load_files
+import json
 
 class Fullscans:
     @staticmethod
-    def get(org_slug: str) -> dict:
-        path = "orgs/"+org_slug+"/full-scans"
+    def get(org_slug: str, params: dict) -> dict:
+        params_arg = ""
+        for name in params:
+            value = params[name]
+            if value:
+                params_arg += f"&{name}={value}"
+        params_arg = "?" + params_arg.lstrip("&")
+
+        path = "orgs/" + org_slug + "/full-scans" + str(params_arg)
         headers = None
         payload = None
-
+        print(path)
         response = socketdev.do_request(
             path=path,
             headers=headers,
@@ -28,26 +36,14 @@ class Fullscans:
         loaded_files = []
         loaded_files = load_files(files, loaded_files)
 
-        params_arg = "?"
-        params_arg  = params_arg +"repo="+params["repo"]
-        if params["branch"]:
-            params_arg  = params_arg +"&branch="+params["branch"]
-        if params["commit_message"]:
-            params_arg  = params_arg +"&commit_message="+params["commit_message"]
-        if params["commit_hash"]:
-            params_arg  = params_arg +"&commit_hash="+params["commit_hash"]
-        if params["pull_request"]:
-            params_arg  = params_arg +"&pull_request="+params["pull_request"]
-        if params["committers"]:
-            params_arg  = params_arg +"&committers="+params["committers"]
-        if params["make_default_branch"]:
-            params_arg  = params_arg +"&make_default_branch="+params["make_default_branch"]
-        if params["set_as_pending_head"]:
-            params_arg  = params_arg +"&set_as_pending_head="+params["set_as_pending_head"]
-        if params["tmp"]:
-            params_arg  = params_arg +"&tmp="+params["tmp"]
+        params_arg = ""
+        for name in params:
+            value = params[name]
+            if value:
+                params_arg += f"&{name}={value}"
+        params_arg = "?" + params_arg.lstrip("&")
 
-        path = "orgs/"+params["org_slug"]+"/full-scans"+params_arg
+        path = "orgs/" + str(params["org_slug"]) + "/full-scans" + str(params_arg)
 
         response = socketdev.do_request(
             path=path,
@@ -62,3 +58,49 @@ class Fullscans:
             print(response.text)
             result = response.text
         return result
+    
+    @staticmethod
+    def delete(org_slug: str, full_scan_id: str) -> dict:
+        path = "orgs/" + org_slug + "/full-scans/" + full_scan_id
+        print(path)
+        response = socketdev.do_request(
+            path=path,
+            method="DELETE"
+        )
+
+        if response.status_code == 200:
+            result = response.json()
+        else:
+            result = {}
+        return result
+
+    @staticmethod
+    def stream(org_slug: str, full_scan_id: str) -> dict:
+        path = "orgs/" + org_slug + "/full-scans/" + full_scan_id
+        print(path)
+        response = socketdev.do_request(
+            path=path,
+            method="GET"
+        )
+
+        if response.status_code == 200:
+            result = response.json()
+        else:
+            result = {}
+        return result
+    
+    @staticmethod
+    def metadata(org_slug: str, full_scan_id: str) -> dict:
+        path = "orgs/" + org_slug + "/full-scans/" + full_scan_id + "/metadata"
+        print(path)
+        response = socketdev.do_request(
+            path=path,
+            method="GET"
+        )
+
+        if response.status_code == 200:
+            result = response.json()
+        else:
+            result = {}
+        return result
+    
