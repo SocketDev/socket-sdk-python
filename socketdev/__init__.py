@@ -10,7 +10,7 @@ from socketdev.quota import Quota
 from socketdev.report import Report
 from socketdev.sbom import Sbom
 from socketdev.purl import Purl
-from socketdev.fullscans import Fullscans
+from socketdev.fullscans import FullScans
 from socketdev.repositories import Repositories
 from socketdev.settings import Settings
 from socketdev.socket_classes import Dependency, Org, Response
@@ -92,6 +92,6 @@ class SocketDev:
         self.report = Report()
         self.sbom = Sbom()
         self.purl = Purl()
-        self.fullscans = Fullscans()
+        self.fullscans = FullScans()
         self.repositories = Repositories()
         self.settings = Settings()
