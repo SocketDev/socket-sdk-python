@@ -1,0 +1,21 @@
+#!/bin/sh
+
+VERSION=$(grep -o "__version__.*" socketdev/__init__.py | awk '{print $3}' | tr -d "'")
+ENABLE_PYPI_BUILD=$1
+
+if [ -z $ENABLE_PYPI_BUILD ]; then
+  echo "$0 pypi-build=enable"
+  printf "\tpypi-build: Build and publish a new version of the package to pypi. Otherwise will push to test pypi"
+  exit
+fi
+
+if [ "$ENABLE_PYPI_BUILD" = "pypi-build=enable" ]; then
+  echo "Doing production build of version $VERSION"
+  python -m build --wheel --sdist
+  twine upload dist/*$VERSION*
+else
+  echo "Doing test build of version $VERSION"
+  python -m build --wheel --sdist
+  twine upload --repository testpypi dist/*$VERSION*
+fi
+
