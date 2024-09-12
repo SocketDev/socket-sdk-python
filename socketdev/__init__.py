@@ -13,12 +13,12 @@ from socketdev.purl import Purl
 from socketdev.fullscans import FullScans
 from socketdev.repositories import Repositories
 from socketdev.settings import Settings
-from socketdev.socket_classes import Dependency, Org, Response
+from core.classes import Response
 from socketdev.exceptions import APIKeyMissing, APIFailure, APIAccessDenied, APIInsufficientQuota, APIResourceNotFound
 
 
 __author__ = 'socket.dev'
-__version__ = '0.0.1'
+__version__ = '1.0.0'
 __all__ = [
     "SocketDev",
 ]
@@ -26,6 +26,7 @@ __all__ = [
 
 global encoded_key
 api_url = "https://api.socket.dev/v0"
+request_timeout = 30
 log = logging.getLogger("socketdev")
 log.addHandler(logging.NullHandler())
 
@@ -40,8 +41,17 @@ def do_request(
         headers: dict = None,
         payload: [dict, str] = None,
         files: list = None,
-        method: str = "GET",
-):
+        method: str = "GET"
+) -> Response:
+    """
+    Shared function for performing the requests against the API.
+    :param path: String path of the URL
+    :param headers: Optional dictionary of the headers to include in the request. Defaults to None
+    :param payload: Optional dictionary or string of the payload to POST. Defaults to None
+    :param files: Optional list of files to send. Defaults to None
+    :param method: Optional string of the method for the Request. Defaults to GET
+    """
+
     if encoded_key is None or encoded_key == "":
         raise APIKeyMissing
 
@@ -58,7 +68,8 @@ def do_request(
             url,
             headers=headers,
             data=payload,
-            files=files
+            files=files,
+            timeout=request_timeout
         )
         if response.status_code >= 400:
             raise APIFailure("Bad Request")
@@ -81,9 +92,25 @@ def do_request(
 
 
 class SocketDev:
-    def __init__(self, token: str):
+    token: str
+    timeout: int
+    dependencies: Dependencies
+    npm: NPM
+    openapi: OpenAPI
+    org: Orgs
+    quota: Quota
+    report: Report
+    sbom: Sbom
+    purl: purl
+    fullscans: FullScans
+    repositories: Report
+    settings: Settings
+
+    def __init__(self, token: str, timeout: int = 30):
         self.token = token + ":"
         encode_key(self.token)
+        self.timeout = timeout
+        SocketDev.set_timeout(self.timeout)
         self.dependencies = Dependencies()
         self.npm = NPM()
         self.openapi = OpenAPI()
@@ -95,3 +122,8 @@ class SocketDev:
         self.fullscans = FullScans()
         self.repositories = Repositories()
         self.settings = Settings()
+
+    @staticmethod
+    def set_timeout(timeout: int):
+        global request_timeout
+        request_timeout = timeout
