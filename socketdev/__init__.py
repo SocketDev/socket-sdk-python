@@ -58,7 +58,7 @@ def do_request(
     if headers is None:
         headers = {
             'Authorization': f"Basic {encoded_key}",
-            'User-Agent': 'SocketPythonScript/0.0.1',
+            'User-Agent': f'SocketPythonScript/{__version__}',
             "accept": "application/json"
         }
     url = f"{api_url}/{path}"

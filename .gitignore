@@ -7,3 +7,9 @@ venv
 *.pyc
 test.py
 .venv
+build
+dist
+*.build
+*.dist
+*.egg-info
+*.cpython-312.pyc
