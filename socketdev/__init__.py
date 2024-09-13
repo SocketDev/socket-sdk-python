@@ -18,7 +18,7 @@ from socketdev.exceptions import APIKeyMissing, APIFailure, APIAccessDenied, API
 
 
 __author__ = 'socket.dev'
-__version__ = '1.0.7'
+__version__ = '1.0.8'
 __all__ = [
     "socketdev",
 ]
