@@ -11,7 +11,7 @@ class Report:
         """
         if from_time is not None:
             now = datetime.now(timezone.utc)
-            new_time = now - timedelta(days=30)
+            new_time = now - timedelta(seconds=30)
             from_time = int(new_time.timestamp())
 
         path = "report/list"
