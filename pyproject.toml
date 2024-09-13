@@ -1,3 +1,55 @@
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools >= 61.0"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "socket-sdk-python"
+dynamic = ["version"]
+requires-python = ">= 3.9"
+dependencies = [
+    'requests'
+]
+readme = "README.rst"
+license = {file = "LICENSE"}
+description = "Socket Security Python SDK"
+keywords = ["socketsecurity", "socket.dev", "sca", "oss", "security", "sdk"]
+authors = [
+    {name = "Douglas Coburn", email = "douglas@socket.dev"}
+]
+maintainers = [
+    {name = "Douglas Coburn", email = "douglas@socket.dev"}
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14"
+]
+
+[project.urls]
+Homepage = "https://github.com/socketdev/socket-sdk-python"
+
+[tool.setuptools.packages.find]
+include = [
+    "socketdev",
+    "socketdev.core",
+    "socketdev.dependencies",
+    "socketdev.fullscans",
+    "socketdev.npm",
+    "socketdev.openapi",
+    "socketdev.org",
+    "socketdev.purl",
+    "socketdev.quota",
+    "socketdev.report",
+    "socketdev.repositories",
+    "socketdev.sbom",
+    "socketdev.settings",
+    "socketdev.tools",
+]
+
+[tool.setuptools.dynamic]
+version = {attr = "socketdev.__version__"}
