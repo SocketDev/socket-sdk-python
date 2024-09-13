@@ -1,6 +1,6 @@
 
-socketdev-python-sdk
-###############
+socket-python-sdk
+#################
 
 Purpose
 -------
@@ -14,8 +14,13 @@ Initializing the module
 
 .. code-block::
 
-    from socketdev import SocketDev
-    socket = SocketDev(token="REPLACE_ME")
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME", timeout=30)
+
+**PARAMETERS:**
+
+- **token (str)** - The Socket API Key for your Organization
+- **Timeout (int)** - The number of seconds to wait before failing the connection
 
 Supported Functions
 -------------------
@@ -28,8 +33,8 @@ Retrieve the Issues associated with a package and version.
 
 .. code-block::
 
-    from socketdev import SocketDev
-    socket = SocketDev(token="REPLACE_ME")
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
     print(socket.npm.issues("hardhat-gas-report", "1.1.25"))
 
 **PARAMETERS:**
@@ -45,8 +50,8 @@ Retrieve the Issues associated with a package and version.
 
 .. code-block::
 
-    from socketdev import SocketDev
-    socket = SocketDev(token="REPLACE_ME")
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
     print(socket.npm.score("hardhat-gas-report", "1.1.25"))
 
 **PARAMETERS:**
@@ -55,15 +60,15 @@ Retrieve the Issues associated with a package and version.
 - **version (str)** - The version of the NPM Package.
 
 dependencies.get(limit, offset)
-""""""""""""""""""
+"""""""""""""""""""""""""""""""
 Retrieve the dependencies for the organization associated with the API Key
 
 **Usage:**
 
 .. code-block::
 
-    from socketdev import SocketDev
-    socket = SocketDev(token="REPLACE_ME")
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
     print(socket.dependencies.get(10, 0))
 
 **PARAMETERS:**
@@ -79,8 +84,8 @@ Retrieve the dependencies for the organization associated with the API Key
 
 .. code-block::
 
-    from socketdev import SocketDev
-    socket = SocketDev(token="REPLACE_ME")
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
     file_names = [
         "path/to/package.json"
     ]
@@ -103,8 +108,8 @@ Retrieve the Socket.dev org information
 
 .. code-block::
 
-    from socketdev import SocketDev
-    socket = SocketDev(token="REPLACE_ME")
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
     print(socket.org.get())
 
 quota.get()
@@ -115,8 +120,8 @@ Retrieve the the current quota available for your API Key
 
 .. code-block::
 
-    from socketdev import SocketDev
-    socket = SocketDev(token="REPLACE_ME")
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
     print(socket.quota.get())
 
 report.list()
@@ -127,9 +132,13 @@ Retrieve the list of all reports for the organization
 
 .. code-block::
 
-    from socketdev import SocketDev
-    socket = SocketDev(token="REPLACE_ME")
-    print(socket.report.list())
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
+    print(socket.report.list(from_time=1726183485))
+
+**PARAMETERS:**
+
+- **from_time (int)** - The Unix Timestamp in Seconds to limit the reports pulled
 
 report.delete(report_id)
 """"""""""""""""""""""""
@@ -139,8 +148,8 @@ Delete the specified report
 
 .. code-block::
 
-    from socketdev import SocketDev
-    socket = SocketDev(token="REPLACE_ME")
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
     print(socket.report.delete("report-id"))
 
 **PARAMETERS:**
@@ -155,8 +164,8 @@ Retrieve the information for a Project Health Report
 
 .. code-block::
 
-    from socketdev import SocketDev
-    socket = SocketDev(token="REPLACE_ME")
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
     print(socket.report.view("report_id"))
 
 **PARAMETERS:**
@@ -171,8 +180,8 @@ Retrieve the supported types of manifest files for creating a report
 
 .. code-block::
 
-    from socketdev import SocketDev
-    socket = SocketDev(token="REPLACE_ME")
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
     print(socket.report.supported())
 
 report.create(files)
@@ -183,8 +192,8 @@ Create a new project health report with the provided files
 
 .. code-block::
 
-    from socketdev import SocketDev
-    socket = SocketDev(token="REPLACE_ME")
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
     files = [
         "/path/to/manifest/package.json"
     ]
@@ -202,8 +211,8 @@ Get a list of information about the tracked repositores
 
 .. code-block::
 
-    from socketdev import SocketDev
-    socket = SocketDev(token="REPLACE_ME")
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
     print(socket.repositories.get())
 
 settings.get()
@@ -214,20 +223,20 @@ Retrieve the Socket Organization Settings
 
 .. code-block::
 
-    from socketdev import SocketDev
-    socket = SocketDev(token="REPLACE_ME")
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
     print(socket.settings.get())
 
 sbom.view(report_id)
-""""""""""""""""""""""
+""""""""""""""""""""
 Retrieve the information for a SBOM Report
 
 **Usage:**
 
 .. code-block::
 
-    from socketdev import SocketDev
-    socket = SocketDev(token="REPLACE_ME")
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
     print(socket.sbom.view("report_id"))
 
 **PARAMETERS:**
@@ -235,15 +244,15 @@ Retrieve the information for a SBOM Report
 - **report_id (str)** - The report ID of the report to view
 
 purl.post(license, components)
-""""""""""""""""""""""
+""""""""""""""""""""""""""""""
 Retrieve the package information for a purl post
 
 **Usage:**
 
 .. code-block::
 
-    from socketdev import SocketDev
-    socket = SocketDev(token="REPLACE_ME")
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
     license = "true"
     components = [
         {
@@ -261,15 +270,15 @@ Retrieve the package information for a purl post
 - **components (array{dict})** - The components list of packages urls
 
 fullscans.get(org_slug)
-""""""""""""""""""""""
+"""""""""""""""""""""""
 Retrieve the Fullscans information for around Organization
 
 **Usage:**
 
 .. code-block::
 
-    from socketdev import SocketDev
-    socket = SocketDev(token="REPLACE_ME")
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
     print(socket.fullscans.get("org_slug"))
 
 **PARAMETERS:**
@@ -277,15 +286,15 @@ Retrieve the Fullscans information for around Organization
 - **org_slug (str)** - The organization name 
 
 fullscans.post(files, params)
-""""""""""""""""""""""
+"""""""""""""""""""""""""""""
 Create a full scan from a set of package manifest files. Returns a full scan including all SBOM artifacts.
 
 **Usage:**
 
 .. code-block::
 
-    from socketdev import SocketDev
-    socket = SocketDev(token="REPLACE_ME")
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
     files = [
         "/path/to/manifest/package.json"
     ]
@@ -335,15 +344,15 @@ Create a full scan from a set of package manifest files. Returns a full scan inc
 +------------------------+------------+-------------------------------------------------------------------------------+
 
 fullscans.delete(org_slug, full_scan_id)
-""""""""""""""""""""""
+""""""""""""""""""""""""""""""""""""""""
 Delete an existing full scan.
 
 **Usage:**
 
 .. code-block::
 
-    from socketdev import SocketDev
-    socket = SocketDev(token="REPLACE_ME")
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
     print(socket.fullscans.delete(org_slug, full_scan_id))
 
 **PARAMETERS:**
@@ -352,15 +361,15 @@ Delete an existing full scan.
 - **full_scan_id (str)** - The ID of the full scan
 
 fullscans.stream(org_slug, full_scan_id)
-""""""""""""""""""""""
+""""""""""""""""""""""""""""""""""""""""
 Stream all SBOM artifacts for a full scan.
 
 **Usage:**
 
 .. code-block::
 
-    from socketdev import SocketDev
-    socket = SocketDev(token="REPLACE_ME")
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
     print(socket.fullscans.stream(org_slug, full_scan_id))
 
 **PARAMETERS:**
@@ -369,15 +378,15 @@ Stream all SBOM artifacts for a full scan.
 - **full_scan_id (str)** - The ID of the full scan
 
 fullscans.metadata(org_slug, full_scan_id)
-""""""""""""""""""""""
+""""""""""""""""""""""""""""""""""""""""""
 Get metadata for a single full scan
 
 **Usage:**
 
 .. code-block::
 
-    from socketdev import SocketDev
-    socket = SocketDev(token="REPLACE_ME")
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
     print(socket.fullscans.metadata(org_slug, full_scan_id))
 
 **PARAMETERS:**

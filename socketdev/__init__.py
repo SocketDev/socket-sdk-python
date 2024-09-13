@@ -13,14 +13,14 @@ from socketdev.purl import Purl
 from socketdev.fullscans import FullScans
 from socketdev.repositories import Repositories
 from socketdev.settings import Settings
-from core.classes import Response
+from socketdev.core.classes import Response
 from socketdev.exceptions import APIKeyMissing, APIFailure, APIAccessDenied, APIInsufficientQuota, APIResourceNotFound
 
 
 __author__ = 'socket.dev'
-__version__ = '1.0.0'
+__version__ = '1.0.5'
 __all__ = [
-    "SocketDev",
+    "socketdev",
 ]
 
 
@@ -91,7 +91,7 @@ def do_request(
     return response
 
 
-class SocketDev:
+class socketdev:
     token: str
     timeout: int
     dependencies: Dependencies
@@ -110,7 +110,7 @@ class SocketDev:
         self.token = token + ":"
         encode_key(self.token)
         self.timeout = timeout
-        SocketDev.set_timeout(self.timeout)
+        socketdev.set_timeout(self.timeout)
         self.dependencies = Dependencies()
         self.npm = NPM()
         self.openapi = OpenAPI()

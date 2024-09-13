@@ -10,6 +10,7 @@ dependencies = [
     'requests'
 ]
 readme = "README.rst"
+license = {file = "LICENSE"}
 description = "Socket Security Python SDK"
 keywords = ["socketsecurity", "socket.dev", "sca", "oss", "security", "sdk"]
 authors = [
@@ -30,12 +31,24 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/SocketDev/socket-sdk-python"
+Homepage = "https://github.com/socketdev/socket-sdk-python"
 
 [tool.setuptools.packages.find]
 include = [
-    "socketsecurity",
-    "socketsecurity.core"
+    "socketdev",
+    "socketdev.core",
+    "socketdev.dependencies",
+    "socketdev.fullscans",
+    "socketdev.npm",
+    "socketdev.openapi",
+    "socketdev.org",
+    "socketdev.purl",
+    "socketdev.quota",
+    "socketdev.report",
+    "socketdev.repositories",
+    "socketdev.sbom",
+    "socketdev.settings",
+    "socketdev.tools",
 ]
 
 [tool.setuptools.dynamic]

@@ -1,6 +1,6 @@
 import socketdev
 import json
-from core.classes import Package
+from socketdev.core.classes import Package
 
 
 class Sbom:

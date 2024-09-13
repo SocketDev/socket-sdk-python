@@ -1,6 +1,28 @@
 import json
 
 
+class Score:
+    supplyChain: float
+    quality: float
+    maintenance: float
+    license: float
+    overall: float
+    vulnerability: float
+
+    def __init__(self, **kwargs):
+        if kwargs:
+            for key, value in kwargs.items():
+                setattr(self, key, value)
+        for score_name in self.__dict__:
+            score = getattr(self, score_name)
+            if score <= 1:
+                score = score * 100
+                setattr(self, score_name, score)
+
+    def __str__(self):
+        return json.dumps(self.__dict__)
+
+
 class Package:
     type: str
     name: str
