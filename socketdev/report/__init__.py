@@ -9,10 +9,10 @@ class Report:
         This function will return all reports from time specified.
         :param from_time: Unix epoch time in seconds. Will default to 30 days
         """
-        if from_time is not None:
-            now = datetime.now(timezone.utc)
-            new_time = now - timedelta(seconds=30)
-            from_time = int(new_time.timestamp())
+        if from_time is None:
+            from_time = int((datetime.now(timezone.utc) - timedelta(days=30)).timestamp())
+        else:
+            from_time = int((datetime.now(timezone.utc) - timedelta(seconds=from_time)).timestamp())
 
         path = "report/list"
         if from_time is not None:

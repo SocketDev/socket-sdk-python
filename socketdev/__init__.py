@@ -18,13 +18,15 @@ from socketdev.exceptions import APIKeyMissing, APIFailure, APIAccessDenied, API
 
 
 __author__ = 'socket.dev'
-__version__ = '1.0.8'
+__version__ = '1.0.9'
 __all__ = [
-    "socketdev",
+    "socketdev"
 ]
 
 
 global encoded_key
+encoded_key: str
+
 api_url = "https://api.socket.dev/v0"
 request_timeout = 30
 log = logging.getLogger("socketdev")
