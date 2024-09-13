@@ -9,14 +9,14 @@ class Report:
         This function will return all reports from time specified.
         :param from_time: Unix epoch time in seconds. Will default to 30 days
         """
-        if from_time is None:
+        if from_time is not None:
             now = datetime.now(timezone.utc)
             new_time = now - timedelta(days=30)
-            from_time = new_time.timestamp()
+            from_time = int(new_time.timestamp())
 
         path = "report/list"
         if from_time is not None:
-            path += f"?{from_time}"
+            path += f"?from={from_time}"
         response = socketdev.do_request(path=path)
         if response.status_code == 200:
             reports = response.json()
