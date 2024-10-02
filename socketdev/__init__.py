@@ -11,6 +11,7 @@ from socketdev.report import Report
 from socketdev.sbom import Sbom
 from socketdev.purl import Purl
 from socketdev.fullscans import FullScans
+from socketdev.repos import Repos
 from socketdev.repositories import Repositories
 from socketdev.settings import Settings
 from socketdev.core.classes import Response
@@ -18,7 +19,7 @@ from socketdev.exceptions import APIKeyMissing, APIFailure, APIAccessDenied, API
 
 
 __author__ = 'socket.dev'
-__version__ = '1.0.9'
+__version__ = '1.0.10'
 __all__ = [
     "socketdev"
 ]
@@ -105,8 +106,9 @@ class socketdev:
     sbom: Sbom
     purl: purl
     fullscans: FullScans
-    repositories: Report
+    repositories: Repositories
     settings: Settings
+    repos: Repos
 
     def __init__(self, token: str, timeout: int = 30):
         self.token = token + ":"
@@ -123,6 +125,7 @@ class socketdev:
         self.purl = Purl()
         self.fullscans = FullScans()
         self.repositories = Repositories()
+        self.repos = Repos()
         self.settings = Settings()
 
     @staticmethod
