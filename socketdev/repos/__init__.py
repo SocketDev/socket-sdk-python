@@ -6,7 +6,7 @@ class Repos:
     def get(org_slug: str, **kwargs) -> dict[str,]:
         query_params = {}
         if kwargs:
-            for key, val in kwargs.keys():
+            for key, val in kwargs.items():
                 query_params[key] = val
         if len(query_params) == 0:
             return {}
@@ -48,7 +48,7 @@ class Repos:
     def post(org_slug: str, **kwargs) -> dict:
         params = {}
         if kwargs:
-            for key, val in kwargs.keys():
+            for key, val in kwargs.items():
                 params[key] = val
         if len(params) == 0:
             return {}
