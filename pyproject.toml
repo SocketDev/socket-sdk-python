@@ -45,6 +45,7 @@ include = [
     "socketdev.purl",
     "socketdev.quota",
     "socketdev.report",
+    "socketdev.repos",
     "socketdev.repositories",
     "socketdev.sbom",
     "socketdev.settings",
