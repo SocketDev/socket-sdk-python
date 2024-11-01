@@ -2,20 +2,21 @@ import logging
 import requests
 import base64
 
+from socketdev.core.classes import Response
 from socketdev.dependencies import Dependencies
+from socketdev.exceptions import APIKeyMissing, APIFailure, APIAccessDenied, APIInsufficientQuota, APIResourceNotFound
+from socketdev.export import Export
+from socketdev.fullscans import FullScans
 from socketdev.npm import NPM
 from socketdev.openapi import OpenAPI
 from socketdev.org import Orgs
+from socketdev.purl import Purl
 from socketdev.quota import Quota
 from socketdev.report import Report
-from socketdev.sbom import Sbom
-from socketdev.purl import Purl
-from socketdev.fullscans import FullScans
 from socketdev.repos import Repos
 from socketdev.repositories import Repositories
+from socketdev.sbom import Sbom
 from socketdev.settings import Settings
-from socketdev.core.classes import Response
-from socketdev.exceptions import APIKeyMissing, APIFailure, APIAccessDenied, APIInsufficientQuota, APIResourceNotFound
 
 
 __author__ = "socket.dev"
@@ -91,6 +92,7 @@ class socketdev:
     sbom: Sbom
     purl: Purl
     fullscans: FullScans
+    export: Export
     repositories: Repositories
     settings: Settings
     repos: Repos

@@ -1,6 +1,9 @@
 import socketdev
 from socketdev.tools import load_files
 import json
+import logging
+
+log = logging.getLogger("socketdev")
 
 
 class FullScans:
@@ -29,8 +32,11 @@ class FullScans:
 
         if response.status_code == 200:
             result = response.json()
-        else:
-            result = {}
+            result["success"] = True
+            result["status"] = 200
+            return result
+
+        result = {"success": False, "status": response.status_code, "message": response.text}
 
         return result
 
@@ -83,7 +89,6 @@ class FullScans:
     @staticmethod
     def stream(org_slug: str, full_scan_id: str) -> dict:
         path = "orgs/" + org_slug + "/full-scans/" + full_scan_id
-
         response = socketdev.do_request(path=path, method="GET")
 
         if response.status_code == 200:
@@ -98,8 +103,13 @@ class FullScans:
                     stream_str.append(item)
             for val in stream_str:
                 stream_dict[val["id"]] = val
-        else:
-            stream_dict = {}
+
+            stream_dict["success"] = True
+            stream_dict["status"] = 200
+
+            return stream_dict
+
+        stream_dict = {"success": False, "status": response.status_code, "message": response.text}
 
         return stream_dict
 

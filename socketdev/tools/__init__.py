@@ -1,5 +1,6 @@
 import glob
 import sys
+import platform
 
 
 def find_package_files(folder: str, file_types: list) -> list:
@@ -16,26 +17,20 @@ def find_package_files(folder: str, file_types: list) -> list:
 def fix_file_path(files) -> list:
     fixed_files = []
     for file in files:
-        file = file.replace("\\", '/')
+        file = file.replace("\\", "/")
         fixed_files.append(file)
     return fixed_files
 
 
 def load_files(files: list, loaded_files: list) -> list:
     for file in files:
+        if platform.system() == "Windows":
+            file = file.replace("\\", "/")
         if "/" in file:
-            _, file_name = file.rsplit("/", 1)
-        elif "\\" in file:
-            _, file_name = file.rsplit("/", 1)
-        else:
-            file_name = file
-        try:
-            file_tuple = (file_name, (file_name, open(file, 'rb'), 'text/plain'))
-            loaded_files.append(file_tuple)
-        except Exception as error:
-            print(f"Unable to open {file}")
-            print(error)
-            exit(1)
+            path, name = file.rsplit("/", 1)
+        full_path = f"{path}/{name}"
+        payload = (full_path, (name, open(full_path, "rb")))
+        loaded_files.append(payload)
     return loaded_files
 
 
@@ -50,7 +45,7 @@ def prepare_for_csv(dependencies: list, packages: dict) -> list:
                     package.name,
                     package.version,
                     package.license,
-                    package.repository
+                    package.repository,
                 ]
                 output.append(output_object)
     return output
