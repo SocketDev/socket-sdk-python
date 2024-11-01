@@ -11,7 +11,6 @@ class Repo(TypedDict):
     default_branch: str
 
 
-# remove methods except for list, use old endpoint for list
 class Repositories:
     @staticmethod
     def list() -> dict:
