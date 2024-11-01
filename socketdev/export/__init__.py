@@ -1,7 +1,7 @@
-from socketdev.tools import do_request
 from urllib.parse import urlencode
 from dataclasses import dataclass, asdict
 from typing import Optional
+import socketdev
 
 
 @dataclass
@@ -33,7 +33,7 @@ class Export:
         path = f"orgs/{org_slug}/export/cdx/{id}"
         if query_params:
             path += query_params.to_query_params()
-        result = do_request(path=path)
+        result = socketdev.do_request(path=path)
         try:
             sbom = result.json()
             sbom["success"] = True
@@ -53,7 +53,7 @@ class Export:
         path = f"orgs/{org_slug}/export/spdx/{id}"
         if query_params:
             path += query_params.to_query_params()
-        result = do_request(path=path)
+        result = socketdev.do_request(path=path)
         try:
             sbom = result.json()
             sbom["success"] = True
