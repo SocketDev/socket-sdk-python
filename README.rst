@@ -52,6 +52,64 @@ Retrieve the package information for a purl post
 - **license (str)** - The license parameter if enabled will show alerts and license information. If disabled will only show the basic package metadata and scores. Default is true
 - **components (array{dict})** - The components list of packages urls
 
+export.cdx_bom(org_slug, id, query_params)
+"""""""""""""""""""""""""""""""""""""""""
+Export a Socket SBOM as a CycloneDX SBOM
+
+**Usage:**
+
+.. code-block::
+
+    from socketdev import socketdev
+    from socketdev.export import ExportQueryParams
+
+    socket = socketdev(token="REPLACE_ME")
+    query_params = ExportQueryParams(
+        author="john_doe",
+        project_name="my-project"
+    )
+    print(socket.export.cdx_bom("org_slug", "sbom_id", query_params))
+
+**PARAMETERS:**
+
+- **org_slug (str)** - The organization name
+- **id (str)** - The ID of either a full scan or an SBOM report
+- **query_params (ExportQueryParams)** - Optional query parameters for filtering:
+    - **author (str)** - Filter by author
+    - **project_group (str)** - Filter by project group
+    - **project_name (str)** - Filter by project name
+    - **project_version (str)** - Filter by project version
+    - **project_id (str)** - Filter by project ID
+
+export.spdx_bom(org_slug, id, query_params)
+""""""""""""""""""""""""""""""""""""""""""
+Export a Socket SBOM as an SPDX SBOM
+
+**Usage:**
+
+.. code-block::
+
+    from socketdev import socketdev
+    from socketdev.export import ExportQueryParams
+
+    socket = socketdev(token="REPLACE_ME")
+    query_params = ExportQueryParams(
+        project_name="my-project",
+        project_version="1.0.0"
+    )
+    print(socket.export.spdx_bom("org_slug", "sbom_id", query_params))
+
+**PARAMETERS:**
+
+- **org_slug (str)** - The organization name
+- **id (str)** - The ID of either a full scan or an SBOM report
+- **query_params (ExportQueryParams)** - Optional query parameters for filtering:
+    - **author (str)** - Filter by author
+    - **project_group (str)** - Filter by project group
+    - **project_name (str)** - Filter by project name
+    - **project_version (str)** - Filter by project version
+    - **project_id (str)** - Filter by project ID
+
 fullscans.get(org_slug)
 """""""""""""""""""""""
 Retrieve the Fullscans information for around Organization
@@ -142,6 +200,25 @@ Delete an existing full scan.
 
 - **org_slug (str)** - The organization name
 - **full_scan_id (str)** - The ID of the full scan
+
+fullscans.stream_diff(org_slug, before, after, preview)
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""
+Stream a diff between two full scans. Returns a scan diff.
+
+**Usage:**
+
+.. code-block::
+
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
+    print(socket.fullscans.stream_diff("org_slug", "before_scan_id", "after_scan_id"))
+
+**PARAMETERS:**
+
+- **org_slug (str)** - The organization name
+- **before (str)** - The base full scan ID
+- **after (str)** - The comparison full scan ID
+- **preview (bool)** - Create a diff-scan that is not persisted. Defaults to False
 
 fullscans.stream(org_slug, full_scan_id)
 """"""""""""""""""""""""""""""""""""""""

@@ -2,27 +2,26 @@ import logging
 import requests
 import base64
 
+from socketdev.core.classes import Response
 from socketdev.dependencies import Dependencies
+from socketdev.exceptions import APIKeyMissing, APIFailure, APIAccessDenied, APIInsufficientQuota, APIResourceNotFound
+from socketdev.export import Export
+from socketdev.fullscans import FullScans
 from socketdev.npm import NPM
 from socketdev.openapi import OpenAPI
 from socketdev.org import Orgs
+from socketdev.purl import Purl
 from socketdev.quota import Quota
 from socketdev.report import Report
-from socketdev.sbom import Sbom
-from socketdev.purl import Purl
-from socketdev.fullscans import FullScans
 from socketdev.repos import Repos
 from socketdev.repositories import Repositories
+from socketdev.sbom import Sbom
 from socketdev.settings import Settings
-from socketdev.core.classes import Response
-from socketdev.exceptions import APIKeyMissing, APIFailure, APIAccessDenied, APIInsufficientQuota, APIResourceNotFound
 
 
-__author__ = 'socket.dev'
-__version__ = '1.0.12'
-__all__ = [
-    "socketdev"
-]
+__author__ = "socket.dev"
+__version__ = "1.0.13"
+__all__ = ["socketdev"]
 
 
 global encoded_key
@@ -36,15 +35,11 @@ log.addHandler(logging.NullHandler())
 
 def encode_key(token: str):
     global encoded_key
-    encoded_key = base64.b64encode(token.encode()).decode('ascii')
+    encoded_key = base64.b64encode(token.encode()).decode("ascii")
 
 
 def do_request(
-        path: str,
-        headers: dict = None,
-        payload: [dict, str] = None,
-        files: list = None,
-        method: str = "GET"
+    path: str, headers: dict = None, payload: [dict, str] = None, files: list = None, method: str = "GET"
 ) -> Response:
     """
     Shared function for performing the requests against the API.
@@ -60,19 +55,14 @@ def do_request(
 
     if headers is None:
         headers = {
-            'Authorization': f"Basic {encoded_key}",
-            'User-Agent': f'SocketPythonScript/{__version__}',
-            "accept": "application/json"
+            "Authorization": f"Basic {encoded_key}",
+            "User-Agent": f"SocketPythonScript/{__version__}",
+            "accept": "application/json",
         }
     url = f"{api_url}/{path}"
     try:
         response = requests.request(
-            method.upper(),
-            url,
-            headers=headers,
-            data=payload,
-            files=files,
-            timeout=request_timeout
+            method.upper(), url, headers=headers, data=payload, files=files, timeout=request_timeout
         )
         if response.status_code >= 400:
             raise APIFailure("Bad Request")
@@ -85,11 +75,7 @@ def do_request(
         elif response.status_code == 429:
             raise APIInsufficientQuota("Insufficient quota for API route")
     except Exception as error:
-        response = Response(
-            text=f"{error}",
-            error=True,
-            status_code=500
-        )
+        response = Response(text=f"{error}", error=True, status_code=500)
         raise APIFailure(response)
     return response
 
@@ -104,8 +90,9 @@ class socketdev:
     quota: Quota
     report: Report
     sbom: Sbom
-    purl: purl
+    purl: Purl
     fullscans: FullScans
+    export: Export
     repositories: Repositories
     settings: Settings
     repos: Repos
