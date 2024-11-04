@@ -9,13 +9,6 @@ requires-python = ">= 3.9"
 dependencies = [
     'requests'
 ]
-
-# modern, faster linter and language server. install with `pip install -e ".[dev]"`
-[project.optional-dependencies]
-dev = [
-    "ruff>=0.3.0",
-]
-
 readme = "README.rst"
 license = {file = "LICENSE"}
 description = "Socket Security Python SDK"
@@ -35,6 +28,12 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14"
+]
+
+# modern, faster linter and language server. install with `pip install -e ".[dev]"`
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.3.0",
 ]
 
 [project.urls]
