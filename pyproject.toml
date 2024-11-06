@@ -44,6 +44,7 @@ include = [
     "socketdev",
     "socketdev.core",
     "socketdev.dependencies",
+    "socketdev.export",
     "socketdev.fullscans",
     "socketdev.npm",
     "socketdev.openapi",

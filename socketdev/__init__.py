@@ -20,7 +20,7 @@ from socketdev.settings import Settings
 
 
 __author__ = "socket.dev"
-__version__ = "1.0.13"
+__version__ = "1.0.14"
 __all__ = ["socketdev"]
 
 
@@ -111,6 +111,7 @@ class socketdev:
         self.sbom = Sbom()
         self.purl = Purl()
         self.fullscans = FullScans()
+        self.export = Export()
         self.repositories = Repositories()
         self.repos = Repos()
         self.settings = Settings()
