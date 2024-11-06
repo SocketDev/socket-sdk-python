@@ -12,7 +12,7 @@ Socket API v0 - https://docs.socket.dev/reference/introduction-to-socket-api
 Initializing the module
 -----------------------
 
-.. code-block::
+.. code-block:: python
 
     from socketdev import socketdev
     socket = socketdev(token="REPLACE_ME", timeout=30)
@@ -32,7 +32,7 @@ Retrieve the package information for a purl post
 
 **Usage:**
 
-.. code-block::
+.. code-block:: python
 
     from socketdev import socketdev
     socket = socketdev(token="REPLACE_ME")
@@ -53,12 +53,12 @@ Retrieve the package information for a purl post
 - **components (array{dict})** - The components list of packages urls
 
 export.cdx_bom(org_slug, id, query_params)
-"""""""""""""""""""""""""""""""""""""""""
+""""""""""""""""""""""""""""""""""""""""""
 Export a Socket SBOM as a CycloneDX SBOM
 
 **Usage:**
 
-.. code-block::
+.. code-block:: python
 
     from socketdev import socketdev
     from socketdev.export import ExportQueryParams
@@ -82,12 +82,12 @@ Export a Socket SBOM as a CycloneDX SBOM
     - **project_id (str)** - Filter by project ID
 
 export.spdx_bom(org_slug, id, query_params)
-""""""""""""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""""""""""""""
 Export a Socket SBOM as an SPDX SBOM
 
 **Usage:**
 
-.. code-block::
+.. code-block:: python
 
     from socketdev import socketdev
     from socketdev.export import ExportQueryParams
@@ -116,7 +116,7 @@ Retrieve the Fullscans information for around Organization
 
 **Usage:**
 
-.. code-block::
+.. code-block:: python
 
     from socketdev import socketdev
     socket = socketdev(token="REPLACE_ME")
@@ -132,7 +132,7 @@ Create a full scan from a set of package manifest files. Returns a full scan inc
 
 **Usage:**
 
-.. code-block::
+.. code-block:: python
 
     from socketdev import socketdev
     socket = socketdev(token="REPLACE_ME")
@@ -190,7 +190,7 @@ Delete an existing full scan.
 
 **Usage:**
 
-.. code-block::
+.. code-block:: python
 
     from socketdev import socketdev
     socket = socketdev(token="REPLACE_ME")
@@ -207,7 +207,7 @@ Stream a diff between two full scans. Returns a scan diff.
 
 **Usage:**
 
-.. code-block::
+.. code-block:: python
 
     from socketdev import socketdev
     socket = socketdev(token="REPLACE_ME")
@@ -226,7 +226,7 @@ Stream all SBOM artifacts for a full scan.
 
 **Usage:**
 
-.. code-block::
+.. code-block:: python
 
     from socketdev import socketdev
     socket = socketdev(token="REPLACE_ME")
@@ -243,7 +243,7 @@ Get metadata for a single full scan
 
 **Usage:**
 
-.. code-block::
+.. code-block:: python
 
     from socketdev import socketdev
     socket = socketdev(token="REPLACE_ME")
@@ -260,7 +260,7 @@ Retrieve the dependencies for the organization associated with the API Key
 
 **Usage:**
 
-.. code-block::
+.. code-block:: python
 
     from socketdev import socketdev
     socket = socketdev(token="REPLACE_ME")
@@ -277,7 +277,7 @@ Retrieve the dependencies for the organization associated with the API Key
 
 **Usage:**
 
-.. code-block::
+.. code-block:: python
 
     from socketdev import socketdev
     socket = socketdev(token="REPLACE_ME")
@@ -301,7 +301,7 @@ Get a list of information about the tracked repositores
 
 **Usage:**
 
-.. code-block::
+.. code-block:: python
 
     from socketdev import socketdev
     socket = socketdev(token="REPLACE_ME")
@@ -320,7 +320,7 @@ Create a new Socket Repository
 
 **Usage:**
 
-.. code-block::
+.. code-block:: python
 
     from socketdev import socketdev
     socket = socketdev(token="REPLACE_ME")
@@ -350,7 +350,7 @@ Get a list of information about the tracked repositores
 
 **Usage:**
 
-.. code-block::
+.. code-block:: python
 
     from socketdev import socketdev
     socket = socketdev(token="REPLACE_ME")
@@ -362,7 +362,7 @@ Update an existing Socket Repository
 
 **Usage:**
 
-.. code-block::
+.. code-block:: python
 
     from socketdev import socketdev
     socket = socketdev(token="REPLACE_ME")
@@ -392,7 +392,7 @@ Delete a Socket Repository
 
 **Usage:**
 
-.. code-block::
+.. code-block:: python
 
     from socketdev import socketdev
     socket = socketdev(token="REPLACE_ME")
@@ -409,7 +409,7 @@ Retrieve the Socket.dev org information
 
 **Usage:**
 
-.. code-block::
+.. code-block:: python
 
     from socketdev import socketdev
     socket = socketdev(token="REPLACE_ME")
@@ -421,7 +421,7 @@ Retrieve the the current quota available for your API Key
 
 **Usage:**
 
-.. code-block::
+.. code-block:: python
 
     from socketdev import socketdev
     socket = socketdev(token="REPLACE_ME")
@@ -433,7 +433,7 @@ Retrieve the Socket Organization Settings
 
 **Usage:**
 
-.. code-block::
+.. code-block:: python
 
     from socketdev import socketdev
     socket = socketdev(token="REPLACE_ME")
@@ -445,7 +445,7 @@ Retrieve the supported types of manifest files for creating a report
 
 **Usage:**
 
-.. code-block::
+.. code-block:: python
 
     from socketdev import socketdev
     socket = socketdev(token="REPLACE_ME")
@@ -457,7 +457,7 @@ Retrieve the list of all reports for the organization
 
 **Usage:**
 
-.. code-block::
+.. code-block:: python
 
     from socketdev import socketdev
     socket = socketdev(token="REPLACE_ME")
@@ -473,7 +473,7 @@ Delete the specified report
 
 **Usage:**
 
-.. code-block::
+.. code-block:: python
 
     from socketdev import socketdev
     socket = socketdev(token="REPLACE_ME")
@@ -489,7 +489,7 @@ Retrieve the information for a Project Health Report
 
 **Usage:**
 
-.. code-block::
+.. code-block:: python
 
     from socketdev import socketdev
     socket = socketdev(token="REPLACE_ME")
@@ -505,7 +505,7 @@ Create a new project health report with the provided files
 
 **Usage:**
 
-.. code-block::
+.. code-block:: python
 
     from socketdev import socketdev
     socket = socketdev(token="REPLACE_ME")
@@ -524,7 +524,7 @@ Get a list of information about the tracked repositores
 
 **Usage:**
 
-.. code-block::
+.. code-block:: python
 
     from socketdev import socketdev
     socket = socketdev(token="REPLACE_ME")
@@ -536,7 +536,7 @@ Retrieve the information for a SBOM Report
 
 **Usage:**
 
-.. code-block::
+.. code-block:: python
 
     from socketdev import socketdev
     socket = socketdev(token="REPLACE_ME")
@@ -548,7 +548,7 @@ Retrieve the Issues associated with a package and version.
 
 **Usage:**
 
-.. code-block::
+.. code-block:: python
 
     from socketdev import socketdev
     socket = socketdev(token="REPLACE_ME")
@@ -565,7 +565,7 @@ Retrieve the Issues associated with a package and version.
 
 **Usage:**
 
-.. code-block::
+.. code-block:: python
 
     from socketdev import socketdev
     socket = socketdev(token="REPLACE_ME")

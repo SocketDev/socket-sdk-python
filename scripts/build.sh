@@ -1,6 +1,6 @@
 #!/bin/sh
 
-VERSION=$(grep -o "__version__.*" socketdev/__init__.py | awk '{print $3}' | tr -d "'" | tr -d '\r')
+VERSION=$(grep -o "__version__.*" socketdev/__init__.py | awk '{print $3}' | sed 's/"//g' | sed "s/'//g" | tr -d '\r')
 ENABLE_PYPI_BUILD=$1
 
 if [ -z $ENABLE_PYPI_BUILD ]; then
@@ -16,7 +16,6 @@ if [ "$ENABLE_PYPI_BUILD" = "pypi-prod=enable" ]; then
 else
   echo "Doing test build of version $VERSION"
   python -m build --wheel --sdist \
-    && ls dist/*$VERSION*\
-    && twine upload --repository testpypi "dist/*$VERSION*"
+    && ls dist/*${VERSION}* \
+    && twine upload -r testpypi dist/*${VERSION}*
 fi
-
