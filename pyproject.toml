@@ -1,5 +1,8 @@
 [build-system]
-requires = ["setuptools >= 61.0"]
+requires = [
+    "setuptools >= 61.0",
+    "requests"
+]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,7 +10,8 @@ name = "socket-sdk-python"
 dynamic = ["version"]
 requires-python = ">= 3.9"
 dependencies = [
-    'requests'
+    'requests',
+    'typing-extensions>=4.12.2'
 ]
 readme = "README.rst"
 license = {file = "LICENSE"}
@@ -34,6 +38,9 @@ classifiers = [
 [project.optional-dependencies]
 dev = [
     "ruff>=0.3.0",
+    "twine",
+    "wheel",
+    "build",
 ]
 
 [project.urls]
@@ -57,6 +64,7 @@ include = [
     "socketdev.sbom",
     "socketdev.settings",
     "socketdev.tools",
+    "socketdev.utils",
 ]
 
 [tool.setuptools.dynamic]

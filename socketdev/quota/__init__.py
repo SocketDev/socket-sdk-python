@@ -1,11 +1,11 @@
-import socketdev
-
 
 class Quota:
-    @staticmethod
-    def get() -> dict:
+    def __init__(self, api):
+        self.api = api
+
+    def get(self) -> dict:
         path = "quota"
-        response = socketdev.do_request(path=path)
+        response = self.api.do_request(path=path)
         if response.status_code == 200:
             quota = response.json()
         else:
