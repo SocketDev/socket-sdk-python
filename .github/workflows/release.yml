@@ -1,0 +1,49 @@
+name: Release
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Get Version
+        id: version
+        run: |
+          RAW_VERSION=$(python -c "from socketdev import __version__; print(__version__)")
+          echo "VERSION=$RAW_VERSION" >> $GITHUB_ENV
+          if [ "v$RAW_VERSION" != "${{ github.ref_name }}" ]; then
+            echo "Error: Git tag (${{ github.ref_name }}) does not match package version (v$RAW_VERSION)"
+            exit 1
+          fi
+
+      - name: Check if version exists on PyPI
+        id: version_check
+        env:
+          VERSION: ${{ env.VERSION }}
+        run: |
+          if curl -s -f https://pypi.org/pypi/socket-sdk-python/$VERSION/json > /dev/null; then
+            echo "Version ${VERSION} already exists on PyPI"
+            echo "pypi_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "Version ${VERSION} not found on PyPI - proceeding with PyPI deployment"
+            echo "pypi_exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build package
+        if: steps.version_check.outputs.pypi_exists != 'true'
+        run: |
+          pip install build
+          python -m build
+
+      - name: Publish to PyPI
+        if: steps.version_check.outputs.pypi_exists != 'true'
+        uses: pypa/gh-action-pypi-publish@v1.8.11
+        with:
+          password: ${{ secrets.PYPI_TOKEN }}
