@@ -41,9 +41,9 @@ class FullScans:
         return result
 
     @staticmethod
-    def post(files: list, params: dict) -> dict:
+    def post(files: list, params: dict, workspace: str = None) -> dict:
         loaded_files = []
-        loaded_files = load_files(files, loaded_files)
+        loaded_files = load_files(files, loaded_files, workspace)
 
         params_arg = FullScans.create_params_string(params)
 

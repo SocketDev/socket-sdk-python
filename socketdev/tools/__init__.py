@@ -21,15 +21,29 @@ def fix_file_path(files) -> list:
         fixed_files.append(file)
     return fixed_files
 
+        
 
-def load_files(files: list, loaded_files: list) -> list:
+
+def load_files(files: list, loaded_files: list, workspace: str = None) -> list:
     for file in files:
         if platform.system() == "Windows":
             file = file.replace("\\", "/")
         if "/" in file:
             path, name = file.rsplit("/", 1)
+        else:
+            path = "."
+            name = file
         full_path = f"{path}/{name}"
-        payload = (full_path, (name, open(full_path, "rb")))
+        
+        # Calculate key based on workspace if provided
+        if workspace and full_path.startswith(workspace):
+            key = full_path[len(workspace):]
+            key = key.lstrip("/")
+            key = key.lstrip("./")
+        else:
+            key = full_path
+            
+        payload = (key, (name, open(full_path, "rb")))
         loaded_files.append(payload)
     return loaded_files
 
