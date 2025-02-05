@@ -1,14 +1,13 @@
 [build-system]
 requires = [
-    "setuptools >= 61.0",
-    "requests"
+    "setuptools >= 61.0"
 ]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "socket-sdk-python"
 dynamic = ["version"]
-requires-python = ">= 3.11"
+requires-python = ">= 3.9"
 dependencies = [
     'requests',
     'typing-extensions>=4.12.2'
@@ -26,45 +25,32 @@ maintainers = [
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14"
-
 ]
 
 # modern, faster linter and language server. install with `pip install -e ".[dev]"`
 [project.optional-dependencies]
 dev = [
     "ruff>=0.3.0",
-    "twine",
-    "wheel",
-    "build",
+    "twine>=4.0.0",
+    "wheel>=0.40.0",
+    "build>=1.0.0"
+]
+test = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0"
 ]
 
 [project.urls]
 Homepage = "https://github.com/socketdev/socket-sdk-python"
 
 [tool.setuptools.packages.find]
-include = [
-    "socketdev",
-    "socketdev.core",
-    "socketdev.dependencies",
-    "socketdev.export",
-    "socketdev.fullscans",
-    "socketdev.npm",
-    "socketdev.openapi",
-    "socketdev.org",
-    "socketdev.purl",
-    "socketdev.quota",
-    "socketdev.report",
-    "socketdev.repos",
-    "socketdev.repositories",
-    "socketdev.sbom",
-    "socketdev.settings",
-    "socketdev.tools",
-    "socketdev.utils",
-]
+include = ["socketdev", "socketdev.*"]
 
 [tool.setuptools.dynamic]
 version = {attr = "socketdev.version.__version__"}
