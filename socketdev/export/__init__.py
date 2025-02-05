@@ -1,7 +1,6 @@
 from urllib.parse import urlencode
 from dataclasses import dataclass, asdict
 from typing import Optional
-import socketdev
 
 
 @dataclass
@@ -21,8 +20,10 @@ class ExportQueryParams:
 
 
 class Export:
-    @staticmethod
-    def cdx_bom(org_slug: str, id: str, query_params: Optional[ExportQueryParams] = None) -> dict:
+    def __init__(self, api):
+        self.api = api
+
+    def cdx_bom(self, org_slug: str, id: str, query_params: Optional[ExportQueryParams] = None) -> dict:
         """
         Export a Socket SBOM as a CycloneDX SBOM
         :param org_slug: String - The slug of the organization
@@ -33,16 +34,15 @@ class Export:
         path = f"orgs/{org_slug}/export/cdx/{id}"
         if query_params:
             path += query_params.to_query_params()
-        result = socketdev.do_request(path=path)
+        response = self.api.do_request(path=path)
         try:
-            sbom = result.json()
+            sbom = response.json()
             sbom["success"] = True
         except Exception as error:
             sbom = {"success": False, "message": str(error)}
         return sbom
 
-    @staticmethod
-    def spdx_bom(org_slug: str, id: str, query_params: Optional[ExportQueryParams] = None) -> dict:
+    def spdx_bom(self, org_slug: str, id: str, query_params: Optional[ExportQueryParams] = None) -> dict:
         """
         Export a Socket SBOM as an SPDX SBOM
         :param org_slug: String - The slug of the organization
@@ -53,9 +53,9 @@ class Export:
         path = f"orgs/{org_slug}/export/spdx/{id}"
         if query_params:
             path += query_params.to_query_params()
-        result = socketdev.do_request(path=path)
+        response = self.api.do_request(path=path)
         try:
-            sbom = result.json()
+            sbom = response.json()
             sbom["success"] = True
         except Exception as error:
             sbom = {"success": False, "message": str(error)}

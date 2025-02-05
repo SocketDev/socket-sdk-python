@@ -1,20 +1,24 @@
-import socketdev
+from typing import TypedDict, Dict
 
+class Organization(TypedDict):
+    id: str
+    name: str
+    image: str
+    plan: str
+    slug: str
+
+class OrganizationsResponse(TypedDict):
+    organizations: Dict[str, Organization]
+    # Add other fields from the response if needed
 
 class Orgs:
-    @staticmethod
-    def get() -> dict:
-        path = "organizations"
-        headers = None
-        payload = None
+    def __init__(self, api):
+        self.api = api
 
-        response = socketdev.do_request(
-            path=path,
-            headers=headers,
-            payload=payload
-        )
+    def get(self) -> OrganizationsResponse:
+        path = "organizations"
+        response = self.api.do_request(path=path)
         if response.status_code == 200:
-            result = response.json()
+            return response.json()  # Return the full response
         else:
-            result = {}
-        return result
+            return {"organizations": {}}  # Return an empty structure

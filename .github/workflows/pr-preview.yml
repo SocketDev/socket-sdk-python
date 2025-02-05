@@ -23,14 +23,12 @@ jobs:
           PREVIEW_VERSION="${BASE_VERSION}.dev${{ github.event.pull_request.number }}${{ github.event.pull_request.commits }}"
           echo "VERSION=${PREVIEW_VERSION}" >> $GITHUB_ENV
 
-          # Update version in __init__.py
-          echo "__version__ = \"${PREVIEW_VERSION}\"" > socketdev/__init__.py.tmp
-          cat socketdev/__init__.py | grep -v "__version__" >> socketdev/__init__.py.tmp
-          mv socketdev/__init__.py.tmp socketdev/__init__.py
+          # Update version in version.py instead of __init__.py
+          echo "__version__ = \"${PREVIEW_VERSION}\"" > socketdev/version.py
 
           # Verify the change
-          echo "Updated version in __init__.py:"
-          cat socketdev/__init__.py | grep "__version__"
+          echo "Updated version in version.py:"
+          cat socketdev/version.py
 
       - name: Check if version exists on Test PyPI
         id: version_check
@@ -55,9 +53,7 @@ jobs:
         if: always()
         run: |
           BASE_VERSION=$(echo $VERSION | cut -d'.' -f1-3)
-          echo "__version__ = \"${BASE_VERSION}\"" > socketdev/__init__.py.tmp
-          cat socketdev/__init__.py | grep -v "__version__" >> socketdev/__init__.py.tmp
-          mv socketdev/__init__.py.tmp socketdev/__init__.py
+          echo "__version__ = \"${BASE_VERSION}\"" > socketdev/version.py
 
       - name: Publish to Test PyPI
         if: steps.version_check.outputs.exists != 'true'

@@ -1,13 +1,14 @@
-import socketdev
 import json
 from socketdev.core.classes import Package
 
 
 class Sbom:
-    @staticmethod
-    def view(report_id: str) -> dict[str, dict]:
+    def __init__(self, api):
+        self.api = api
+
+    def view(self, report_id: str) -> dict[str, dict]:
         path = f"sbom/view/{report_id}"
-        response = socketdev.do_request(path=path)
+        response = self.api.do_request(path=path)
         if response.status_code == 200:
             sbom = []
             sbom_dict = {}
@@ -19,13 +20,12 @@ class Sbom:
                     item = json.loads(line)
                     sbom.append(item)
             for val in sbom:
-                sbom_dict[val['id']] = val
+                sbom_dict[val["id"]] = val
         else:
             sbom_dict = {}
         return sbom_dict
 
-    @staticmethod
-    def create_packages_dict(sbom: dict[str, dict]) -> dict[str, Package]:
+    def create_packages_dict(self, sbom: dict[str, dict]) -> dict[str, Package]:
         """
         Converts the SBOM Artifacts from the FulLScan into a Dictionary for parsing
         :param sbom: list - Raw artifacts for the SBOM

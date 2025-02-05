@@ -1,16 +1,16 @@
 import json
 
-import socketdev
-
 
 class Purl:
-    @staticmethod
-    def post(license: str = "true", components: list = []) -> dict:
+    def __init__(self, api):
+        self.api = api
+
+    def post(self, license: str = "true", components: list = []) -> dict:
         path = "purl?" + "license=" + license
         components = {"components": components}
         components = json.dumps(components)
 
-        response = socketdev.do_request(path=path, payload=components, method="POST")
+        response = self.api.do_request(path=path, payload=components, method="POST")
         if response.status_code == 200:
             purl = []
             purl_dict = {}

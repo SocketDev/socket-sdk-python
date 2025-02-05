@@ -1,10 +1,7 @@
 import logging
-import requests
-import base64
 
-from socketdev.core.classes import Response
+from socketdev.core.api import API
 from socketdev.dependencies import Dependencies
-from socketdev.exceptions import APIKeyMissing, APIFailure, APIAccessDenied, APIInsufficientQuota, APIResourceNotFound
 from socketdev.export import Export
 from socketdev.fullscans import FullScans
 from socketdev.npm import NPM
@@ -17,11 +14,14 @@ from socketdev.repos import Repos
 from socketdev.repositories import Repositories
 from socketdev.sbom import Sbom
 from socketdev.settings import Settings
+from socketdev.utils import Utils, IntegrationType, INTEGRATION_TYPES
+from socketdev.version import __version__
 
 
 __author__ = "socket.dev"
-__version__ = "1.0.15"
-__all__ = ["socketdev"]
+__version__ = __version__
+__all__ = ["socketdev", "Utils", "IntegrationType", "INTEGRATION_TYPES"]
+
 
 
 global encoded_key
@@ -33,90 +33,29 @@ log = logging.getLogger("socketdev")
 log.addHandler(logging.NullHandler())
 
 
-def encode_key(token: str):
-    global encoded_key
-    encoded_key = base64.b64encode(token.encode()).decode("ascii")
-
-
-def do_request(
-    path: str, headers: dict = None, payload: [dict, str] = None, files: list = None, method: str = "GET"
-) -> Response:
-    """
-    Shared function for performing the requests against the API.
-    :param path: String path of the URL
-    :param headers: Optional dictionary of the headers to include in the request. Defaults to None
-    :param payload: Optional dictionary or string of the payload to POST. Defaults to None
-    :param files: Optional list of files to send. Defaults to None
-    :param method: Optional string of the method for the Request. Defaults to GET
-    """
-
-    if encoded_key is None or encoded_key == "":
-        raise APIKeyMissing
-
-    if headers is None:
-        headers = {
-            "Authorization": f"Basic {encoded_key}",
-            "User-Agent": f"SocketPythonScript/{__version__}",
-            "accept": "application/json",
-        }
-    url = f"{api_url}/{path}"
-    try:
-        response = requests.request(
-            method.upper(), url, headers=headers, data=payload, files=files, timeout=request_timeout
-        )
-        if response.status_code >= 400:
-            raise APIFailure("Bad Request")
-        elif response.status_code == 401:
-            raise APIAccessDenied("Unauthorized")
-        elif response.status_code == 403:
-            raise APIInsufficientQuota("Insufficient max_quota for API method")
-        elif response.status_code == 404:
-            raise APIResourceNotFound(f"Path not found {path}")
-        elif response.status_code == 429:
-            raise APIInsufficientQuota("Insufficient quota for API route")
-    except Exception as error:
-        response = Response(text=f"{error}", error=True, status_code=500)
-        raise APIFailure(response)
-    return response
-
-
 class socketdev:
-    token: str
-    timeout: int
-    dependencies: Dependencies
-    npm: NPM
-    openapi: OpenAPI
-    org: Orgs
-    quota: Quota
-    report: Report
-    sbom: Sbom
-    purl: Purl
-    fullscans: FullScans
-    export: Export
-    repositories: Repositories
-    settings: Settings
-    repos: Repos
-
     def __init__(self, token: str, timeout: int = 30):
+        self.api = API()
         self.token = token + ":"
-        encode_key(self.token)
-        self.timeout = timeout
-        socketdev.set_timeout(self.timeout)
-        self.dependencies = Dependencies()
-        self.npm = NPM()
-        self.openapi = OpenAPI()
-        self.org = Orgs()
-        self.quota = Quota()
-        self.report = Report()
-        self.sbom = Sbom()
-        self.purl = Purl()
-        self.fullscans = FullScans()
-        self.export = Export()
-        self.repositories = Repositories()
-        self.repos = Repos()
-        self.settings = Settings()
+        self.api.encode_key(self.token)
+        self.api.set_timeout(timeout)
+
+        self.dependencies = Dependencies(self.api)
+        self.npm = NPM(self.api)
+        self.openapi = OpenAPI(self.api)
+        self.org = Orgs(self.api)
+        self.quota = Quota(self.api)
+        self.report = Report(self.api)
+        self.sbom = Sbom(self.api)
+        self.purl = Purl(self.api)
+        self.fullscans = FullScans(self.api)
+        self.export = Export(self.api)
+        self.repositories = Repositories(self.api)
+        self.repos = Repos(self.api)
+        self.settings = Settings(self.api)
+        self.utils = Utils()
 
     @staticmethod
     def set_timeout(timeout: int):
-        global request_timeout
-        request_timeout = timeout
+        # Kept for backwards compatibility
+        pass
