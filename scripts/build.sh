@@ -1,6 +1,6 @@
 #!/bin/sh
 
-VERSION=$(grep -o "__version__.*" socketdev/__init__.py | awk '{print $3}' | sed 's/"//g' | sed "s/'//g" | tr -d '\r')
+VERSION=$(grep -o "__version__.*" socketdev/version.py | awk '{print $3}' | sed 's/"//g' | sed "s/'//g" | tr -d '\r')
 ENABLE_PYPI_BUILD=$1
 
 if [ -z $ENABLE_PYPI_BUILD ]; then

@@ -19,13 +19,20 @@ jobs:
         id: version_check
         run: |
           # Get version from current PR
-          PR_VERSION=$(grep -o '__version__ = "[^"]*"' socketdev/__init__.py | cut -d'"' -f2)
+          PR_VERSION=$(grep -o '__version__ = "[^"]*"' socketdev/version.py | cut -d'"' -f2)
           echo "Debug PR version: $PR_VERSION"
           echo "PR_VERSION=${PR_VERSION}" >> $GITHUB_ENV
 
-          # Get version from main branch
+          # Get version from main branch - try both locations
           git checkout origin/main
-          MAIN_VERSION=$(grep -o '__version__ = "[^"]*"' socketdev/__init__.py | cut -d'"' -f2)
+          if [ -f socketdev/version.py ]; then
+            MAIN_VERSION=$(grep -o '__version__ = "[^"]*"' socketdev/version.py | cut -d'"' -f2)
+          else
+            # Fall back to old location in __init__.py
+            # Use more specific grep to avoid matching the imported version
+            MAIN_VERSION=$(grep -o '^__version__ = "[^"]*"' socketdev/__init__.py | cut -d'"' -f2)
+          fi
+          
           echo "Debug main version: $MAIN_VERSION"
           echo "MAIN_VERSION=${MAIN_VERSION}" >> $GITHUB_ENV
 

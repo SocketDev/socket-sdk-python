@@ -16,7 +16,7 @@ jobs:
       - name: Get Version
         id: version
         run: |
-          RAW_VERSION=$(python -c "from socketdev import __version__; print(__version__)")
+          RAW_VERSION=$(python -c "from socketdev.version import __version__; print(__version__)")
           echo "VERSION=$RAW_VERSION" >> $GITHUB_ENV
           if [ "v$RAW_VERSION" != "${{ github.ref_name }}" ]; then
             echo "Error: Git tag (${{ github.ref_name }}) does not match package version (v$RAW_VERSION)"

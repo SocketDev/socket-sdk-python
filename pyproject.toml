@@ -68,7 +68,7 @@ include = [
 ]
 
 [tool.setuptools.dynamic]
-version = {attr = "socketdev.__version__"}
+version = {attr = "socketdev.version.__version__"}
 
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.

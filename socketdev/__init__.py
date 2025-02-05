@@ -15,10 +15,11 @@ from socketdev.repositories import Repositories
 from socketdev.sbom import Sbom
 from socketdev.settings import Settings
 from socketdev.utils import Utils, IntegrationType, INTEGRATION_TYPES
+from socketdev.version import __version__
 
 
 __author__ = "socket.dev"
-__version__ = "2.0.0"
+__version__ = __version__
 __all__ = ["socketdev", "Utils", "IntegrationType", "INTEGRATION_TYPES"]
 
 
