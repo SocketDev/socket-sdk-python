@@ -2,7 +2,7 @@ import base64
 import requests
 from socketdev.core.classes import Response
 from socketdev.exceptions import APIKeyMissing, APIFailure, APIAccessDenied, APIInsufficientQuota, APIResourceNotFound
-from socketdev.version import __version__
+from socketdev import __version__
 
 
 class API:
