@@ -424,7 +424,7 @@ class DiffArtifact:
             type=data["type"],
             name=data["name"],
             license=data.get("license", ""),
-            scores=SocketScore.from_dict(data["scores"]),
+            scores=SocketScore.from_dict(data["score"]),
             capabilities=SecurityCapabilities.from_dict(data["capabilities"]),
             files=data["files"],
             version=data["version"],
