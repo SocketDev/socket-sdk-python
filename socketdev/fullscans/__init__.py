@@ -395,7 +395,7 @@ class DiffArtifact:
     name: str
     license: str
     scores: SocketScore
-    capabilities: SecurityCapabilities
+    capabilities: Optional[SecurityCapabilities] = None
     files: str
     version: str
     alerts: List[DiffArtifactAlert]
@@ -425,7 +425,7 @@ class DiffArtifact:
             name=data["name"],
             license=data.get("license", ""),
             scores=SocketScore.from_dict(data["score"]),
-            capabilities=SecurityCapabilities.from_dict(data["capabilities"]),
+            capabilities=SecurityCapabilities.from_dict(data["capabilities"]) if data.get("capabilities") else None,
             files=data["files"],
             version=data["version"],
             alerts=[DiffArtifactAlert.from_dict(alert) for alert in data["alerts"]],
