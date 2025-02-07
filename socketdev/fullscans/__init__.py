@@ -191,17 +191,22 @@ class GetFullScanMetadataResponse:
 
 @dataclass
 class DependencyRef:
-    direct: bool
-    toplevelAncestors: List[str]
+    topLevelAncestors: List[str]
+    direct: Optional[bool] = None
+    manifestFiles: Optional[List[SocketManifestReference]] = None
+    dependencies: Optional[List[str]] = None
 
     def __getitem__(self, key): return getattr(self, key)
     def to_dict(self): return asdict(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> "DependencyRef":
+        manifest_files = data.get("manifestFiles")
         return cls(
-            direct=data["direct"],
-            toplevelAncestors=data["toplevelAncestors"]
+            topLevelAncestors=data["topLevelAncestors"],
+            direct=data.get("direct"),
+            manifestFiles=[SocketManifestReference.from_dict(m) for m in manifest_files] if manifest_files else None,
+            dependencies=data.get("dependencies")
         )
 
 @dataclass
@@ -400,8 +405,8 @@ class DiffArtifact:
     licenseDetails: List[LicenseDetail]
     files: Optional[str] = None
     capabilities: Optional[SecurityCapabilities] = None
-    base: Optional[DependencyRef] = None
-    head: Optional[DependencyRef] = None
+    base: Optional[List[DependencyRef]] = None
+    head: Optional[List[DependencyRef]] = None
     namespace: Optional[str] = None
     subpath: Optional[str] = None
     artifact_id: Optional[str] = None
@@ -418,6 +423,8 @@ class DiffArtifact:
 
     @classmethod
     def from_dict(cls, data: dict) -> "DiffArtifact":
+        base_data = data.get("base")
+        head_data = data.get("head")
         return cls(
             diffType=DiffType(data["diffType"]),
             id=data["id"],
@@ -430,8 +437,8 @@ class DiffArtifact:
             licenseDetails=[LicenseDetail.from_dict(detail) for detail in data["licenseDetails"]],
             files=data.get("files"),
             capabilities=SecurityCapabilities.from_dict(data["capabilities"]) if data.get("capabilities") else None,
-            base=DependencyRef.from_dict(data["base"]) if data.get("base") else None,
-            head=DependencyRef.from_dict(data["head"]) if data.get("head") else None,
+            base=[DependencyRef.from_dict(b) for b in base_data] if base_data else None,
+            head=[DependencyRef.from_dict(h) for h in head_data] if head_data else None,
             namespace=data.get("namespace"),
             subpath=data.get("subpath"),
             artifact_id=data.get("artifact_id"),
