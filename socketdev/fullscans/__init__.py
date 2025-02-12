@@ -123,8 +123,8 @@ class FullScanMetadata:
     repository_id: str
     branch: str
     html_report_url: str
-    repo: Optional[str] = None # In docs, never shows up
-    organization_slug: Optional[str] = None # In docs, never shows up
+    repo: Optional[str] = None 
+    organization_slug: Optional[str] = None
     committers: Optional[List[str]] = None
     commit_message: Optional[str] = None
     commit_hash: Optional[str] = None
@@ -189,20 +189,29 @@ class GetFullScanMetadataResponse:
             data=FullScanMetadata.from_dict(data.get("data")) if data.get("data") else None
         )
 
-@dataclass
-class DependencyRef:
-    direct: bool
-    toplevelAncestors: List[str]
+@dataclass(kw_only=True)
+class SocketArtifactLink:
+    topLevelAncestors: List[str]
+    direct: bool = False 
+    artifact: Optional[Dict] = None
+    dependencies: Optional[List[str]] = None
+    manifestFiles: Optional[List[SocketManifestReference]] = None
 
     def __getitem__(self, key): return getattr(self, key)
     def to_dict(self): return asdict(self)
 
     @classmethod
-    def from_dict(cls, data: dict) -> "DependencyRef":
+    def from_dict(cls, data: dict) -> "SocketArtifactLink":
+        manifest_files = data.get("manifestFiles")
+        direct_val = data.get("direct", False)
         return cls(
-            direct=data["direct"],
-            toplevelAncestors=data["toplevelAncestors"]
+            topLevelAncestors=data["topLevelAncestors"],
+            direct=direct_val if isinstance(direct_val, bool) else direct_val.lower() == "true",
+            artifact=data.get("artifact"),
+            dependencies=data.get("dependencies"),
+            manifestFiles=[SocketManifestReference.from_dict(m) for m in manifest_files] if manifest_files else None
         )
+
 
 @dataclass
 class SocketScore:
@@ -355,11 +364,11 @@ class LicenseAttribution:
         )
 
 @dataclass
-class DiffArtifactAlert:
+class SocketAlert:
     key: str
     type: str
-    severity: Optional[SocketIssueSeverity] = None
-    category: Optional[SocketCategory] = None
+    severity: SocketIssueSeverity
+    category: SocketCategory
     file: Optional[str] = None
     start: Optional[int] = None
     end: Optional[int] = None
@@ -371,14 +380,12 @@ class DiffArtifactAlert:
     def to_dict(self): return asdict(self)
 
     @classmethod
-    def from_dict(cls, data: dict) -> "DiffArtifactAlert":
-        severity = data.get("severity")
-        category = data.get("category")
+    def from_dict(cls, data: dict) -> "SocketAlert":
         return cls(
             key=data["key"],
             type=data["type"],
-            severity=SocketIssueSeverity(severity) if severity else None,
-            category=SocketCategory(category) if category else None,
+            severity=SocketIssueSeverity(data["severity"]),
+            category=SocketCategory(data["category"]),
             file=data.get("file"),
             start=data.get("start"),
             end=data.get("end"),
@@ -387,28 +394,29 @@ class DiffArtifactAlert:
             actionPolicyIndex=data.get("actionPolicyIndex")
         )
 
+
 @dataclass
 class DiffArtifact:
     diffType: DiffType
     id: str
     type: str
     name: str
-    license: str
-    scores: SocketScore
-    capabilities: SecurityCapabilities
-    files: str
+    score: SocketScore
     version: str
-    alerts: List[DiffArtifactAlert]
+    alerts: List[SocketAlert]
     licenseDetails: List[LicenseDetail]
-    base: Optional[DependencyRef] = None
-    head: Optional[DependencyRef] = None
+    author: List[str] = field(default_factory=list)
+    license: Optional[str] = None
+    files: Optional[str] = None
+    capabilities: Optional[SecurityCapabilities] = None
+    base: Optional[List[SocketArtifactLink]] = None
+    head: Optional[List[SocketArtifactLink]] = None
     namespace: Optional[str] = None
     subpath: Optional[str] = None
     artifact_id: Optional[str] = None
     artifactId: Optional[str] = None
     qualifiers: Optional[Dict[str, Any]] = None
     size: Optional[int] = None
-    author: Optional[str] = None
     state: Optional[str] = None
     error: Optional[str] = None
     licenseAttrib: Optional[List[LicenseAttribution]] = None
@@ -418,27 +426,29 @@ class DiffArtifact:
 
     @classmethod
     def from_dict(cls, data: dict) -> "DiffArtifact":
+        base_data = data.get("base")
+        head_data = data.get("head")
         return cls(
             diffType=DiffType(data["diffType"]),
             id=data["id"],
             type=data["type"],
             name=data["name"],
-            license=data.get("license", ""),
-            scores=SocketScore.from_dict(data["score"]),
-            capabilities=SecurityCapabilities.from_dict(data["capabilities"]),
-            files=data["files"],
+            score=SocketScore.from_dict(data["score"]),
             version=data["version"],
-            alerts=[DiffArtifactAlert.from_dict(alert) for alert in data["alerts"]],
+            alerts=[SocketAlert.from_dict(alert) for alert in data["alerts"]],
             licenseDetails=[LicenseDetail.from_dict(detail) for detail in data["licenseDetails"]],
-            base=DependencyRef.from_dict(data["base"]) if data.get("base") else None,
-            head=DependencyRef.from_dict(data["head"]) if data.get("head") else None,
+            files=data.get("files"),
+            license=data.get("license"),
+            capabilities=SecurityCapabilities.from_dict(data["capabilities"]) if data.get("capabilities") else None,
+            base=[SocketArtifactLink.from_dict(b) for b in base_data] if base_data else None,
+            head=[SocketArtifactLink.from_dict(h) for h in head_data] if head_data else None,
             namespace=data.get("namespace"),
             subpath=data.get("subpath"),
             artifact_id=data.get("artifact_id"),
             artifactId=data.get("artifactId"),
             qualifiers=data.get("qualifiers"),
             size=data.get("size"),
-            author=data.get("author"),
+            author=data.get("author", []),
             state=data.get("state"),
             error=data.get("error"),
             licenseAttrib=[LicenseAttribution.from_dict(attrib) for attrib in data["licenseAttrib"]] if data.get("licenseAttrib") else None
@@ -533,80 +543,25 @@ class StreamDiffResponse:
         )
 
 @dataclass(kw_only=True)
-class SocketArtifactLink:
-    topLevelAncestors: List[str]
-    artifact: Optional[Dict] = None
-    dependencies: Optional[List[str]] = None
-    direct: Optional[bool] = None
-    manifestFiles: Optional[List[SocketManifestReference]] = None
-
-    def __getitem__(self, key): return getattr(self, key)
-    def to_dict(self): return asdict(self)
-
-    @classmethod
-    def from_dict(cls, data: dict) -> "SocketArtifactLink":
-        manifest_files = data.get("manifestFiles")
-        return cls(
-            topLevelAncestors=data["topLevelAncestors"],
-            artifact=data.get("artifact"),
-            dependencies=data.get("dependencies"),
-            direct=data.get("direct"),
-            manifestFiles=[SocketManifestReference.from_dict(m) for m in manifest_files] if manifest_files else None
-        )
-
-@dataclass
-class SocketAlert:
-    key: str
-    type: str
-    severity: SocketIssueSeverity
-    category: SocketCategory
-    file: Optional[str] = None
-    start: Optional[int] = None
-    end: Optional[int] = None
-    props: Optional[Dict[str, Any]] = None
-    action: Optional[str] = None
-    actionPolicyIndex: Optional[int] = None
-
-    def __getitem__(self, key): return getattr(self, key)
-    def to_dict(self): return asdict(self)
-
-    @classmethod
-    def from_dict(cls, data: dict) -> "SocketAlert":
-        return cls(
-            key=data["key"],
-            type=data["type"],
-            severity=SocketIssueSeverity(data["severity"]),
-            category=SocketCategory(data["category"]),
-            file=data.get("file"),
-            start=data.get("start"),
-            end=data.get("end"),
-            props=data.get("props"),
-            action=data.get("action"),
-            actionPolicyIndex=data.get("actionPolicyIndex")
-        )
-
-@dataclass(kw_only=True)
 class SocketArtifact(SocketPURL, SocketArtifactLink):
     id: str
-    alerts: Optional[List[SocketAlert]] = field(default_factory=list)
+    alerts: List[SocketAlert]
+    score: SocketScore
     author: Optional[List[str]] = field(default_factory=list)
     batchIndex: Optional[int] = None
     license: Optional[str] = None
     licenseAttrib: Optional[List[LicenseAttribution]] = field(default_factory=list)
     licenseDetails: Optional[List[LicenseDetail]] = field(default_factory=list)
-    score: Optional[SocketScore] = None
-    size: Optional[float] = None
+    size: Optional[int] = None
 
     def __getitem__(self, key): return getattr(self, key)
     def to_dict(self): return asdict(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> "SocketArtifact":
-        # First get the base class data
         purl_data = {k: data.get(k) for k in SocketPURL.__dataclass_fields__}
         link_data = {k: data.get(k) for k in SocketArtifactLink.__dataclass_fields__}
         
-        # Handle nested types
         alerts = data.get("alerts")
         license_attrib = data.get("licenseAttrib")
         license_details = data.get("licenseDetails")
@@ -658,7 +613,7 @@ class FullScans:
         for name, value in params.items():
             if value:
                 if name == "committers" and isinstance(value, list):
-                    # Handle committers specially - add multiple params
+                    
                     for committer in value:
                         param_str += f"&{name}={committer}"
                 else:
@@ -699,7 +654,7 @@ class FullScans:
         org_slug = str(params.org_slug)
         params_dict = params.to_dict()
         params_dict.pop("org_slug")
-        params_arg = self.create_params_string(params_dict)  # Convert params to dict
+        params_arg = self.create_params_string(params_dict)  
 
         path = "orgs/" + org_slug + "/full-scans" + str(params_arg)
 
@@ -772,12 +727,12 @@ class FullScans:
                         item = json.loads(line)
                         stream_str.append(item)
                 for val in stream_str:
-                    artifacts[val["id"]] = val  # Just store the raw dict
+                    artifacts[val["id"]] = val  
 
                 return FullScanStreamResponse.from_dict({
                     "success": True,
                     "status": 200,
-                    "artifacts": artifacts  # Let from_dict handle the conversion
+                    "artifacts": artifacts
                 })
             except Exception as e:
                 error_message = f"Error parsing stream response: {str(e)}"

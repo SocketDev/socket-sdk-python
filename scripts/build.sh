@@ -17,5 +17,5 @@ else
   echo "Doing test build of version $VERSION"
   python -m build --wheel --sdist \
     && ls dist/*${VERSION}* \
-    && twine upload -r testpypi dist/*${VERSION}*
+    && twine upload --verbose -r testpypi dist/*${VERSION}*
 fi
