@@ -404,8 +404,8 @@ class DiffArtifact:
     score: SocketScore
     version: str
     alerts: List[SocketAlert]
-    author: List[str] = field(default_factory=list)
     licenseDetails: List[LicenseDetail]
+    author: List[str] = field(default_factory=list)
     license: Optional[str] = None
     files: Optional[str] = None
     capabilities: Optional[SecurityCapabilities] = None
