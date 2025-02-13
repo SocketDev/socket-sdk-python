@@ -506,9 +506,9 @@ class CommitInfo:
 class FullScanDiffReport:
     before: CommitInfo
     after: CommitInfo
-    directDependenciesChanged: bool = False
     diff_report_url: str
     artifacts: DiffArtifacts
+    directDependenciesChanged: bool = False
 
     def __getitem__(self, key): return getattr(self, key)
     def to_dict(self): return asdict(self)
