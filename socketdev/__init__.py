@@ -28,13 +28,13 @@ global encoded_key
 encoded_key: str
 
 api_url = "https://api.socket.dev/v0"
-request_timeout = 30
+request_timeout = 1200
 log = logging.getLogger("socketdev")
 log.addHandler(logging.NullHandler())
 
 
 class socketdev:
-    def __init__(self, token: str, timeout: int = 30):
+    def __init__(self, token: str, timeout: int = 1200):
         self.api = API()
         self.token = token + ":"
         self.api.encode_key(self.token)
