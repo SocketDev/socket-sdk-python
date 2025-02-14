@@ -506,9 +506,9 @@ class CommitInfo:
 class FullScanDiffReport:
     before: CommitInfo
     after: CommitInfo
-    directDependenciesChanged: bool
     diff_report_url: str
     artifacts: DiffArtifacts
+    directDependenciesChanged: bool = False
 
     def __getitem__(self, key): return getattr(self, key)
     def to_dict(self): return asdict(self)
@@ -518,7 +518,7 @@ class FullScanDiffReport:
         return cls(
             before=CommitInfo.from_dict(data["before"]),
             after=CommitInfo.from_dict(data["after"]),
-            directDependenciesChanged=data["directDependenciesChanged"],
+            directDependenciesChanged=data.get("directDependenciesChanged", False),
             diff_report_url=data["diff_report_url"],
             artifacts=DiffArtifacts.from_dict(data["artifacts"])
         )
