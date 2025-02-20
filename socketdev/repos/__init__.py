@@ -131,7 +131,7 @@ class Repos:
             return {}
             
         path = "orgs/" + org_slug + "/repos"
-        response = self.api.do_request(path=path, method="POST", payload=params.__dict__)
+        response = self.api.do_request(path=path, method="POST", payload=params)
         
         if response.status_code == 200:
             result = response.json()
@@ -150,7 +150,7 @@ class Repos:
             return {}
             
         path = f"orgs/{org_slug}/repos/{repo_name}"
-        response = self.api.do_request(path=path, method="POST", payload=params.__dict__)
+        response = self.api.do_request(path=path, method="POST", payload=params)
         
         if response.status_code == 200:
             result = response.json()
