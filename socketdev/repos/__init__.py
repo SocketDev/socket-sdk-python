@@ -135,7 +135,7 @@ class Repos:
         payload = json.dumps(params)
         response = self.api.do_request(path=path, method="POST", payload=payload)
         
-        if response.status_code == 200:
+        if response.status_code == 201:
             result = response.json()
             return result
 
