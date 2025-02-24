@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import List, Optional
 from dataclasses import dataclass, asdict
@@ -131,9 +132,10 @@ class Repos:
             return {}
             
         path = "orgs/" + org_slug + "/repos"
-        response = self.api.do_request(path=path, method="POST", payload=params.__dict__)
+        payload = json.dumps(params)
+        response = self.api.do_request(path=path, method="POST", payload=payload)
         
-        if response.status_code == 200:
+        if response.status_code == 201:
             result = response.json()
             return result
 
@@ -150,7 +152,8 @@ class Repos:
             return {}
             
         path = f"orgs/{org_slug}/repos/{repo_name}"
-        response = self.api.do_request(path=path, method="POST", payload=params.__dict__)
+        payload = json.dumps(params)
+        response = self.api.do_request(path=path, method="POST", payload=payload)
         
         if response.status_code == 200:
             result = response.json()
