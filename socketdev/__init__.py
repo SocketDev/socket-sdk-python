@@ -23,7 +23,6 @@ __version__ = __version__
 __all__ = ["socketdev", "Utils", "IntegrationType", "INTEGRATION_TYPES"]
 
 
-
 global encoded_key
 encoded_key: str
 
@@ -31,6 +30,8 @@ api_url = "https://api.socket.dev/v0"
 request_timeout = 1200
 log = logging.getLogger("socketdev")
 log.addHandler(logging.NullHandler())
+
+# TODO: Add debug flag to constructor to enable verbose error logging for API response parsing.
 
 
 class socketdev:

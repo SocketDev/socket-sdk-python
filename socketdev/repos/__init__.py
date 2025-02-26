@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import List, Optional
+from typing import Optional, Union
 from dataclasses import dataclass, asdict
 
 log = logging.getLogger("socketdev")
@@ -97,25 +97,30 @@ class Repos:
         log.error(f"Error getting repositories: {response.status_code}, message: {error_message}")
         return {}
 
-    def repo(self, org_slug: str, repo_name: str) -> GetRepoResponse:
+    def repo(self, org_slug: str, repo_name: str, use_types: bool = False) -> Union[dict, GetRepoResponse]:
         path = f"orgs/{org_slug}/repos/{repo_name}"
         response = self.api.do_request(path=path)
 
         if response.status_code == 200:
             result = response.json()
-            return GetRepoResponse.from_dict({"success": True, "status": 200, "data": result})
+            if use_types:
+                return GetRepoResponse.from_dict({"success": True, "status": 200, "data": result})
+            return result
 
         error_message = response.json().get("error", {}).get("message", "Unknown error")
-        log.error(f"Failed to get repository: {response.status_code}, message: {error_message}")
-        return GetRepoResponse.from_dict({"success": False, "status": response.status_code, "message": error_message})
+        print(f"Failed to get repository: {response.status_code}, message: {error_message}")
+        if use_types:
+            return GetRepoResponse.from_dict(
+                {"success": False, "status": response.status_code, "message": error_message}
+            )
+        return {}
 
     def delete(self, org_slug: str, name: str) -> dict:
         path = f"orgs/{org_slug}/repos/{name}"
         response = self.api.do_request(path=path, method="DELETE")
 
         if response.status_code == 200:
-            result = response.json()
-            return result
+            return response.json()
 
         error_message = response.json().get("error", {}).get("message", "Unknown error")
         log.error(f"Error deleting repository: {response.status_code}, message: {error_message}")
@@ -134,8 +139,7 @@ class Repos:
         response = self.api.do_request(path=path, method="POST", payload=payload)
 
         if response.status_code == 201:
-            result = response.json()
-            return result
+            return response.json()
 
         error_message = response.json().get("error", {}).get("message", "Unknown error")
         log.error(f"Error creating repository: {response.status_code}, message: {error_message}")
@@ -154,8 +158,7 @@ class Repos:
         response = self.api.do_request(path=path, method="POST", payload=payload)
 
         if response.status_code == 200:
-            result = response.json()
-            return result
+            return response.json()
 
         error_message = response.json().get("error", {}).get("message", "Unknown error")
         log.error(f"Error updating repository: {response.status_code}, message: {error_message}")

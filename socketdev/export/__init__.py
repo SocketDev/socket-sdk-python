@@ -1,6 +1,9 @@
 from urllib.parse import urlencode
 from dataclasses import dataclass, asdict
 from typing import Optional
+import logging
+
+log = logging.getLogger("socketdev")
 
 
 @dataclass
@@ -23,40 +26,50 @@ class Export:
     def __init__(self, api):
         self.api = api
 
-    def cdx_bom(self, org_slug: str, id: str, query_params: Optional[ExportQueryParams] = None) -> dict:
+    def cdx_bom(
+        self, org_slug: str, id: str, query_params: Optional[ExportQueryParams] = None, use_types: bool = False
+    ) -> dict:
         """
         Export a Socket SBOM as a CycloneDX SBOM
         :param org_slug: String - The slug of the organization
         :param id: String - The id of either a full scan or an sbom report
         :param query_params: Optional[ExportQueryParams] - Query parameters for filtering
-        :return:
+        :param use_types: Optional[bool] - Whether to return typed responses
+        :return: dict
         """
         path = f"orgs/{org_slug}/export/cdx/{id}"
         if query_params:
             path += query_params.to_query_params()
         response = self.api.do_request(path=path)
-        try:
-            sbom = response.json()
-            sbom["success"] = True
-        except Exception as error:
-            sbom = {"success": False, "message": str(error)}
-        return sbom
 
-    def spdx_bom(self, org_slug: str, id: str, query_params: Optional[ExportQueryParams] = None) -> dict:
+        if response.status_code == 200:
+            return response.json()
+            # TODO: Add typed response when types are defined
+
+        log.error(f"Error exporting CDX BOM: {response.status_code}")
+        print(response.text)
+        return {}
+
+    def spdx_bom(
+        self, org_slug: str, id: str, query_params: Optional[ExportQueryParams] = None, use_types: bool = False
+    ) -> dict:
         """
         Export a Socket SBOM as an SPDX SBOM
         :param org_slug: String - The slug of the organization
         :param id: String - The id of either a full scan or an sbom report
         :param query_params: Optional[ExportQueryParams] - Query parameters for filtering
-        :return:
+        :param use_types: Optional[bool] - Whether to return typed responses
+        :return: dict
         """
         path = f"orgs/{org_slug}/export/spdx/{id}"
         if query_params:
             path += query_params.to_query_params()
         response = self.api.do_request(path=path)
-        try:
-            sbom = response.json()
-            sbom["success"] = True
-        except Exception as error:
-            sbom = {"success": False, "message": str(error)}
-        return sbom
+
+        if response.status_code == 200:
+            return response.json()
+            # TODO: Add typed response when types are defined
+
+        log.error(f"Error exporting SPDX BOM: {response.status_code}")
+        print(response.text)
+        return {}

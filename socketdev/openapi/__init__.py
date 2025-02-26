@@ -1,4 +1,8 @@
+import logging
 
+log = logging.getLogger("socketdev")
+
+# TODO: Add response type classes for OpenAPI endpoints
 
 
 class OpenAPI:
@@ -9,7 +13,7 @@ class OpenAPI:
         path = "openapi"
         response = self.api.do_request(path=path)
         if response.status_code == 200:
-            openapi = response.json()
-        else:
-            openapi = {}
-        return openapi
+            return response.json()
+        log.error(f"Error getting OpenAPI spec: {response.status_code}")
+        print(response.text)
+        return {}

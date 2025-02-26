@@ -1,7 +1,11 @@
 import json
 from urllib.parse import urlencode
-
+import logging
 from socketdev.tools import load_files
+
+log = logging.getLogger("socketdev")
+
+# TODO: Add types for responses. Not currently used in the CLI.
 
 
 class Dependencies:
@@ -17,7 +21,7 @@ class Dependencies:
             result = response.json()
         else:
             result = {}
-            print(f"Error posting {files} to the Dependency API")
+            log.error(f"Error posting {files} to the Dependency API")
             print(response.text)
         return result
 

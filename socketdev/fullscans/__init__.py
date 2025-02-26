@@ -1,13 +1,14 @@
 import json
 import logging
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 from dataclasses import dataclass, asdict, field
 
 
 from ..utils import IntegrationType, Utils
 
 log = logging.getLogger("socketdev")
+
 
 class SocketPURL_Type(str, Enum):
     UNKNOWN = "unknown"
@@ -31,12 +32,14 @@ class SocketCategory(str, Enum):
     LICENSE = "license"
     MISCELLANEOUS = "miscellaneous"
 
+
 class DiffType(str, Enum):
     ADDED = "added"
     REMOVED = "removed"
     UNCHANGED = "unchanged"
     REPLACED = "replaced"
     UPDATED = "updated"
+
 
 @dataclass(kw_only=True)
 class SocketPURL:
@@ -47,8 +50,11 @@ class SocketPURL:
     subpath: Optional[str] = None
     version: Optional[str] = None
 
-    def __getitem__(self, key): return getattr(self, key)
-    def to_dict(self): return asdict(self)
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def to_dict(self):
+        return asdict(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> "SocketPURL":
@@ -58,8 +64,9 @@ class SocketPURL:
             namespace=data.get("namespace"),
             release=data.get("release"),
             subpath=data.get("subpath"),
-            version=data.get("version")
+            version=data.get("version"),
         )
+
 
 @dataclass
 class SocketManifestReference:
@@ -67,16 +74,16 @@ class SocketManifestReference:
     start: Optional[int] = None
     end: Optional[int] = None
 
-    def __getitem__(self, key): return getattr(self, key)
-    def to_dict(self): return asdict(self)
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def to_dict(self):
+        return asdict(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> "SocketManifestReference":
-        return cls(
-            file=data["file"],
-            start=data.get("start"),
-            end=data.get("end")
-        )
+        return cls(file=data["file"], start=data.get("start"), end=data.get("end"))
+
 
 @dataclass
 class FullScanParams:
@@ -93,8 +100,11 @@ class FullScanParams:
     set_as_pending_head: Optional[bool] = None
     tmp: Optional[bool] = None
 
-    def __getitem__(self, key): return getattr(self, key)
-    def to_dict(self): return asdict(self)
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def to_dict(self):
+        return asdict(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> "FullScanParams":
@@ -111,8 +121,9 @@ class FullScanParams:
             integration_org_slug=data.get("integration_org_slug"),
             make_default_branch=data.get("make_default_branch"),
             set_as_pending_head=data.get("set_as_pending_head"),
-            tmp=data.get("tmp")
+            tmp=data.get("tmp"),
         )
+
 
 @dataclass
 class FullScanMetadata:
@@ -123,15 +134,18 @@ class FullScanMetadata:
     repository_id: str
     branch: str
     html_report_url: str
-    repo: Optional[str] = None 
+    repo: Optional[str] = None
     organization_slug: Optional[str] = None
     committers: Optional[List[str]] = None
     commit_message: Optional[str] = None
     commit_hash: Optional[str] = None
     pull_request: Optional[int] = None
 
-    def __getitem__(self, key): return getattr(self, key)
-    def to_dict(self): return asdict(self)
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def to_dict(self):
+        return asdict(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> "FullScanMetadata":
@@ -148,8 +162,9 @@ class FullScanMetadata:
             committers=data.get("committers"),
             commit_message=data.get("commit_message"),
             commit_hash=data.get("commit_hash"),
-            pull_request=data.get("pull_request")
+            pull_request=data.get("pull_request"),
         )
+
 
 @dataclass
 class CreateFullScanResponse:
@@ -158,8 +173,11 @@ class CreateFullScanResponse:
     data: Optional[FullScanMetadata] = None
     message: Optional[str] = None
 
-    def __getitem__(self, key): return getattr(self, key)
-    def to_dict(self): return asdict(self)
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def to_dict(self):
+        return asdict(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> "CreateFullScanResponse":
@@ -167,8 +185,9 @@ class CreateFullScanResponse:
             success=data["success"],
             status=data["status"],
             message=data.get("message"),
-            data=FullScanMetadata.from_dict(data.get("data")) if data.get("data") else None
+            data=FullScanMetadata.from_dict(data.get("data")) if data.get("data") else None,
         )
+
 
 @dataclass
 class GetFullScanMetadataResponse:
@@ -177,8 +196,11 @@ class GetFullScanMetadataResponse:
     data: Optional[FullScanMetadata] = None
     message: Optional[str] = None
 
-    def __getitem__(self, key): return getattr(self, key)
-    def to_dict(self): return asdict(self)
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def to_dict(self):
+        return asdict(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> "GetFullScanMetadataResponse":
@@ -186,19 +208,23 @@ class GetFullScanMetadataResponse:
             success=data["success"],
             status=data["status"],
             message=data.get("message"),
-            data=FullScanMetadata.from_dict(data.get("data")) if data.get("data") else None
+            data=FullScanMetadata.from_dict(data.get("data")) if data.get("data") else None,
         )
+
 
 @dataclass(kw_only=True)
 class SocketArtifactLink:
     topLevelAncestors: List[str]
-    direct: bool = False 
+    direct: bool = False
     artifact: Optional[Dict] = None
     dependencies: Optional[List[str]] = None
     manifestFiles: Optional[List[SocketManifestReference]] = None
 
-    def __getitem__(self, key): return getattr(self, key)
-    def to_dict(self): return asdict(self)
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def to_dict(self):
+        return asdict(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> "SocketArtifactLink":
@@ -209,7 +235,7 @@ class SocketArtifactLink:
             direct=direct_val if isinstance(direct_val, bool) else direct_val.lower() == "true",
             artifact=data.get("artifact"),
             dependencies=data.get("dependencies"),
-            manifestFiles=[SocketManifestReference.from_dict(m) for m in manifest_files] if manifest_files else None
+            manifestFiles=[SocketManifestReference.from_dict(m) for m in manifest_files] if manifest_files else None,
         )
 
 
@@ -222,8 +248,11 @@ class SocketScore:
     license: float
     overall: float
 
-    def __getitem__(self, key): return getattr(self, key)
-    def to_dict(self): return asdict(self)
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def to_dict(self):
+        return asdict(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> "SocketScore":
@@ -233,8 +262,9 @@ class SocketScore:
             maintenance=data["maintenance"],
             vulnerability=data["vulnerability"],
             license=data["license"],
-            overall=data["overall"]
+            overall=data["overall"],
         )
+
 
 @dataclass
 class SecurityCapabilities:
@@ -245,8 +275,11 @@ class SecurityCapabilities:
     shell: bool
     unsafe: bool
 
-    def __getitem__(self, key): return getattr(self, key)
-    def to_dict(self): return asdict(self)
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def to_dict(self):
+        return asdict(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> "SecurityCapabilities":
@@ -256,8 +289,9 @@ class SecurityCapabilities:
             fs=data["fs"],
             net=data["net"],
             shell=data["shell"],
-            unsafe=data["unsafe"]
+            unsafe=data["unsafe"],
         )
+
 
 @dataclass
 class Alert:
@@ -270,8 +304,11 @@ class Alert:
     action: str
     actionPolicyIndex: int
 
-    def __getitem__(self, key): return getattr(self, key)
-    def to_dict(self): return asdict(self)
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def to_dict(self):
+        return asdict(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> "Alert":
@@ -283,23 +320,25 @@ class Alert:
             end=data["end"],
             props=data["props"],
             action=data["action"],
-            actionPolicyIndex=data["actionPolicyIndex"]
+            actionPolicyIndex=data["actionPolicyIndex"],
         )
+
 
 @dataclass
 class LicenseMatch:
     licenseId: str
     licenseExceptionId: str
 
-    def __getitem__(self, key): return getattr(self, key)
-    def to_dict(self): return asdict(self)
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def to_dict(self):
+        return asdict(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> "LicenseMatch":
-        return cls(
-            licenseId=data["licenseId"],
-            licenseExceptionId=data["licenseExceptionId"]
-        )
+        return cls(licenseId=data["licenseId"], licenseExceptionId=data["licenseExceptionId"])
+
 
 @dataclass
 class LicenseDetail:
@@ -312,8 +351,11 @@ class LicenseDetail:
     provenance: str
     spdxDisj: List[List[LicenseMatch]]
 
-    def __getitem__(self, key): return getattr(self, key)
-    def to_dict(self): return asdict(self)
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def to_dict(self):
+        return asdict(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> "LicenseDetail":
@@ -325,9 +367,9 @@ class LicenseDetail:
             match_strength=data["match_strength"],
             filehash=data["filehash"],
             provenance=data["provenance"],
-            spdxDisj=[[LicenseMatch.from_dict(match) for match in group] 
-                     for group in data["spdxDisj"]]
+            spdxDisj=[[LicenseMatch.from_dict(match) for match in group] for group in data["spdxDisj"]],
         )
+
 
 @dataclass
 class AttributionData:
@@ -336,8 +378,11 @@ class AttributionData:
     foundInFilepath: Optional[str] = None
     spdxExpr: Optional[str] = None
 
-    def __getitem__(self, key): return getattr(self, key)
-    def to_dict(self): return asdict(self)
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def to_dict(self):
+        return asdict(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> "AttributionData":
@@ -345,23 +390,27 @@ class AttributionData:
             purl=data["purl"],
             foundAuthors=data["foundAuthors"],
             foundInFilepath=data.get("foundInFilepath"),
-            spdxExpr=data.get("spdxExpr")
+            spdxExpr=data.get("spdxExpr"),
         )
+
 
 @dataclass
 class LicenseAttribution:
     attribText: str
     attribData: List[AttributionData]
 
-    def __getitem__(self, key): return getattr(self, key)
-    def to_dict(self): return asdict(self)
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def to_dict(self):
+        return asdict(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> "LicenseAttribution":
         return cls(
-            attribText=data["attribText"],
-            attribData=[AttributionData.from_dict(item) for item in data["attribData"]]
+            attribText=data["attribText"], attribData=[AttributionData.from_dict(item) for item in data["attribData"]]
         )
+
 
 @dataclass
 class SocketAlert:
@@ -376,8 +425,11 @@ class SocketAlert:
     action: Optional[str] = None
     actionPolicyIndex: Optional[int] = None
 
-    def __getitem__(self, key): return getattr(self, key)
-    def to_dict(self): return asdict(self)
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def to_dict(self):
+        return asdict(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> "SocketAlert":
@@ -391,7 +443,7 @@ class SocketAlert:
             end=data.get("end"),
             props=data.get("props"),
             action=data.get("action"),
-            actionPolicyIndex=data.get("actionPolicyIndex")
+            actionPolicyIndex=data.get("actionPolicyIndex"),
         )
 
 
@@ -401,11 +453,11 @@ class DiffArtifact:
     id: str
     type: str
     name: str
-    score: SocketScore
     version: str
-    alerts: List[SocketAlert]
     licenseDetails: List[LicenseDetail]
+    score: Optional[SocketScore] = None
     author: List[str] = field(default_factory=list)
+    alerts: List[SocketAlert] = field(default_factory=list)
     license: Optional[str] = None
     files: Optional[str] = None
     capabilities: Optional[SecurityCapabilities] = None
@@ -421,21 +473,28 @@ class DiffArtifact:
     error: Optional[str] = None
     licenseAttrib: Optional[List[LicenseAttribution]] = None
 
-    def __getitem__(self, key): return getattr(self, key)
-    def to_dict(self): return asdict(self)
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def to_dict(self):
+        return asdict(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> "DiffArtifact":
         base_data = data.get("base")
         head_data = data.get("head")
+
+        score_data = data.get("score") or data.get("scores")
+        score = SocketScore.from_dict(score_data) if score_data else None
+
         return cls(
             diffType=DiffType(data["diffType"]),
             id=data["id"],
             type=data["type"],
             name=data["name"],
-            score=SocketScore.from_dict(data["score"]),
+            score=score,
             version=data["version"],
-            alerts=[SocketAlert.from_dict(alert) for alert in data["alerts"]],
+            alerts=[SocketAlert.from_dict(alert) for alert in data.get("alerts", [])],
             licenseDetails=[LicenseDetail.from_dict(detail) for detail in data["licenseDetails"]],
             files=data.get("files"),
             license=data.get("license"),
@@ -451,8 +510,11 @@ class DiffArtifact:
             author=data.get("author", []),
             state=data.get("state"),
             error=data.get("error"),
-            licenseAttrib=[LicenseAttribution.from_dict(attrib) for attrib in data["licenseAttrib"]] if data.get("licenseAttrib") else None
+            licenseAttrib=[LicenseAttribution.from_dict(attrib) for attrib in data["licenseAttrib"]]
+            if data.get("licenseAttrib")
+            else None,
         )
+
 
 @dataclass
 class DiffArtifacts:
@@ -462,8 +524,11 @@ class DiffArtifacts:
     replaced: List[DiffArtifact]
     updated: List[DiffArtifact]
 
-    def __getitem__(self, key): return getattr(self, key)
-    def to_dict(self): return asdict(self)
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def to_dict(self):
+        return asdict(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> "DiffArtifacts":
@@ -472,8 +537,9 @@ class DiffArtifacts:
             removed=[DiffArtifact.from_dict(a) for a in data["removed"]],
             unchanged=[DiffArtifact.from_dict(a) for a in data["unchanged"]],
             replaced=[DiffArtifact.from_dict(a) for a in data["replaced"]],
-            updated=[DiffArtifact.from_dict(a) for a in data["updated"]]
+            updated=[DiffArtifact.from_dict(a) for a in data["updated"]],
         )
+
 
 @dataclass
 class CommitInfo:
@@ -486,8 +552,11 @@ class CommitInfo:
     commit_hash: Optional[str] = None
     pull_request: Optional[int] = None
 
-    def __getitem__(self, key): return getattr(self, key)
-    def to_dict(self): return asdict(self)
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def to_dict(self):
+        return asdict(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> "CommitInfo":
@@ -499,8 +568,9 @@ class CommitInfo:
             committers=data["committers"],
             commit_message=data.get("commit_message"),
             commit_hash=data.get("commit_hash"),
-            pull_request=data.get("pull_request")
+            pull_request=data.get("pull_request"),
         )
+
 
 @dataclass
 class FullScanDiffReport:
@@ -510,8 +580,11 @@ class FullScanDiffReport:
     artifacts: DiffArtifacts
     directDependenciesChanged: bool = False
 
-    def __getitem__(self, key): return getattr(self, key)
-    def to_dict(self): return asdict(self)
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def to_dict(self):
+        return asdict(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> "FullScanDiffReport":
@@ -520,8 +593,9 @@ class FullScanDiffReport:
             after=CommitInfo.from_dict(data["after"]),
             directDependenciesChanged=data.get("directDependenciesChanged", False),
             diff_report_url=data["diff_report_url"],
-            artifacts=DiffArtifacts.from_dict(data["artifacts"])
+            artifacts=DiffArtifacts.from_dict(data["artifacts"]),
         )
+
 
 @dataclass
 class StreamDiffResponse:
@@ -530,8 +604,11 @@ class StreamDiffResponse:
     data: Optional[FullScanDiffReport] = None
     message: Optional[str] = None
 
-    def __getitem__(self, key): return getattr(self, key)
-    def to_dict(self): return asdict(self)
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def to_dict(self):
+        return asdict(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> "StreamDiffResponse":
@@ -539,8 +616,9 @@ class StreamDiffResponse:
             success=data["success"],
             status=data["status"],
             message=data.get("message"),
-            data=FullScanDiffReport.from_dict(data.get("data")) if data.get("data") else None
+            data=FullScanDiffReport.from_dict(data.get("data")) if data.get("data") else None,
         )
+
 
 @dataclass(kw_only=True)
 class SocketArtifact(SocketPURL, SocketArtifactLink):
@@ -554,19 +632,22 @@ class SocketArtifact(SocketPURL, SocketArtifactLink):
     licenseDetails: Optional[List[LicenseDetail]] = field(default_factory=list)
     size: Optional[int] = None
 
-    def __getitem__(self, key): return getattr(self, key)
-    def to_dict(self): return asdict(self)
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def to_dict(self):
+        return asdict(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> "SocketArtifact":
         purl_data = {k: data.get(k) for k in SocketPURL.__dataclass_fields__}
         link_data = {k: data.get(k) for k in SocketArtifactLink.__dataclass_fields__}
-        
+
         alerts = data.get("alerts")
         license_attrib = data.get("licenseAttrib")
         license_details = data.get("licenseDetails")
         score = data.get("score")
-        
+
         return cls(
             **purl_data,
             **link_data,
@@ -578,8 +659,9 @@ class SocketArtifact(SocketPURL, SocketArtifactLink):
             licenseAttrib=[LicenseAttribution.from_dict(la) for la in license_attrib] if license_attrib else None,
             licenseDetails=[LicenseDetail.from_dict(ld) for ld in license_details] if license_details else None,
             score=SocketScore.from_dict(score) if score else None,
-            size=data.get("size")
+            size=data.get("size"),
         )
+
 
 @dataclass
 class FullScanStreamResponse:
@@ -588,8 +670,11 @@ class FullScanStreamResponse:
     artifacts: Optional[Dict[str, SocketArtifact]] = None
     message: Optional[str] = None
 
-    def __getitem__(self, key): return getattr(self, key)
-    def to_dict(self): return asdict(self)
+    def __getitem__(self, key):
+        return getattr(self, key)
+
+    def to_dict(self):
+        return asdict(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> "FullScanStreamResponse":
@@ -597,11 +682,11 @@ class FullScanStreamResponse:
             success=data["success"],
             status=data["status"],
             message=data.get("message"),
-            artifacts={
-                k: SocketArtifact.from_dict(v) 
-                for k, v in data["artifacts"].items()
-            } if data.get("artifacts") else None
+            artifacts={k: SocketArtifact.from_dict(v) for k, v in data["artifacts"].items()}
+            if data.get("artifacts")
+            else None,
         )
+
 
 class FullScans:
     def __init__(self, api):
@@ -613,7 +698,6 @@ class FullScans:
         for name, value in params.items():
             if value:
                 if name == "committers" and isinstance(value, list):
-                    
                     for committer in value:
                         param_str += f"&{name}={committer}"
                 else:
@@ -623,60 +707,50 @@ class FullScans:
 
         return param_str
 
-    def get(self, org_slug: str, params: dict) -> GetFullScanMetadataResponse:
+    def get(self, org_slug: str, params: dict, use_types: bool = False) -> Union[dict, GetFullScanMetadataResponse]:
         params_arg = self.create_params_string(params)
         Utils.validate_integration_type(params.get("integration_type", ""))
 
         path = "orgs/" + org_slug + "/full-scans" + str(params_arg)
-        headers = None
-        payload = None
-
-        response = self.api.do_request(path=path, headers=headers, payload=payload)
+        response = self.api.do_request(path=path)
 
         if response.status_code == 200:
             result = response.json()
-            return GetFullScanMetadataResponse.from_dict({
-                "success": True,
-                "status": 200,
-                "data": result
-            })
+            if use_types:
+                return GetFullScanMetadataResponse.from_dict({"success": True, "status": 200, "data": result})
+            return result
 
         error_message = response.json().get("error", {}).get("message", "Unknown error")
         log.error(f"Error getting full scan metadata: {response.status_code}, message: {error_message}")
-        return GetFullScanMetadataResponse.from_dict({
-            "success": False,
-            "status": response.status_code,
-            "message": error_message
-        })
+        if use_types:
+            return GetFullScanMetadataResponse.from_dict(
+                {"success": False, "status": response.status_code, "message": error_message}
+            )
+        return {}
 
-    def post(self, files: list, params: FullScanParams) -> CreateFullScanResponse:
-        
+    def post(self, files: list, params: FullScanParams, use_types: bool = False) -> Union[dict, CreateFullScanResponse]:
         org_slug = str(params.org_slug)
         params_dict = params.to_dict()
         params_dict.pop("org_slug")
-        params_arg = self.create_params_string(params_dict)  
+        params_arg = self.create_params_string(params_dict)
 
         path = "orgs/" + org_slug + "/full-scans" + str(params_arg)
 
         response = self.api.do_request(path=path, method="POST", files=files)
-        
+
         if response.status_code == 201:
             result = response.json()
-            return CreateFullScanResponse.from_dict({
-                "success": True,
-                "status": 201,
-                "data": result
-            })
-        
-        log.error(f"Error posting {files} to the Fullscans API")
-        error_message = response.json().get("error", {}).get("message", "Unknown error")
-        log.error(error_message)
+            if use_types:
+                return CreateFullScanResponse.from_dict({"success": True, "status": 201, "data": result})
+            return result
 
-        return CreateFullScanResponse.from_dict({
-            "success": False,
-            "status": response.status_code,
-            "message": error_message
-        })
+        error_message = response.json().get("error", {}).get("message", "Unknown error")
+        log.error(f"Error posting {files} to the Fullscans API: {response.status_code}, message: {error_message}")
+        if use_types:
+            return CreateFullScanResponse.from_dict(
+                {"success": False, "status": response.status_code, "message": error_message}
+            )
+        return {}
 
     def delete(self, org_slug: str, full_scan_id: str) -> dict:
         path = "orgs/" + org_slug + "/full-scans/" + full_scan_id
@@ -691,85 +765,82 @@ class FullScans:
         log.error(f"Error deleting full scan: {response.status_code}, message: {error_message}")
         return {}
 
-    def stream_diff(self, org_slug: str, before: str, after: str) -> StreamDiffResponse:
+    def stream_diff(
+        self, org_slug: str, before: str, after: str, use_types: bool = False
+    ) -> Union[dict, StreamDiffResponse]:
         path = f"orgs/{org_slug}/full-scans/diff?before={before}&after={after}"
 
         response = self.api.do_request(path=path, method="GET")
 
         if response.status_code == 200:
-            return StreamDiffResponse.from_dict({
-                "success": True,
-                "status": 200,
-                "data": response.json()
-            })
+            result = response.json()
+            if use_types:
+                return StreamDiffResponse.from_dict({"success": True, "status": 200, "data": result})
+            return result
 
         error_message = response.json().get("error", {}).get("message", "Unknown error")
         log.error(f"Error streaming diff: {response.status_code}, message: {error_message}")
-        return StreamDiffResponse.from_dict({
-            "success": False,
-            "status": response.status_code,
-            "message": error_message
-        })
+        if use_types:
+            return StreamDiffResponse.from_dict(
+                {"success": False, "status": response.status_code, "message": error_message}
+            )
+        return {}
 
-    def stream(self, org_slug: str, full_scan_id: str) -> FullScanStreamResponse:
+    def stream(self, org_slug: str, full_scan_id: str, use_types: bool = False) -> Union[dict, FullScanStreamResponse]:
         path = "orgs/" + org_slug + "/full-scans/" + full_scan_id
         response = self.api.do_request(path=path, method="GET")
-        
+
         if response.status_code == 200:
             try:
                 stream_str = []
                 artifacts = {}
                 result = response.text
-                result.strip('"')
-                result.strip()
+                result = result.strip('"').strip()
                 for line in result.split("\n"):
                     if line != '"' and line != "" and line is not None:
                         item = json.loads(line)
                         stream_str.append(item)
                 for val in stream_str:
-                    artifacts[val["id"]] = val  
+                    artifacts[val["id"]] = val
 
-                return FullScanStreamResponse.from_dict({
-                    "success": True,
-                    "status": 200,
-                    "artifacts": artifacts
-                })
+                if use_types:
+                    return FullScanStreamResponse.from_dict({"success": True, "status": 200, "artifacts": artifacts})
+                return artifacts
+
             except Exception as e:
                 error_message = f"Error parsing stream response: {str(e)}"
                 log.error(error_message)
-                return FullScanStreamResponse.from_dict({
-                    "success": False,
-                    "status": response.status_code,
-                    "message": error_message
-                })
+                if use_types:
+                    return FullScanStreamResponse.from_dict(
+                        {"success": False, "status": response.status_code, "message": error_message}
+                    )
+                return {}
 
         error_message = response.json().get("error", {}).get("message", "Unknown error")
         log.error(f"Error streaming full scan: {response.status_code}, message: {error_message}")
-        return FullScanStreamResponse.from_dict({
-            "success": False,
-            "status": response.status_code,
-            "message": error_message
-        })
+        if use_types:
+            return FullScanStreamResponse.from_dict(
+                {"success": False, "status": response.status_code, "message": error_message}
+            )
+        return {}
 
-    def metadata(self, org_slug: str, full_scan_id: str) -> GetFullScanMetadataResponse:
+    def metadata(
+        self, org_slug: str, full_scan_id: str, use_types: bool = False
+    ) -> Union[dict, GetFullScanMetadataResponse]:
         path = "orgs/" + org_slug + "/full-scans/" + full_scan_id + "/metadata"
 
         response = self.api.do_request(path=path, method="GET")
 
         if response.status_code == 200:
-            return GetFullScanMetadataResponse.from_dict({
-                "success": True,
-                "status": 200,
-                "data": response.json()
-            })
+            result = response.json()
+            if use_types:
+                return GetFullScanMetadataResponse.from_dict({"success": True, "status": 200, "data": result})
+            return result
 
         error_message = response.json().get("error", {}).get("message", "Unknown error")
         log.error(f"Error getting metadata: {response.status_code}, message: {error_message}")
-        return GetFullScanMetadataResponse.from_dict({
-            "success": False,
-            "status": response.status_code,
-            "message": error_message
-        })
-
-
-
+        if use_types:
+            return GetFullScanMetadataResponse.from_dict(
+                {"success": False, "status": response.status_code, "message": error_message}
+            )
+        return {}
