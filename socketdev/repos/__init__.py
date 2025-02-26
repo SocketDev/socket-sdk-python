@@ -74,7 +74,7 @@ class Repos:
         query_params = kwargs
         path = "orgs/" + org_slug + "/repos"
 
-        if query_params:
+        if query_params:  # Only add query string if we have parameters
             path += "?"
             for param in query_params:
                 value = query_params[param]
@@ -88,11 +88,10 @@ class Repos:
             per_page = int(query_params.get("per_page", 30))
 
             # TEMPORARY: Handle pagination edge case where API returns nextPage=1 even when no more results exist
-            next_page = raw_result["nextPage"]
-            if next_page != 0 and len(raw_result["results"]) < per_page:
-                next_page = 0
+            if raw_result["nextPage"] != 0 and len(raw_result["results"]) < per_page:
+                raw_result["nextPage"] = 0
 
-            return {"results": raw_result["results"], "nextPage": next_page}
+            return raw_result
 
         error_message = response.json().get("error", {}).get("message", "Unknown error")
         log.error(f"Error getting repositories: {response.status_code}, message: {error_message}")
