@@ -60,24 +60,25 @@ class API:
             request_duration = time.time() - start_time
 
             headers_str = f"\n\nHeaders:\n{format_headers(response.headers)}" if response.headers else ""
+            path_str = f"\nPath: {url}"
 
             if response.status_code == 401:
-                raise APIAccessDenied(f"Unauthorized{headers_str}")
+                raise APIAccessDenied(f"Unauthorized{path_str}{headers_str}")
             if response.status_code == 403:
                 try:
                     error_message = response.json().get("error", {}).get("message", "")
                     if "Insufficient permissions for API method" in error_message:
-                        raise APIInsufficientPermissions(f"{error_message}{headers_str}")
+                        raise APIInsufficientPermissions(f"{error_message}{path_str}{headers_str}")
                     elif "Organization not allowed" in error_message:
-                        raise APIOrganizationNotAllowed(f"{error_message}{headers_str}")
+                        raise APIOrganizationNotAllowed(f"{error_message}{path_str}{headers_str}")
                     elif "Insufficient max quota" in error_message:
-                        raise APIInsufficientQuota(f"{error_message}{headers_str}")
+                        raise APIInsufficientQuota(f"{error_message}{path_str}{headers_str}")
                     else:
-                        raise APIAccessDenied(f"{error_message or 'Access denied'}{headers_str}")
+                        raise APIAccessDenied(f"{error_message or 'Access denied'}{path_str}{headers_str}")
                 except ValueError:
-                    raise APIAccessDenied(f"Access denied{headers_str}")
+                    raise APIAccessDenied(f"Access denied{path_str}{headers_str}")
             if response.status_code == 404:
-                raise APIResourceNotFound(f"Path not found {path}{headers_str}")
+                raise APIResourceNotFound(f"Path not found {path}{path_str}{headers_str}")
             if response.status_code == 429:
                 retry_after = response.headers.get("retry-after")
                 if retry_after:
@@ -90,11 +91,14 @@ class API:
                         time_msg = f" Retry after: {retry_after}"
                 else:
                     time_msg = ""
-                raise APIInsufficientQuota(f"Insufficient quota for API route.{time_msg}{headers_str}")
+                raise APIInsufficientQuota(f"Insufficient quota for API route.{time_msg}{path_str}{headers_str}")
             if response.status_code == 502:
-                raise APIBadGateway("Upstream server error")
+                raise APIBadGateway(f"Upstream server error{path_str}{headers_str}")
             if response.status_code >= 400:
-                raise APIFailure(f"Bad Request: HTTP {response.status_code}{headers_str}")
+                raise APIFailure(
+                    f"Bad Request: HTTP original_status_code:{response.status_code}{path_str}{headers_str}",
+                    status_code=500,
+                )
 
             return response
 
