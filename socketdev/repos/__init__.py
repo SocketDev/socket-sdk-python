@@ -70,11 +70,11 @@ class Repos:
     def __init__(self, api):
         self.api = api
 
-    def get(self, org_slug: str, **kwargs) -> dict[str, List[RepositoryInfo]]:
+    def get(self, org_slug: str, **kwargs) -> dict[str, list[dict] | int]:
         query_params = kwargs
         path = "orgs/" + org_slug + "/repos"
 
-        if query_params:  # Only add query string if we have parameters
+        if query_params:
             path += "?"
             for param in query_params:
                 value = query_params[param]
@@ -85,8 +85,14 @@ class Repos:
 
         if response.status_code == 200:
             raw_result = response.json()
-            result = {key: [RepositoryInfo.from_dict(repo) for repo in repos] for key, repos in raw_result.items()}
-            return result
+            per_page = int(query_params.get("per_page", 30))
+
+            # TEMPORARY: Handle pagination edge case where API returns nextPage=1 even when no more results exist
+            next_page = raw_result["nextPage"]
+            if next_page != 0 and len(raw_result["results"]) < per_page:
+                next_page = 0
+
+            return {"results": raw_result["results"], "nextPage": next_page}
 
         error_message = response.json().get("error", {}).get("message", "Unknown error")
         log.error(f"Error getting repositories: {response.status_code}, message: {error_message}")
