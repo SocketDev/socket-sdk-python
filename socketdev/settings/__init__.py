@@ -97,3 +97,76 @@ class Settings:
                 {"securityPolicyRules": {}, "success": False, "status": response.status_code, "message": error_message}
             )
         return {}
+
+    def integration_events(self, org_slug: str, integration_id: str) -> dict:
+        """Get integration events for a specific integration.
+
+        Args:
+            org_slug: Organization slug
+            integration_id: Integration ID
+        """
+        path = f"orgs/{org_slug}/settings/integrations/{integration_id}"
+        response = self.api.do_request(path=path)
+
+        if response.status_code == 200:
+            return response.json()
+
+        error_message = response.json().get("error", {}).get("message", "Unknown error")
+        log.error(f"Error getting integration events: {response.status_code}, message: {error_message}")
+        return {}
+
+    def get_license_policy(self, org_slug: str) -> dict:
+        """Get license policy settings for an organization.
+
+        Args:
+            org_slug: Organization slug
+        """
+        path = f"orgs/{org_slug}/settings/license-policy"
+        response = self.api.do_request(path=path)
+
+        if response.status_code == 200:
+            return response.json()
+
+        error_message = response.json().get("error", {}).get("message", "Unknown error")
+        log.error(f"Error getting license policy: {response.status_code}, message: {error_message}")
+        return {}
+
+    def update_security_policy(self, org_slug: str, body: dict, custom_rules_only: bool = False) -> dict:
+        """Update security policy settings for an organization.
+
+        Args:
+            org_slug: Organization slug
+            body: Security policy configuration to update
+            custom_rules_only: Optional flag to update only custom rules
+        """
+        path = f"orgs/{org_slug}/settings/security-policy"
+        if custom_rules_only:
+            path += "?custom_rules_only=true"
+
+        response = self.api.do_request(path=path, method="POST", payload=body)
+
+        if response.status_code == 200:
+            return response.json()
+
+        error_message = response.json().get("error", {}).get("message", "Unknown error")
+        log.error(f"Error updating security policy: {response.status_code}, message: {error_message}")
+        return {}
+
+    def update_license_policy(self, org_slug: str, body: dict, merge_update: bool = False) -> dict:
+        """Update license policy settings for an organization.
+
+        Args:
+            org_slug: Organization slug
+            body: License policy configuration to update
+            merge_update: Optional flag to merge updates instead of replacing (defaults to False)
+        """
+        path = f"orgs/{org_slug}/settings/license-policy?merge_update={str(merge_update).lower()}"
+
+        response = self.api.do_request(path=path, method="POST", payload=body)
+
+        if response.status_code == 200:
+            return response.json()
+
+        error_message = response.json().get("error", {}).get("message", "Unknown error")
+        log.error(f"Error updating license policy: {response.status_code}, message: {error_message}")
+        return {}

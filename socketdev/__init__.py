@@ -4,6 +4,7 @@ from socketdev.core.api import API
 from socketdev.dependencies import Dependencies
 from socketdev.export import Export
 from socketdev.fullscans import FullScans
+from socketdev.historical import Historical
 from socketdev.npm import NPM
 from socketdev.openapi import OpenAPI
 from socketdev.org import Orgs
@@ -14,6 +15,7 @@ from socketdev.repos import Repos
 from socketdev.repositories import Repositories
 from socketdev.sbom import Sbom
 from socketdev.settings import Settings
+from socketdev.triage import Triage
 from socketdev.utils import Utils, IntegrationType, INTEGRATION_TYPES
 from socketdev.version import __version__
 
@@ -42,18 +44,20 @@ class socketdev:
         self.api.set_timeout(timeout)
 
         self.dependencies = Dependencies(self.api)
+        self.export = Export(self.api)
+        self.fullscans = FullScans(self.api)
+        self.historical = Historical(self.api)
         self.npm = NPM(self.api)
         self.openapi = OpenAPI(self.api)
         self.org = Orgs(self.api)
+        self.purl = Purl(self.api)
         self.quota = Quota(self.api)
         self.report = Report(self.api)
-        self.sbom = Sbom(self.api)
-        self.purl = Purl(self.api)
-        self.fullscans = FullScans(self.api)
-        self.export = Export(self.api)
-        self.repositories = Repositories(self.api)
         self.repos = Repos(self.api)
+        self.repositories = Repositories(self.api)
+        self.sbom = Sbom(self.api)
         self.settings = Settings(self.api)
+        self.triage = Triage(self.api)
         self.utils = Utils()
 
     @staticmethod

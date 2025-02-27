@@ -22,7 +22,7 @@ class Dependencies:
         else:
             result = {}
             log.error(f"Error posting {files} to the Dependency API")
-            print(response.text)
+            log.error(response.text)
         return result
 
     def get(
@@ -38,6 +38,6 @@ class Dependencies:
             result = response.json()
         else:
             result = {}
-            print("Unable to retrieve Dependencies")
-            print(response.text)
+            log.error("Unable to retrieve Dependencies")
+            log.error(response.text)
         return result
