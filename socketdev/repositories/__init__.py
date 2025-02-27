@@ -1,4 +1,7 @@
-from typing import TypedDict
+from typing import TypedDict, Union
+import logging
+
+log = logging.getLogger("socketdev")
 
 
 class Repo(TypedDict):
@@ -14,11 +17,15 @@ class Repositories:
     def __init__(self, api):
         self.api = api
 
-    def list(self) -> dict:
+    def list(self, use_types: bool = False) -> Union[dict, list[Repo]]:
         path = "repos"
         response = self.api.do_request(path=path)
         if response.status_code == 200:
-            repos = response.json()
-        else:
-            repos = {}
-        return repos
+            result = response.json()
+            if use_types:
+                return [Repo(repo) for repo in result]
+            return result
+
+        log.error(f"Error listing repositories: {response.status_code}")
+        print(response.text)
+        return []
