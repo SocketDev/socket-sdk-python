@@ -709,8 +709,6 @@ class FullScans:
 
     def get(self, org_slug: str, params: dict, use_types: bool = False) -> Union[dict, GetFullScanMetadataResponse]:
         params_arg = self.create_params_string(params)
-        Utils.validate_integration_type(params.get("integration_type", ""))
-
         path = "orgs/" + org_slug + "/full-scans" + str(params_arg)
         response = self.api.do_request(path=path)
 
@@ -729,9 +727,11 @@ class FullScans:
         return {}
 
     def post(self, files: list, params: FullScanParams, use_types: bool = False) -> Union[dict, CreateFullScanResponse]:
+        Utils.validate_integration_type(params.integration_type if params.integration_type else "api")
         org_slug = str(params.org_slug)
         params_dict = params.to_dict()
         params_dict.pop("org_slug")
+
         params_arg = self.create_params_string(params_dict)
 
         path = "orgs/" + org_slug + "/full-scans" + str(params_arg)
