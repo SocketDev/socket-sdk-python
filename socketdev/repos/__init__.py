@@ -2,6 +2,7 @@ import json
 import logging
 from typing import Optional, Union
 from dataclasses import dataclass, asdict
+from socketdev.exceptions import APIFailure
 
 log = logging.getLogger("socketdev")
 
@@ -81,35 +82,44 @@ class Repos:
                 path += f"{param}={value}&"
             path = path.rstrip("&")
 
-        response = self.api.do_request(path=path)
+        try:
+            response = self.api.do_request(path=path)
+            if response.status_code == 200:
+                raw_result = response.json()
+                per_page = int(query_params.get("per_page", 30))
 
-        if response.status_code == 200:
-            raw_result = response.json()
-            per_page = int(query_params.get("per_page", 30))
+                # TEMPORARY: Handle pagination edge case where API returns nextPage=1 even when no more results exist
+                if raw_result["nextPage"] != 0 and len(raw_result["results"]) < per_page:
+                    raw_result["nextPage"] = 0
 
-            # TEMPORARY: Handle pagination edge case where API returns nextPage=1 even when no more results exist
-            if raw_result["nextPage"] != 0 and len(raw_result["results"]) < per_page:
-                raw_result["nextPage"] = 0
+                return raw_result
+        except APIFailure as e:
+            log.error(f"Socket SDK: API failure while getting repositories {e}")
+            raise
+        except Exception as e:
+            log.error(f"Socket SDK: Unexpected error while getting repositories {e}")
+            raise
 
-            return raw_result
-
-        error_message = response.json().get("error", {}).get("message", "Unknown error")
-        log.error(f"Error getting repositories: {response.status_code}, message: {error_message}")
         return {}
 
     def repo(self, org_slug: str, repo_name: str, use_types: bool = False) -> Union[dict, GetRepoResponse]:
         path = f"orgs/{org_slug}/repos/{repo_name}"
-        response = self.api.do_request(path=path)
+        try:
+            response = self.api.do_request(path=path)
+            if response.status_code == 200:
+                result = response.json()
+                if use_types:
+                    return GetRepoResponse.from_dict({"success": True, "status": 200, "data": result})
+                return result
+        except APIFailure as e:
+            log.error(f"Socket SDK: API failure while getting repository {e}")
+            raise
+        except Exception as e:
+            log.error(f"Socket SDK: Unexpected error while getting repository {e}")
+            raise
 
-        if response.status_code == 200:
-            result = response.json()
-            if use_types:
-                return GetRepoResponse.from_dict({"success": True, "status": 200, "data": result})
-            return result
-
-        error_message = response.json().get("error", {}).get("message", "Unknown error")
-        print(f"Failed to get repository: {response.status_code}, message: {error_message}")
         if use_types:
+            error_message = response.json().get("error", {}).get("message", "Unknown error")
             return GetRepoResponse.from_dict(
                 {"success": False, "status": response.status_code, "message": error_message}
             )
@@ -117,13 +127,17 @@ class Repos:
 
     def delete(self, org_slug: str, name: str) -> dict:
         path = f"orgs/{org_slug}/repos/{name}"
-        response = self.api.do_request(path=path, method="DELETE")
+        try:
+            response = self.api.do_request(path=path, method="DELETE")
+            if response.status_code == 200:
+                return response.json()
+        except APIFailure as e:
+            log.error(f"Socket SDK: API failure while deleting repository {e}")
+            raise
+        except Exception as e:
+            log.error(f"Socket SDK: Unexpected error while deleting repository {e}")
+            raise
 
-        if response.status_code == 200:
-            return response.json()
-
-        error_message = response.json().get("error", {}).get("message", "Unknown error")
-        log.error(f"Error deleting repository: {response.status_code}, message: {error_message}")
         return {}
 
     def post(self, org_slug: str, **kwargs) -> dict:
@@ -136,30 +150,38 @@ class Repos:
 
         path = "orgs/" + org_slug + "/repos"
         payload = json.dumps(params)
-        response = self.api.do_request(path=path, method="POST", payload=payload)
+        try:
+            response = self.api.do_request(path=path, method="POST", payload=payload)
+            if response.status_code == 201:
+                return response.json()
+        except APIFailure as e:
+            log.error(f"Socket SDK: API failure while creating repository {e}")
+            raise
+        except Exception as e:
+            log.error(f"Socket SDK: Unexpected error while creating repository {e}")
+            raise
 
-        if response.status_code == 201:
-            return response.json()
-
-        error_message = response.json().get("error", {}).get("message", "Unknown error")
-        log.error(f"Error creating repository: {response.status_code}, message: {error_message}")
         return {}
 
     def update(self, org_slug: str, repo_name: str, **kwargs) -> dict:
         params = {}
         if kwargs:
-            for key, val in kwargs.keys():
+            for key, val in kwargs.items():
                 params[key] = val
         if len(params) == 0:
             return {}
 
         path = f"orgs/{org_slug}/repos/{repo_name}"
         payload = json.dumps(params)
-        response = self.api.do_request(path=path, method="POST", payload=payload)
+        try:
+            response = self.api.do_request(path=path, method="POST", payload=payload)
+            if response.status_code == 200:
+                return response.json()
+        except APIFailure as e:
+            log.error(f"Socket SDK: API failure while updating repository {e}")
+            raise
+        except Exception as e:
+            log.error(f"Socket SDK: Unexpected error while updating repository {e}")
+            raise
 
-        if response.status_code == 200:
-            return response.json()
-
-        error_message = response.json().get("error", {}).get("message", "Unknown error")
-        log.error(f"Error updating repository: {response.status_code}, message: {error_message}")
         return {}

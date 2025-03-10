@@ -1,10 +1,9 @@
 import json
 from socketdev.core.classes import Package
 import logging
+from socketdev.exceptions import APIFailure
 
 log = logging.getLogger("socketdev")
-
-# TODO: Add response type classes for SBOM endpoints
 
 
 class Sbom:
@@ -17,24 +16,27 @@ class Sbom:
     # who have been using this method since its introduction 9 months ago.
     def view(self, report_id: str) -> dict[str, dict]:
         path = f"sbom/view/{report_id}"
-        response = self.api.do_request(path=path)
-        if response.status_code == 200:
-            sbom = []
-            sbom_dict = {}
-            data = response.text
-            data.strip('"')
-            data.strip()
-            for line in data.split("\n"):
-                if line != '"' and line != "" and line is not None:
-                    item = json.loads(line)
-                    sbom.append(item)
-            for val in sbom:
-                sbom_dict[val["id"]] = val
-        else:
-            log.error(f"Error viewing SBOM: {response.status_code}")
-            print(response.text)
-            sbom_dict = {}
-        return sbom_dict
+        try:
+            response = self.api.do_request(path=path)
+            if response.status_code == 200:
+                sbom = []
+                sbom_dict = {}
+                data = response.text.strip('"').strip()
+                for line in data.split("\n"):
+                    if line and line != '"':
+                        item = json.loads(line)
+                        sbom.append(item)
+                for val in sbom:
+                    sbom_dict[val["id"]] = val
+                return sbom_dict
+        except APIFailure as e:
+            log.error(f"Socket SDK: API failure while viewing SBOM {e}")
+            raise
+        except Exception as e:
+            log.error(f"Socket SDK: Unexpected error while viewing SBOM {e}")
+            raise
+
+        return {}
 
     def create_packages_dict(self, sbom: dict[str, dict]) -> dict[str, Package]:
         """

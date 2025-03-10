@@ -3,7 +3,7 @@ import logging
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 from dataclasses import dataclass, asdict, field
-
+from socketdev.exceptions import APIFailure
 
 from ..utils import IntegrationType, Utils
 
@@ -710,20 +710,20 @@ class FullScans:
     def get(self, org_slug: str, params: dict, use_types: bool = False) -> Union[dict, GetFullScanMetadataResponse]:
         params_arg = self.create_params_string(params)
         path = "orgs/" + org_slug + "/full-scans" + str(params_arg)
-        response = self.api.do_request(path=path)
+        try:
+            response = self.api.do_request(path=path)
+            if response.status_code == 200:
+                result = response.json()
+                if use_types:
+                    return GetFullScanMetadataResponse.from_dict({"success": True, "status": 200, "data": result})
+                return result
+        except APIFailure as e:
+            log.error(f"Socket SDK: API failure while getting full scan metadata {e}")
+            raise
+        except Exception as e:
+            log.error(f"Socket SDK: Unexpected error while getting full scan metadata {e}")
+            raise
 
-        if response.status_code == 200:
-            result = response.json()
-            if use_types:
-                return GetFullScanMetadataResponse.from_dict({"success": True, "status": 200, "data": result})
-            return result
-
-        error_message = response.json().get("error", {}).get("message", "Unknown error")
-        log.error(f"Error getting full scan metadata: {response.status_code}, message: {error_message}")
-        if use_types:
-            return GetFullScanMetadataResponse.from_dict(
-                {"success": False, "status": response.status_code, "message": error_message}
-            )
         return {}
 
     def post(self, files: list, params: FullScanParams, use_types: bool = False) -> Union[dict, CreateFullScanResponse]:
@@ -731,116 +731,116 @@ class FullScans:
         org_slug = str(params.org_slug)
         params_dict = params.to_dict()
         params_dict.pop("org_slug")
-
         params_arg = self.create_params_string(params_dict)
-
         path = "orgs/" + org_slug + "/full-scans" + str(params_arg)
 
-        response = self.api.do_request(path=path, method="POST", files=files)
+        try:
+            response = self.api.do_request(path=path, method="POST", files=files)
+            if response.status_code == 201:
+                result = response.json()
+                if use_types:
+                    return CreateFullScanResponse.from_dict({"success": True, "status": 201, "data": result})
+                return result
+        except APIFailure as e:
+            log.error(f"Socket SDK: API failure while posting full scan {e}")
+            raise
+        except Exception as e:
+            log.error(f"Socket SDK: Unexpected error while posting full scan {e}")
+            raise
 
-        if response.status_code == 201:
-            result = response.json()
-            if use_types:
-                return CreateFullScanResponse.from_dict({"success": True, "status": 201, "data": result})
-            return result
-
-        error_message = response.json().get("error", {}).get("message", "Unknown error")
-        log.error(f"Error posting {files} to the Fullscans API: {response.status_code}, message: {error_message}")
-        if use_types:
-            return CreateFullScanResponse.from_dict(
-                {"success": False, "status": response.status_code, "message": error_message}
-            )
         return {}
 
     def delete(self, org_slug: str, full_scan_id: str) -> dict:
         path = "orgs/" + org_slug + "/full-scans/" + full_scan_id
+        try:
+            response = self.api.do_request(path=path, method="DELETE")
+            if response.status_code == 200:
+                return response.json()
+        except APIFailure as e:
+            log.error(f"Socket SDK: API failure while deleting full scan {e}")
+            raise
+        except Exception as e:
+            log.error(f"Socket SDK: Unexpected error while deleting full scan {e}")
+            raise
 
-        response = self.api.do_request(path=path, method="DELETE")
-
-        if response.status_code == 200:
-            result = response.json()
-            return result
-
-        error_message = response.json().get("error", {}).get("message", "Unknown error")
-        log.error(f"Error deleting full scan: {response.status_code}, message: {error_message}")
         return {}
 
     def stream_diff(
         self, org_slug: str, before: str, after: str, use_types: bool = False
     ) -> Union[dict, StreamDiffResponse]:
         path = f"orgs/{org_slug}/full-scans/diff?before={before}&after={after}"
+        try:
+            response = self.api.do_request(path=path, method="GET")
+            if response.status_code == 200:
+                result = response.json()
+                if use_types:
+                    return StreamDiffResponse.from_dict({"success": True, "status": 200, "data": result})
+                return result
+        except APIFailure as e:
+            log.error(f"Socket SDK: API failure while streaming diff {e}")
+            raise
+        except Exception as e:
+            log.error(f"Socket SDK: Unexpected error while streaming diff {e}")
+            raise
 
-        response = self.api.do_request(path=path, method="GET")
-
-        if response.status_code == 200:
-            result = response.json()
-            if use_types:
-                return StreamDiffResponse.from_dict({"success": True, "status": 200, "data": result})
-            return result
-
-        error_message = response.json().get("error", {}).get("message", "Unknown error")
-        log.error(f"Error streaming diff: {response.status_code}, message: {error_message}")
-        if use_types:
-            return StreamDiffResponse.from_dict(
-                {"success": False, "status": response.status_code, "message": error_message}
-            )
         return {}
 
     def stream(self, org_slug: str, full_scan_id: str, use_types: bool = False) -> Union[dict, FullScanStreamResponse]:
         path = "orgs/" + org_slug + "/full-scans/" + full_scan_id
-        response = self.api.do_request(path=path, method="GET")
+        try:
+            response = self.api.do_request(path=path, method="GET")
+            if response.status_code == 200:
+                try:
+                    stream_str = []
+                    artifacts = {}
+                    result = response.text.strip('"').strip()
+                    for line in result.split("\n"):
+                        if line != '"' and line != "" and line is not None:
+                            item = json.loads(line)
+                            stream_str.append(item)
+                    for val in stream_str:
+                        artifacts[val["id"]] = val
 
-        if response.status_code == 200:
-            try:
-                stream_str = []
-                artifacts = {}
-                result = response.text
-                result = result.strip('"').strip()
-                for line in result.split("\n"):
-                    if line != '"' and line != "" and line is not None:
-                        item = json.loads(line)
-                        stream_str.append(item)
-                for val in stream_str:
-                    artifacts[val["id"]] = val
+                    if use_types:
+                        return FullScanStreamResponse.from_dict(
+                            {"success": True, "status": 200, "artifacts": artifacts}
+                        )
+                    return artifacts
 
-                if use_types:
-                    return FullScanStreamResponse.from_dict({"success": True, "status": 200, "artifacts": artifacts})
-                return artifacts
+                except Exception as e:
+                    error_message = f"Error parsing stream response: {str(e)}"
+                    log.error(error_message)
+                    if use_types:
+                        return FullScanStreamResponse.from_dict(
+                            {"success": False, "status": response.status_code, "message": error_message}
+                        )
+                    return {}
 
-            except Exception as e:
-                error_message = f"Error parsing stream response: {str(e)}"
-                log.error(error_message)
-                if use_types:
-                    return FullScanStreamResponse.from_dict(
-                        {"success": False, "status": response.status_code, "message": error_message}
-                    )
-                return {}
+        except APIFailure as e:
+            log.error(f"Socket SDK: API failure while streaming full scan {e}")
+            raise
+        except Exception as e:
+            log.error(f"Socket SDK: Unexpected error while streaming full scan {e}")
+            raise
 
-        error_message = response.json().get("error", {}).get("message", "Unknown error")
-        log.error(f"Error streaming full scan: {response.status_code}, message: {error_message}")
-        if use_types:
-            return FullScanStreamResponse.from_dict(
-                {"success": False, "status": response.status_code, "message": error_message}
-            )
         return {}
 
     def metadata(
         self, org_slug: str, full_scan_id: str, use_types: bool = False
     ) -> Union[dict, GetFullScanMetadataResponse]:
         path = "orgs/" + org_slug + "/full-scans/" + full_scan_id + "/metadata"
+        try:
+            response = self.api.do_request(path=path, method="GET")
+            if response.status_code == 200:
+                result = response.json()
+                if use_types:
+                    return GetFullScanMetadataResponse.from_dict({"success": True, "status": 200, "data": result})
+                return result
+        except APIFailure as e:
+            log.error(f"Socket SDK: API failure while getting metadata {e}")
+            raise
+        except Exception as e:
+            log.error(f"Socket SDK: Unexpected error while getting metadata {e}")
+            raise
 
-        response = self.api.do_request(path=path, method="GET")
-
-        if response.status_code == 200:
-            result = response.json()
-            if use_types:
-                return GetFullScanMetadataResponse.from_dict({"success": True, "status": 200, "data": result})
-            return result
-
-        error_message = response.json().get("error", {}).get("message", "Unknown error")
-        log.error(f"Error getting metadata: {response.status_code}, message: {error_message}")
-        if use_types:
-            return GetFullScanMetadataResponse.from_dict(
-                {"success": False, "status": response.status_code, "message": error_message}
-            )
         return {}

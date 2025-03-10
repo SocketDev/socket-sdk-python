@@ -1,4 +1,5 @@
 import logging
+from socketdev.exceptions import APIFailure
 
 log = logging.getLogger("socketdev")
 
@@ -11,9 +12,15 @@ class OpenAPI:
 
     def get(self) -> dict:
         path = "openapi"
-        response = self.api.do_request(path=path)
-        if response.status_code == 200:
-            return response.json()
-        log.error(f"Error getting OpenAPI spec: {response.status_code}")
-        print(response.text)
+        try:
+            response = self.api.do_request(path=path)
+            if response.status_code == 200:
+                return response.json()
+        except APIFailure as e:
+            log.error(f"Socket SDK: API failure while getting OpenAPI spec {e}")
+            raise
+        except Exception as e:
+            log.error(f"Socket SDK: Unexpected error while getting OpenAPI spec {e}")
+            raise
+
         return {}

@@ -2,6 +2,7 @@ import logging
 from enum import Enum
 from typing import Dict, Optional, Union
 from dataclasses import dataclass, asdict
+from socketdev.exceptions import APIFailure
 
 log = logging.getLogger("socketdev")
 
@@ -80,21 +81,31 @@ class Settings:
         params = {"custom_rules_only": custom_rules_only}
         params_args = self.create_params_string(params) if custom_rules_only else ""
         path += params_args
-        response = self.api.do_request(path=path, method="GET")
 
-        if response.status_code == 200:
-            rules = response.json()
-            if use_types:
-                return OrgSecurityPolicyResponse.from_dict(
-                    {"securityPolicyRules": rules.get("securityPolicyRules", {}), "success": True, "status": 200}
-                )
-            return rules
+        try:
+            response = self.api.do_request(path=path, method="GET")
+            if response.status_code == 200:
+                rules = response.json()
+                if use_types:
+                    return OrgSecurityPolicyResponse.from_dict(
+                        {"securityPolicyRules": rules.get("securityPolicyRules", {}), "success": True, "status": 200}
+                    )
+                return rules
+        except APIFailure as e:
+            log.error(f"Socket SDK: API failure while getting security policy {e}")
+            raise
+        except Exception as e:
+            log.error(f"Socket SDK: Unexpected error while getting security policy {e}")
+            raise
 
-        error_message = response.json().get("error", {}).get("message", "Unknown error")
-        print(f"Failed to get security policy: {response.status_code}, message: {error_message}")
         if use_types:
             return OrgSecurityPolicyResponse.from_dict(
-                {"securityPolicyRules": {}, "success": False, "status": response.status_code, "message": error_message}
+                {
+                    "securityPolicyRules": {},
+                    "success": False,
+                    "status": response.status_code,
+                    "message": "Unknown error",
+                }
             )
         return {}
 
@@ -106,13 +117,17 @@ class Settings:
             integration_id: Integration ID
         """
         path = f"orgs/{org_slug}/settings/integrations/{integration_id}"
-        response = self.api.do_request(path=path)
+        try:
+            response = self.api.do_request(path=path)
+            if response.status_code == 200:
+                return response.json()
+        except APIFailure as e:
+            log.error(f"Socket SDK: API failure while getting integration events {e}")
+            raise
+        except Exception as e:
+            log.error(f"Socket SDK: Unexpected error while getting integration events {e}")
+            raise
 
-        if response.status_code == 200:
-            return response.json()
-
-        error_message = response.json().get("error", {}).get("message", "Unknown error")
-        log.error(f"Error getting integration events: {response.status_code}, message: {error_message}")
         return {}
 
     def get_license_policy(self, org_slug: str) -> dict:
@@ -122,13 +137,17 @@ class Settings:
             org_slug: Organization slug
         """
         path = f"orgs/{org_slug}/settings/license-policy"
-        response = self.api.do_request(path=path)
+        try:
+            response = self.api.do_request(path=path)
+            if response.status_code == 200:
+                return response.json()
+        except APIFailure as e:
+            log.error(f"Socket SDK: API failure while getting license policy {e}")
+            raise
+        except Exception as e:
+            log.error(f"Socket SDK: Unexpected error while getting license policy {e}")
+            raise
 
-        if response.status_code == 200:
-            return response.json()
-
-        error_message = response.json().get("error", {}).get("message", "Unknown error")
-        log.error(f"Error getting license policy: {response.status_code}, message: {error_message}")
         return {}
 
     def update_security_policy(self, org_slug: str, body: dict, custom_rules_only: bool = False) -> dict:
@@ -143,13 +162,17 @@ class Settings:
         if custom_rules_only:
             path += "?custom_rules_only=true"
 
-        response = self.api.do_request(path=path, method="POST", payload=body)
+        try:
+            response = self.api.do_request(path=path, method="POST", payload=body)
+            if response.status_code == 200:
+                return response.json()
+        except APIFailure as e:
+            log.error(f"Socket SDK: API failure while updating security policy {e}")
+            raise
+        except Exception as e:
+            log.error(f"Socket SDK: Unexpected error while updating security policy {e}")
+            raise
 
-        if response.status_code == 200:
-            return response.json()
-
-        error_message = response.json().get("error", {}).get("message", "Unknown error")
-        log.error(f"Error updating security policy: {response.status_code}, message: {error_message}")
         return {}
 
     def update_license_policy(self, org_slug: str, body: dict, merge_update: bool = False) -> dict:
@@ -162,11 +185,15 @@ class Settings:
         """
         path = f"orgs/{org_slug}/settings/license-policy?merge_update={str(merge_update).lower()}"
 
-        response = self.api.do_request(path=path, method="POST", payload=body)
+        try:
+            response = self.api.do_request(path=path, method="POST", payload=body)
+            if response.status_code == 200:
+                return response.json()
+        except APIFailure as e:
+            log.error(f"Socket SDK: API failure while updating license policy {e}")
+            raise
+        except Exception as e:
+            log.error(f"Socket SDK: Unexpected error while updating license policy {e}")
+            raise
 
-        if response.status_code == 200:
-            return response.json()
-
-        error_message = response.json().get("error", {}).get("message", "Unknown error")
-        log.error(f"Error updating license policy: {response.status_code}, message: {error_message}")
         return {}

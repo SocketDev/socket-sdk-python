@@ -1,5 +1,6 @@
 from typing import TypedDict, Dict
 import logging
+from socketdev.api import APIFailure
 
 log = logging.getLogger("socketdev")
 
@@ -23,12 +24,18 @@ class Orgs:
 
     def get(self, use_types: bool = False) -> OrganizationsResponse:
         path = "organizations"
-        response = self.api.do_request(path=path)
-        if response.status_code == 200:
-            result = response.json()
-            if use_types:
-                return OrganizationsResponse(result)
-            return result
-        log.error(f"Error getting organizations: {response.status_code}")
-        print(response.text)
+        try:
+            response = self.api.do_request(path=path)
+            if response.status_code == 200:
+                result = response.json()
+                if use_types:
+                    return OrganizationsResponse(result)
+                return result
+        except APIFailure as e:
+            log.error(f"Socket SDK: API failure {e}")
+            raise
+        except Exception as e:
+            log.error(f"Socket SDK: Unexpected error {e}")
+            raise
+
         return {"organizations": {}}

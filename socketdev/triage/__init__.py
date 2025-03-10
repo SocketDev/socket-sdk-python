@@ -1,5 +1,6 @@
 import logging
 from urllib.parse import urlencode
+from socketdev.exceptions import APIFailure
 
 log = logging.getLogger("socketdev")
 
@@ -19,13 +20,17 @@ class Triage:
         if query_params:
             path += "?" + urlencode(query_params)
 
-        response = self.api.do_request(path=path)
+        try:
+            response = self.api.do_request(path=path)
+            if response.status_code == 200:
+                return response.json()
+        except APIFailure as e:
+            log.error(f"Socket SDK: API failure while getting alert triage list {e}")
+            raise
+        except Exception as e:
+            log.error(f"Socket SDK: Unexpected error while getting alert triage list {e}")
+            raise
 
-        if response.status_code == 200:
-            return response.json()
-
-        error_message = response.json().get("error", {}).get("message", "Unknown error")
-        log.error(f"Error getting alert triage list: {response.status_code}, message: {error_message}")
         return {}
 
     def update_alert_triage(self, org_slug: str, body: dict) -> dict:
@@ -37,11 +42,15 @@ class Triage:
         """
         path = f"orgs/{org_slug}/triage/alerts"
 
-        response = self.api.do_request(path=path, method="POST", payload=body)
+        try:
+            response = self.api.do_request(path=path, method="POST", payload=body)
+            if 200 <= response.status_code < 300:
+                return response.json()
+        except APIFailure as e:
+            log.error(f"Socket SDK: API failure while updating alert triage {e}")
+            raise
+        except Exception as e:
+            log.error(f"Socket SDK: Unexpected error while updating alert triage {e}")
+            raise
 
-        if 200 <= response.status_code < 300:
-            return response.json()
-
-        error_message = response.json().get("error", {}).get("message", "Unknown error")
-        log.error(f"Error updating alert triage: {response.status_code}, message: {error_message}")
         return {}

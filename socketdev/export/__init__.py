@@ -2,6 +2,7 @@ from urllib.parse import urlencode
 from dataclasses import dataclass, asdict
 from typing import Optional
 import logging
+from socketdev.exceptions import APIFailure
 
 log = logging.getLogger("socketdev")
 
@@ -40,14 +41,17 @@ class Export:
         path = f"orgs/{org_slug}/export/cdx/{id}"
         if query_params:
             path += query_params.to_query_params()
-        response = self.api.do_request(path=path)
+        try:
+            response = self.api.do_request(path=path)
+            if response.status_code == 200:
+                return response.json()
+        except APIFailure as e:
+            log.error(f"Socket SDK: API failure while exporting CDX BOM {e}")
+            raise
+        except Exception as e:
+            log.error(f"Socket SDK: Unexpected error while exporting CDX BOM {e}")
+            raise
 
-        if response.status_code == 200:
-            return response.json()
-            # TODO: Add typed response when types are defined
-
-        log.error(f"Error exporting CDX BOM: {response.status_code}")
-        print(response.text)
         return {}
 
     def spdx_bom(
@@ -64,12 +68,15 @@ class Export:
         path = f"orgs/{org_slug}/export/spdx/{id}"
         if query_params:
             path += query_params.to_query_params()
-        response = self.api.do_request(path=path)
+        try:
+            response = self.api.do_request(path=path)
+            if response.status_code == 200:
+                return response.json()
+        except APIFailure as e:
+            log.error(f"Socket SDK: API failure while exporting SPDX BOM {e}")
+            raise
+        except Exception as e:
+            log.error(f"Socket SDK: Unexpected error while exporting SPDX BOM {e}")
+            raise
 
-        if response.status_code == 200:
-            return response.json()
-            # TODO: Add typed response when types are defined
-
-        log.error(f"Error exporting SPDX BOM: {response.status_code}")
-        print(response.text)
         return {}
