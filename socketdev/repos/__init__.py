@@ -30,16 +30,16 @@ class RepositoryInfo:
     def from_dict(cls, data: dict) -> "RepositoryInfo":
         return cls(
             id=data["id"],
-            created_at=data["created_at"],
-            updated_at=data["updated_at"],
-            head_full_scan_id=data["head_full_scan_id"],
+            created_at=data.get("created_at", ""),
+            updated_at=data.get("updated_at", ""),
+            head_full_scan_id=data.get("head_full_scan_id", ""),
             name=data["name"],
-            description=data["description"],
-            homepage=data["homepage"],
-            visibility=data["visibility"],
-            archived=data["archived"],
-            default_branch=data["default_branch"],
-            slug=data.get("slug"),
+            description=data.get("description", ""),
+            homepage=data.get("homepage", ""),
+            visibility=data.get("visibility", "private"),
+            archived=data.get("archived", False),
+            default_branch=data.get("default_branch", "main"),
+            slug=data["slug"]
         )
 
 
