@@ -202,7 +202,7 @@ Delete an existing full scan.
 - **full_scan_id (str)** - The ID of the full scan
 
 fullscans.stream_diff(org_slug, before, after, preview, include_license_details)
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 Stream a diff between two full scans. Returns a scan diff.
 
 **Usage:**
