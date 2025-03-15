@@ -201,7 +201,7 @@ Delete an existing full scan.
 - **org_slug (str)** - The organization name
 - **full_scan_id (str)** - The ID of the full scan
 
-fullscans.stream_diff(org_slug, before, after, preview)
+fullscans.stream_diff(org_slug, before, after, preview, include_license_details)
 """""""""""""""""""""""""""""""""""""""""""""""""""""""
 Stream a diff between two full scans. Returns a scan diff.
 
@@ -218,7 +218,7 @@ Stream a diff between two full scans. Returns a scan diff.
 - **org_slug (str)** - The organization name
 - **before (str)** - The base full scan ID
 - **after (str)** - The comparison full scan ID
-- **preview (bool)** - Create a diff-scan that is not persisted. Defaults to False
+- **include_license_details (bool)** - Include license details. Can greatly increase response size. Defaults to False.
 
 fullscans.stream(org_slug, full_scan_id)
 """"""""""""""""""""""""""""""""""""""""
