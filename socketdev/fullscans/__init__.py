@@ -486,6 +486,16 @@ class DiffArtifact:
 
         score_data = data.get("score") or data.get("scores")
         score = SocketScore.from_dict(score_data) if score_data else None
+        license_details_source = data.get("licenseDetails")
+        if license_details_source:
+            license_details = [LicenseDetail.from_dict(detail) for detail in license_details_source]
+        else:
+            license_details = []
+        license_attrib_source = data.get("licenseAttrib")
+        if license_attrib_source:
+            license_attrib = [LicenseAttribution.from_dict(attrib) for attrib in license_attrib_source]
+        else:
+            license_attrib = []
 
         return cls(
             diffType=DiffType(data["diffType"]),
@@ -495,7 +505,7 @@ class DiffArtifact:
             score=score,
             version=data["version"],
             alerts=[SocketAlert.from_dict(alert) for alert in data.get("alerts", [])],
-            licenseDetails=[LicenseDetail.from_dict(detail) for detail in data["licenseDetails"]],
+            licenseDetails=license_details,
             files=data.get("files"),
             license=data.get("license"),
             capabilities=SecurityCapabilities.from_dict(data["capabilities"]) if data.get("capabilities") else None,
@@ -510,7 +520,7 @@ class DiffArtifact:
             author=data.get("author", []),
             state=data.get("state"),
             error=data.get("error"),
-            licenseAttrib=[LicenseAttribution.from_dict(attrib) for attrib in data["licenseAttrib"]]
+            licenseAttrib=license_attrib
             if data.get("licenseAttrib")
             else None,
         )
@@ -766,9 +776,18 @@ class FullScans:
         return {}
 
     def stream_diff(
-        self, org_slug: str, before: str, after: str, use_types: bool = False
+            self,
+            org_slug: str,
+            before: str,
+            after: str,
+            use_types: bool = True,
+            include_license_details: bool = False,
+            **kwargs,
     ) -> Union[dict, StreamDiffResponse]:
-        path = f"orgs/{org_slug}/full-scans/diff?before={before}&after={after}"
+        path = f"orgs/{org_slug}/full-scans/diff?before={before}&after={after}&{include_license_details}"
+        if kwargs:
+            for key, value in kwargs.items():
+                path += f"&{key}={value}"
 
         response = self.api.do_request(path=path, method="GET")
 
