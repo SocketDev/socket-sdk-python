@@ -44,7 +44,7 @@ class API:
         if headers is None:
             headers = {
                 "Authorization": f"Basic {self.encoded_key}",
-                "User-Agent": f"SocketPythonScript/{__version__}",
+                "User-Agent": f"SocketSDKPython/{__version__}",
                 "accept": "application/json",
             }
         url = f"{self.api_url}/{path}"

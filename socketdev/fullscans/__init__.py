@@ -3,7 +3,7 @@ import logging
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 from dataclasses import dataclass, asdict, field
-
+import urllib.parse
 
 from ..utils import IntegrationType, Utils
 
@@ -702,24 +702,10 @@ class FullScans:
     def __init__(self, api):
         self.api = api
 
-    def create_params_string(self, params: dict) -> str:
-        param_str = ""
-
-        for name, value in params.items():
-            if value:
-                if name == "committers" and isinstance(value, list):
-                    for committer in value:
-                        param_str += f"&{name}={committer}"
-                else:
-                    param_str += f"&{name}={value}"
-
-        param_str = "?" + param_str.lstrip("&")
-
-        return param_str
 
     def get(self, org_slug: str, params: dict, use_types: bool = False) -> Union[dict, GetFullScanMetadataResponse]:
-        params_arg = self.create_params_string(params)
-        path = "orgs/" + org_slug + "/full-scans" + str(params_arg)
+        params_arg = urllib.parse.urlencode(params)
+        path = "orgs/" + org_slug + "/full-scans?" + str(params_arg)
         response = self.api.do_request(path=path)
 
         if response.status_code == 200:
@@ -741,10 +727,8 @@ class FullScans:
         org_slug = str(params.org_slug)
         params_dict = params.to_dict()
         params_dict.pop("org_slug")
-
-        params_arg = self.create_params_string(params_dict)
-
-        path = "orgs/" + org_slug + "/full-scans" + str(params_arg)
+        params_arg = urllib.parse.urlencode(params_dict)
+        path = "orgs/" + org_slug + "/full-scans?" + str(params_arg)
 
         response = self.api.do_request(path=path, method="POST", files=files)
 
