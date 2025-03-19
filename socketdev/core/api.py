@@ -16,6 +16,7 @@ from socketdev.exceptions import (
 from socketdev.version import __version__
 from requests.exceptions import Timeout, ConnectionError
 import time
+import urllib.parse
 
 
 class API:
@@ -47,6 +48,7 @@ class API:
                 "User-Agent": f"SocketPythonScript/{__version__}",
                 "accept": "application/json",
             }
+        path = urllib.parse.quote(path)
         url = f"{self.api_url}/{path}"
 
         def format_headers(headers_dict):
