@@ -10,6 +10,8 @@ jobs:
     permissions:
       id-token: write
       contents: read
+      pull-requests: write
+      issues: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
