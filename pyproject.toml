@@ -1,6 +1,7 @@
 [build-system]
 requires = [
-    "setuptools >= 61.0"
+    "setuptools==68.2.2",
+    "wheel"
 ]
 build-backend = "setuptools.build_meta"
 
@@ -13,7 +14,7 @@ dependencies = [
     'typing-extensions>=4.12.2'
 ]
 readme = "README.rst"
-license = {file = "LICENSE"}
+license = {text = "MIT"}
 description = "Socket Security Python SDK"
 keywords = ["socketsecurity", "socket.dev", "sca", "oss", "security", "sdk"]
 authors = [

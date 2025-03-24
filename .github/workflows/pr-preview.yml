@@ -6,6 +6,11 @@ on:
 jobs:
   preview:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      issues: write
+      id-token: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -61,7 +66,6 @@ jobs:
         uses: pypa/gh-action-pypi-publish@v1.8.11
         with:
           repository-url: https://test.pypi.org/legacy/
-          password: ${{ secrets.TEST_PYPI_TOKEN }}
           verbose: true
 
       - name: Comment on PR
