@@ -1,5 +1,3 @@
-import logging
-
 from socketdev.core.api import API
 from socketdev.dependencies import Dependencies
 from socketdev.export import Export
@@ -18,6 +16,7 @@ from socketdev.settings import Settings
 from socketdev.triage import Triage
 from socketdev.utils import Utils, IntegrationType, INTEGRATION_TYPES
 from socketdev.version import __version__
+from socketdev.log import log
 
 
 __author__ = "socket.dev"
@@ -30,8 +29,7 @@ encoded_key: str
 
 api_url = "https://api.socket.dev/v0"
 request_timeout = 1200
-log = logging.getLogger("socketdev")
-log.addHandler(logging.NullHandler())
+
 
 # TODO: Add debug flag to constructor to enable verbose error logging for API response parsing.
 
