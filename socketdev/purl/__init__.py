@@ -1,16 +1,26 @@
 import json
+import urllib.parse
+from socketdev.log import log
 
 
 class Purl:
     def __init__(self, api):
         self.api = api
 
-    def post(self, license: str = "true", components: list = []) -> list:
-        path = "purl?" + "license=" + license
-        components = {"components": components}
-        components = json.dumps(components)
-
-        response = self.api.do_request(path=path, payload=components, method="POST")
+    def post(self, license: str = "false", components: list = None, **kwargs) -> list:
+        path = "purl?"
+        if components is None:
+            components = []
+        purls = {"components": components}
+        purls = json.dumps(purls)
+        query_args = {
+            "license": license,
+        }
+        if kwargs:
+            query_args.update(kwargs)
+        params = urllib.parse.urlencode(query_args)
+        path += params
+        response = self.api.do_request(path=path, payload=purls, method="POST")
         if response.status_code == 200:
             purl = []
             result = response.text
