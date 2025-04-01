@@ -4,7 +4,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 from dataclasses import dataclass, asdict, field
 import urllib.parse
-
+from ..core.dedupe import Dedupe
 from ..utils import IntegrationType, Utils
 
 log = logging.getLogger("socketdev")
@@ -712,6 +712,7 @@ class FullScans:
             result = response.json()
             if use_types:
                 return GetFullScanMetadataResponse.from_dict({"success": True, "status": 200, "data": result})
+
             return result
 
         error_message = response.json().get("error", {}).get("message", "Unknown error")
@@ -803,9 +804,9 @@ class FullScans:
                     if line != '"' and line != "" and line is not None:
                         item = json.loads(line)
                         stream_str.append(item)
-                for val in stream_str:
-                    artifacts[val["id"]] = val
-
+                stream_deduped = Dedupe.dedupe(stream_str, batched=False)
+                for batch in stream_deduped:
+                    artifacts[batch["id"]] = batch
                 if use_types:
                     return FullScanStreamResponse.from_dict({"success": True, "status": 200, "artifacts": artifacts})
                 return artifacts
