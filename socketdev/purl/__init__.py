@@ -1,7 +1,6 @@
 import json
 import urllib.parse
 from socketdev.log import log
-from core.dedupe import Dedupe
 
 
 class Purl:
@@ -33,8 +32,7 @@ class Purl:
                         purl.append(item)
                     except json.JSONDecodeError:
                         continue
-            purl_deduped = Dedupe.dedupe(purl)
-            return purl_deduped
+            return purl
 
         log.error(f"Error posting {components} to the Purl API: {response.status_code}")
         print(response.text)
