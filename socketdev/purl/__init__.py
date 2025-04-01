@@ -1,7 +1,7 @@
 import json
 import urllib.parse
 from socketdev.log import log
-from core.dedupe import Dedupe
+from ..core.dedupe import Dedupe
 
 
 class Purl:

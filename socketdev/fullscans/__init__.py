@@ -4,7 +4,7 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 from dataclasses import dataclass, asdict, field
 import urllib.parse
-from core.dedupe import Dedupe
+from ..core.dedupe import Dedupe
 from ..utils import IntegrationType, Utils
 
 log = logging.getLogger("socketdev")
