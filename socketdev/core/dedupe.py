@@ -56,22 +56,10 @@ class Dedupe:
                         alert_map[identity]["releases"].append(release)
 
         base = package_group[0]
-        return {
-            "id": base.get("id"),
-            "author": base.get("author"),
-            "size": base.get("size"),
-            "type": base.get("type"),
-            "name": base.get("name"),
-            "namespace": base.get("namespace"),
-            "version": base.get("version"),
-            "releases": sorted(releases),
-            "alerts": list(alert_map.values()),
-            "score": base.get("score", {}),
-            "license": base.get("license"),
-            "licenseDetails": base.get("licenseDetails", []),
-            "batchIndex": base.get("batchIndex"),
-            "purl": f"pkg:{base.get('type', 'unknown')}/{base.get('name', 'unknown')}@{base.get('version', '0.0.0')}"
-        }
+        base["releases"] = sorted(releases)
+        base["alerts"] = list(alert_map.values())
+        base["purl"] = f"pkg:{base.get('type', 'unknown')}/{base.get('name', 'unknown')}@{base.get('version', '0.0.0')}"
+        return base
 
     @staticmethod
     def dedupe(packages: List[Dict[str, Any]], batched: bool = True) -> List[Dict[str, Any]]:
