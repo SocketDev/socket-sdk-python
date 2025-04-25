@@ -49,7 +49,9 @@ class Dedupe:
                         "file": file,
                         "start": alert.get("start"),
                         "end": alert.get("end"),
-                        "releases": [release]
+                        "releases": [release],
+                        "props": alert.get("props", []),
+                        "action": alert["action"]
                     }
                 else:
                     if release not in alert_map[identity]["releases"]:
