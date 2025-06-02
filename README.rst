@@ -575,3 +575,205 @@ Retrieve the Issues associated with a package and version.
 
 - **package (str)** - The name of the NPM package.
 - **version (str)** - The version of the NPM Package.
+
+labels.list(org_slug)
+"""""""""""""""""""""""
+List all repository labels for the given organization.
+
+**Usage:**
+
+.. code-block:: python
+
+    from socketdev import socketdev
+
+    socket = socketdev(token="REPLACE_ME")
+    print(socket.labels.list("org_slug"))
+
+**PARAMETERS:**
+
+- **org_slug (str)** – The organization name
+
+labels.post(org_slug, label_name)
+"""""""""""""""""""""""""""""""""""
+Create a new label in the organization.
+
+**Usage:**
+
+.. code-block:: python
+
+    print(socket.labels.post("org_slug", "my-label"))
+
+**PARAMETERS:**
+
+- **org_slug (str)** – The organization name
+- **label_name (str)** – Name of the label to create
+
+labels.get(org_slug, label_id)
+"""""""""""""""""""""""""""""""""
+Retrieve a single label by its ID.
+
+**Usage:**
+
+.. code-block:: python
+
+    print(socket.labels.get("org_slug", "label_id"))
+
+**PARAMETERS:**
+
+- **org_slug (str)** – The organization name
+- **label_id (str)** – The label ID
+
+labels.delete(org_slug, label_id)
+"""""""""""""""""""""""""""""""""""
+Delete a label by ID.
+
+**Usage:**
+
+.. code-block:: python
+
+    print(socket.labels.delete("org_slug", "label_id"))
+
+**PARAMETERS:**
+
+- **org_slug (str)** – The organization name
+- **label_id (str)** – The label ID
+
+labels.associate(org_slug, label_id, repo_id)
+"""""""""""""""""""""""""""""""""""""""""""""""
+Associate a label with a repository.
+
+**Usage:**
+
+.. code-block:: python
+
+    print(socket.labels.associate("org_slug", 1234, "repo_id"))
+
+**PARAMETERS:**
+
+- **org_slug (str)** – The organization name
+- **label_id (int)** – The label ID
+- **repo_id (str)** – The repository ID
+
+labels.disassociate(org_slug, label_id, repo_id)
+"""""""""""""""""""""""""""""""""""""""""""""""""
+Disassociate a label from a repository.
+
+**Usage:**
+
+.. code-block:: python
+
+    print(socket.labels.disassociate("org_slug", 1234, "repo_id"))
+
+**PARAMETERS:**
+
+- **org_slug (str)** – The organization name
+- **label_id (int)** – The label ID
+- **repo_id (str)** – The repository ID
+
+labels.setting.get(org_slug, label_id, setting_key)
+"""""""""""""""""""""""""""""""""""""""""""""""""""""
+Get a setting for a specific label.
+
+**Usage:**
+
+.. code-block:: python
+
+    print(socket.labels.setting.get("org_slug", 1234, "severity"))
+
+**PARAMETERS:**
+
+- **org_slug (str)** – The organization name
+- **label_id (int)** – The label ID
+- **setting_key (str)** – The key of the setting
+
+labels.setting.put(org_slug, label_id, settings)
+"""""""""""""""""""""""""""""""""""""""""""""""""""
+Update settings for a specific label.
+
+**Usage:**
+
+.. code-block:: python
+
+    settings = {"severity": {"value": {"level": "high"}}}
+    print(socket.labels.setting.put("org_slug", 1234, settings))
+
+**PARAMETERS:**
+
+- **org_slug (str)** – The organization name
+- **label_id (int)** – The label ID
+- **settings (dict)** – A dictionary of label settings
+
+labels.setting.delete(org_slug, label_id, setting_key)
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""
+Delete a setting from a label.
+
+**Usage:**
+
+.. code-block:: python
+
+    print(socket.labels.setting.delete("org_slug", 1234, "severity"))
+
+**PARAMETERS:**
+
+- **org_slug (str)** – The organization name
+- **label_id (int)** – The label ID
+- **setting_key (str)** – The setting key to delete
+
+historical.list(org_slug, query_params=None)
+"""""""""""""""""""""""""""""""""""""""""""""""
+List historical alerts for an organization.
+
+**Usage:**
+
+.. code-block:: python
+
+    print(socket.historical.list("org_slug", {"repo": "example-repo"}))
+
+**PARAMETERS:**
+
+- **org_slug (str)** – The organization name
+- **query_params (dict, optional)** – Optional query parameters
+
+historical.trend(org_slug, query_params=None)
+"""""""""""""""""""""""""""""""""""""""""""""""
+Retrieve alert trend data across time.
+
+**Usage:**
+
+.. code-block:: python
+
+    print(socket.historical.trend("org_slug", {"range": "30d"}))
+
+**PARAMETERS:**
+
+- **org_slug (str)** – The organization name
+- **query_params (dict, optional)** – Optional query parameters
+
+historical.snapshots.create(org_slug)
+""""""""""""""""""""""""""""""""""""""""
+Create a new snapshot of historical data.
+
+**Usage:**
+
+.. code-block:: python
+
+    print(socket.historical.snapshots.create("org_slug"))
+
+**PARAMETERS:**
+
+- **org_slug (str)** – The organization name
+
+historical.snapshots.list(org_slug, query_params=None)
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+List all historical snapshots for an organization.
+
+**Usage:**
+
+.. code-block:: python
+
+    print(socket.historical.snapshots.list("org_slug", {"repo": "example-repo"}))
+
+**PARAMETERS:**
+
+- **org_slug (str)** – The organization name
+- **query_params (dict, optional)** – Optional query parameters
