@@ -16,6 +16,7 @@ from socketdev.settings import Settings
 from socketdev.triage import Triage
 from socketdev.utils import Utils, IntegrationType, INTEGRATION_TYPES
 from socketdev.version import __version__
+from socketdev.labels import Labels
 from socketdev.log import log
 
 
@@ -57,6 +58,7 @@ class socketdev:
         self.settings = Settings(self.api)
         self.triage = Triage(self.api)
         self.utils = Utils()
+        self.labels = Labels(self.api)
 
     @staticmethod
     def set_timeout(timeout: int):
