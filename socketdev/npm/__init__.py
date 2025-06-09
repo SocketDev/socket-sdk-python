@@ -15,7 +15,7 @@ class NPM:
         if response.status_code == 200:
             return response.json()
         log.error(f"Error getting npm issues: {response.status_code}")
-        print(response.text)
+        log.error(response.text)
         return []
 
     def score(self, package: str, version: str) -> list:
@@ -24,5 +24,5 @@ class NPM:
         if response.status_code == 200:
             return response.json()
         log.error(f"Error getting npm score: {response.status_code}")
-        print(response.text)
+        log.error(response.text)
         return []

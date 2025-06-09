@@ -47,7 +47,7 @@ class Export:
             # TODO: Add typed response when types are defined
 
         log.error(f"Error exporting CDX BOM: {response.status_code}")
-        print(response.text)
+        log.error(response.text)
         return {}
 
     def spdx_bom(
@@ -71,5 +71,5 @@ class Export:
             # TODO: Add typed response when types are defined
 
         log.error(f"Error exporting SPDX BOM: {response.status_code}")
-        print(response.text)
+        log.error(response.text)
         return {}

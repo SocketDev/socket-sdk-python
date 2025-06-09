@@ -30,5 +30,5 @@ class Orgs:
                 return OrganizationsResponse(result)
             return result
         log.error(f"Error getting organizations: {response.status_code}")
-        print(response.text)
+        log.error(response.text)
         return {"organizations": {}}

@@ -108,7 +108,7 @@ class Repos:
             return result
 
         error_message = response.json().get("error", {}).get("message", "Unknown error")
-        print(f"Failed to get repository: {response.status_code}, message: {error_message}")
+        log.error(f"Failed to get repository: {response.status_code}, message: {error_message}")
         if use_types:
             return GetRepoResponse.from_dict(
                 {"success": False, "status": response.status_code, "message": error_message}
