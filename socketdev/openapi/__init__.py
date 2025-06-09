@@ -15,5 +15,5 @@ class OpenAPI:
         if response.status_code == 200:
             return response.json()
         log.error(f"Error getting OpenAPI spec: {response.status_code}")
-        print(response.text)
+        log.error(response.text)
         return {}

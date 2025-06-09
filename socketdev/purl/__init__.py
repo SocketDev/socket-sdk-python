@@ -37,5 +37,5 @@ class Purl:
             return purl_deduped
 
         log.error(f"Error posting {components} to the Purl API: {response.status_code}")
-        print(response.text)
+        log.error(response.text)
         return []

@@ -32,7 +32,7 @@ class Sbom:
                 sbom_dict[val["id"]] = val
         else:
             log.error(f"Error viewing SBOM: {response.status_code}")
-            print(response.text)
+            log.error(response.text)
             sbom_dict = {}
         return sbom_dict
 
@@ -48,7 +48,7 @@ class Sbom:
             item = sbom[package_id]
             package = Package(**item)
             if package.id in packages:
-                print(f"Duplicate package_id: {package_id}")
+                log.error(f"Duplicate package_id: {package_id}")
             else:
                 packages[package.id] = package
                 for top_id in package.topLevelAncestors:

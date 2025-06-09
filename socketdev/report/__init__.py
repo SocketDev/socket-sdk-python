@@ -27,7 +27,7 @@ class Report:
         if response.status_code == 200:
             return response.json()
         log.error(f"Error listing reports: {response.status_code}")
-        print(response.text)
+        log.error(response.text)
         return {}
 
     def delete(self, report_id: str) -> bool:
@@ -36,7 +36,7 @@ class Report:
         if response.status_code == 200:
             return True
         log.error(f"Error deleting report: {response.status_code}")
-        print(response.text)
+        log.error(response.text)
         return False
 
     def view(self, report_id) -> dict:
@@ -45,7 +45,7 @@ class Report:
         if response.status_code == 200:
             return response.json()
         log.error(f"Error viewing report: {response.status_code}")
-        print(response.text)
+        log.error(response.text)
         return {}
 
     def supported(self) -> dict:
@@ -54,7 +54,7 @@ class Report:
         if response.status_code == 200:
             return response.json()
         log.error(f"Error getting supported reports: {response.status_code}")
-        print(response.text)
+        log.error(response.text)
         return {}
 
     def create(self, files: list) -> dict:
@@ -68,5 +68,5 @@ class Report:
         if response.status_code == 200:
             return response.json()
         log.error(f"Error creating report: {response.status_code}")
-        print(response.text)
+        log.error(response.text)
         return {}

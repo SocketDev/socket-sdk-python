@@ -27,5 +27,5 @@ class Repositories:
             return result
 
         log.error(f"Error listing repositories: {response.status_code}")
-        print(response.text)
+        log.error(response.text)
         return []

@@ -15,5 +15,5 @@ class Quota:
         if response.status_code == 200:
             return response.json()
         log.error(f"Error getting quota: {response.status_code}")
-        print(response.text)
+        log.error(response.text)
         return {}

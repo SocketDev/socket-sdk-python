@@ -1,5 +1,6 @@
 from collections import defaultdict
 from typing import Dict, List, Any
+from socketdev.log import log
 
 
 class Dedupe:
@@ -100,5 +101,5 @@ class Dedupe:
                 pkg["batchIndex"] = batch_index
                 grouped[pkg["batchIndex"]].append(pkg)
         except Exception as error:
-            print(error)
+            log.error(error)
         return grouped

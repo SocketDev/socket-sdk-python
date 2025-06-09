@@ -73,7 +73,7 @@ class Labels:
             return result
 
         error_message = response.json().get("error", {}).get("message", "Unknown error")
-        print(f"Failed to create repository label: {response.status_code}, message: {error_message}")
+        log.error(f"Failed to create repository label: {response.status_code}, message: {error_message}")
         return {}
 
     def get(self, org_slug: str, label_id: str) -> dict:
@@ -84,7 +84,7 @@ class Labels:
             return result
 
         error_message = response.json().get("error", {}).get("message", "Unknown error")
-        print(f"Failed to get repository label: {response.status_code}, message: {error_message}")
+        log.error(f"Failed to get repository label: {response.status_code}, message: {error_message}")
         return {}
 
     def delete(self, org_slug: str, label_id: str) -> dict:
