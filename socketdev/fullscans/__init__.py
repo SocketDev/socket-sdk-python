@@ -848,3 +848,14 @@ class FullScans:
                 {"success": False, "status": response.status_code, "message": error_message}
             )
         return {}
+
+    def gfm(self, org_slug: str, before: str, after: str) -> dict:
+        path = "orgs/" + org_slug + f"/full-scans/diff/gfm?before={before}&after={after}"
+        response = self.api.do_request(path=path, method="GET")
+        if response.status_code == 200:
+            result = response.json()
+            return result
+
+        error_message = response.json().get("error", {}).get("message", "Unknown error")
+        log.error(f"Error getting diff scan results: {response.status_code}, message: {error_message}")
+        return {}
