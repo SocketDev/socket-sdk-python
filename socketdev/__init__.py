@@ -1,5 +1,6 @@
 from socketdev.core.api import API
 from socketdev.dependencies import Dependencies
+from socketdev.diffscans import DiffScans
 from socketdev.export import Export
 from socketdev.fullscans import FullScans
 from socketdev.historical import Historical
@@ -61,6 +62,7 @@ class socketdev:
         self.utils = Utils()
         self.labels = Labels(self.api)
         self.licensemetadata = LicenseMetadata(self.api)
+        self.diffscans = DiffScans(self.api)
 
     @staticmethod
     def set_timeout(timeout: int):

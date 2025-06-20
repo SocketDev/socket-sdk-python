@@ -54,8 +54,9 @@ class API:
         def format_headers(headers_dict):
             return "\n".join(f"{k}: {v}" for k, v in headers_dict.items())
 
+        start_time = time.time()
         try:
-            start_time = time.time()
+            
             response = requests.request(
                 method.upper(), url, headers=headers, data=payload, files=files, timeout=self.request_timeout
             )
@@ -103,14 +104,19 @@ class API:
                 log.error(f"Upstream server error{path_str}{headers_str}")
                 raise APIBadGateway()
             if response.status_code >= 400:
+                try:
+                    error_json = response.json()
+                except Exception:
+                    error_json = None
+                error_message = error_json.get("error", {}).get("message") if error_json else response.text
                 error = (
-                    f"Bad Request: HTTP original_status_code:{response.status_code}{path_str}{headers_str}"
+                    f"Bad Request: HTTP original_status_code:{response.status_code}{path_str}{headers_str}\n"
+                    f"Error message: {error_message}"
                 )
                 log.error(error)
-                raise APIFailure()
+                raise APIFailure(error)
 
             return response
-
         except Timeout:
             request_duration = time.time() - start_time
             log.error(f"Request timed out after {request_duration:.2f} seconds")
