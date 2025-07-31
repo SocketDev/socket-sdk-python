@@ -766,7 +766,7 @@ class FullScans:
             before: str,
             after: str,
             use_types: bool = True,
-            include_license_details: bool = True,
+            include_license_details: str = "true",
             **kwargs,
     ) -> Union[dict, StreamDiffResponse]:
         path = f"orgs/{org_slug}/full-scans/diff?before={before}&after={after}&include_license_details={include_license_details}"
