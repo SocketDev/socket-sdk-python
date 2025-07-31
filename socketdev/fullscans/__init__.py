@@ -766,10 +766,10 @@ class FullScans:
             before: str,
             after: str,
             use_types: bool = True,
-            include_license_details: bool = False,
+            include_license_details: bool = True,
             **kwargs,
     ) -> Union[dict, StreamDiffResponse]:
-        path = f"orgs/{org_slug}/full-scans/diff?before={before}&after={after}&{include_license_details}"
+        path = f"orgs/{org_slug}/full-scans/diff?before={before}&after={after}&include_license_details={include_license_details}"
         if kwargs:
             for key, value in kwargs.items():
                 path += f"&{key}={value}"
