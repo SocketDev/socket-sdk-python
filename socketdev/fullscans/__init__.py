@@ -343,11 +343,9 @@ class LicenseMatch:
 @dataclass
 class LicenseDetail:
     authors: List[str]
-    charEnd: int
-    charStart: int
+    errorData: str
     filepath: str
     match_strength: int
-    filehash: str
     provenance: str
     spdxDisj: List[List[LicenseMatch]]
 
@@ -360,14 +358,13 @@ class LicenseDetail:
     @classmethod
     def from_dict(cls, data: dict) -> "LicenseDetail":
         return cls(
+            spdxDisj=data["spdxDisj"],
             authors=data["authors"],
-            charEnd=data["charEnd"],
-            charStart=data["charStart"],
+            errorData=data["errorData"],
+            provenance=data["provenance"],
             filepath=data["filepath"],
             match_strength=data["match_strength"],
-            filehash=data["filehash"],
-            provenance=data["provenance"],
-            spdxDisj=[[LicenseMatch.from_dict(match) for match in group] for group in data["spdxDisj"]],
+
         )
 
 
