@@ -2,6 +2,7 @@ import json
 from urllib.parse import urlencode
 import logging
 from socketdev.tools import load_files
+from ..utils import Utils
 
 log = logging.getLogger("socketdev")
 
@@ -12,9 +13,13 @@ class Dependencies:
     def __init__(self, api):
         self.api = api
 
-    def post(self, files: list, params: dict) -> dict:
-        loaded_files = []
-        loaded_files = load_files(files, loaded_files)
+    def post(self, files: list, params: dict, use_lazy_loading: bool = False, workspace: str = None) -> dict:
+        if use_lazy_loading:
+            loaded_files = Utils.load_files_for_sending_lazy(files, workspace)
+        else:
+            loaded_files = []
+            loaded_files = load_files(files, loaded_files)
+        
         path = "dependencies/upload?" + urlencode(params)
         response = self.api.do_request(path=path, files=loaded_files, method="POST")
         if response.status_code == 200:

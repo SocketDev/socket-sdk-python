@@ -343,11 +343,9 @@ class LicenseMatch:
 @dataclass
 class LicenseDetail:
     authors: List[str]
-    charEnd: int
-    charStart: int
+    errorData: str
     filepath: str
     match_strength: int
-    filehash: str
     provenance: str
     spdxDisj: List[List[LicenseMatch]]
 
@@ -360,14 +358,13 @@ class LicenseDetail:
     @classmethod
     def from_dict(cls, data: dict) -> "LicenseDetail":
         return cls(
+            spdxDisj=data["spdxDisj"],
             authors=data["authors"],
-            charEnd=data["charEnd"],
-            charStart=data["charStart"],
+            errorData=data["errorData"],
+            provenance=data["provenance"],
             filepath=data["filepath"],
             match_strength=data["match_strength"],
-            filehash=data["filehash"],
-            provenance=data["provenance"],
-            spdxDisj=[[LicenseMatch.from_dict(match) for match in group] for group in data["spdxDisj"]],
+
         )
 
 
@@ -723,7 +720,31 @@ class FullScans:
             )
         return {}
 
-    def post(self, files: list, params: FullScanParams, use_types: bool = False) -> Union[dict, CreateFullScanResponse]:
+    def post(self, files: list, params: FullScanParams, use_types: bool = False, use_lazy_loading: bool = False, workspace: str = None, max_open_files: int = 100) -> Union[dict, CreateFullScanResponse]:
+        """
+        Create a new full scan by uploading manifest files.
+        
+        Args:
+            files: List of file paths to upload for scanning
+            params: FullScanParams object containing scan configuration
+            use_types: Whether to return typed response objects (default: False)
+            use_lazy_loading: Whether to use lazy file loading to prevent "too many open files" 
+                            errors when uploading large numbers of files (default: False)
+                            NOTE: In version 3.0, this will default to True for better performance
+            workspace: Base directory path to make file paths relative to
+            max_open_files: Maximum number of files to keep open simultaneously when using 
+                          lazy loading. Useful for systems with low ulimit values (default: 100)
+        
+        Returns:
+            dict or CreateFullScanResponse: API response containing scan results
+            
+        Note:
+            When use_lazy_loading=True, files are opened only when needed during upload,
+            preventing file descriptor exhaustion. The max_open_files parameter controls how many
+            files can be open simultaneously - set this lower on systems with restrictive ulimits.
+            
+            For large file uploads (>100 files), it's recommended to set use_lazy_loading=True.
+        """
         Utils.validate_integration_type(params.integration_type if params.integration_type else "api")
         org_slug = str(params.org_slug)
         params_dict = params.to_dict()
@@ -731,7 +752,13 @@ class FullScans:
         params_arg = urllib.parse.urlencode(params_dict)
         path = "orgs/" + org_slug + "/full-scans?" + str(params_arg)
 
-        response = self.api.do_request(path=path, method="POST", files=files)
+        # Use lazy loading if requested
+        if use_lazy_loading:
+            prepared_files = Utils.load_files_for_sending_lazy(files, workspace, max_open_files)
+        else:
+            prepared_files = files
+
+        response = self.api.do_request(path=path, method="POST", files=prepared_files)
 
         if response.status_code == 201:
             result = response.json()
@@ -766,10 +793,10 @@ class FullScans:
             before: str,
             after: str,
             use_types: bool = True,
-            include_license_details: bool = False,
+            include_license_details: str = "true",
             **kwargs,
     ) -> Union[dict, StreamDiffResponse]:
-        path = f"orgs/{org_slug}/full-scans/diff?before={before}&after={after}&{include_license_details}"
+        path = f"orgs/{org_slug}/full-scans/diff?before={before}&after={after}&include_license_details={include_license_details}"
         if kwargs:
             for key, value in kwargs.items():
                 path += f"&{key}={value}"
