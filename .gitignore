@@ -13,3 +13,4 @@ dist
 *.dist
 *.egg-info
 *.cpython-312.pyc
+example-socket-export.py
