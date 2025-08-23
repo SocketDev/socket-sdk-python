@@ -61,7 +61,29 @@ class Dedupe:
         base = package_group[0]
         base["releases"] = sorted(releases)
         base["alerts"] = list(alert_map.values())
-        base["purl"] = f"pkg:{base.get('type', 'unknown')}/{base.get('name', 'unknown')}@{base.get('version', '0.0.0')}"
+        
+        # Use inputPurl if available and complete, otherwise construct proper purl with namespace
+        if "inputPurl" in base and "@" in base["inputPurl"]:
+            # inputPurl has version, use it as-is
+            base["purl"] = base["inputPurl"]
+        else:
+            # Construct purl properly with namespace and version
+            purl_type = base.get('type', 'unknown')
+            namespace = base.get('namespace')
+            name = base.get('name', 'unknown')
+            version = base.get('version', '0.0.0')
+            
+            # Start with inputPurl if available (without version) or construct from scratch
+            if "inputPurl" in base and not "@" in base["inputPurl"]:
+                # inputPurl exists but lacks version, append it
+                base["purl"] = f"{base['inputPurl']}@{version}"
+            else:
+                # Construct complete purl from components
+                if namespace:
+                    base["purl"] = f"pkg:{purl_type}/{namespace}/{name}@{version}"
+                else:
+                    base["purl"] = f"pkg:{purl_type}/{name}@{version}"
+        
         return base
 
     @staticmethod
