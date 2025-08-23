@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "socket-sdk-python"
-dynamic = ["version"]
+version = "2.2.2"
 requires-python = ">= 3.9"
 dependencies = [
     'requests',
