@@ -15,24 +15,16 @@ jobs:
         with:
           fetch-depth: 0  # Fetch all history for all branches
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install hatchling==1.27.0
-          pip install hatch==1.14.0
-          pip install packaging
-
       - name: Check version increment
         id: version_check
         run: |
           # Get version from current PR
-          PR_VERSION=$(hatch version)
+          PR_VERSION=$(grep -o "__version__.*" socketdev/version.py | awk '{print $3}' | tr -d "'")
           echo "PR_VERSION=$PR_VERSION" >> $GITHUB_ENV
 
           # Get version from main branch
           git checkout origin/main
-          pip install hatchling==1.27.0 hatch==1.14.0
-          MAIN_VERSION=$(hatch version)
+          MAIN_VERSION=$(grep -o "__version__.*" socketdev/version.py | awk '{print $3}' | tr -d "'")
           echo "MAIN_VERSION=$MAIN_VERSION" >> $GITHUB_ENV
 
           # Compare versions using Python
@@ -84,7 +76,7 @@ jobs:
                   owner: owner,
                   repo: repo,
                   comment_id: versionComment.id,
-                  body: `❌ **Version Check Failed**\n\nPlease increment the version. Current version in main: ${process.env.MAIN_VERSION}, PR version: ${process.env.PR_VERSION}`
+                  body: `❌ **Version Check Failed**\n\nPlease increment...`
                 });
               }
             } else if (!success) {
@@ -93,6 +85,6 @@ jobs:
                 owner: owner,
                 repo: repo,
                 issue_number: prNumber,
-                body: `❌ **Version Check Failed**\n\nPlease increment the version. Current version in main: ${process.env.MAIN_VERSION}, PR version: ${process.env.PR_VERSION}`
+                body: `❌ **Version Check Failed**\n\nPlease increment...`
               });
             }
