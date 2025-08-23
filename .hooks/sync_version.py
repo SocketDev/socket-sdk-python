@@ -11,7 +11,7 @@ PYPROJECT_FILE = pathlib.Path("pyproject.toml")
 
 VERSION_PATTERN = re.compile(r"__version__\s*=\s*['\"]([^'\"]+)['\"]")
 PYPROJECT_PATTERN = re.compile(r'^version\s*=\s*".*"$', re.MULTILINE)
-PYPI_API = "https://test.pypi.org/pypi/socket-sdk-python/json"
+PYPI_API = "https://test.pypi.org/pypi/socketdev/json"
 
 def read_version_from_version_file(path: pathlib.Path) -> str:
     content = path.read_text()

@@ -33,7 +33,7 @@ jobs:
         run: |
           VERSION=$(hatch version | cut -d+ -f1)
           echo "VERSION=$VERSION" >> $GITHUB_ENV
-          if curl -s -f https://test.pypi.org/pypi/socket-sdk-python/$VERSION/json > /dev/null; then
+          if curl -s -f https://test.pypi.org/pypi/socketdev/$VERSION/json > /dev/null; then
             echo "Version ${VERSION} already exists on Test PyPI"
             echo "exists=true" >> $GITHUB_OUTPUT
           else
@@ -90,7 +90,7 @@ jobs:
 
             Install with:
             \`\`\`bash
-            pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple socket-sdk-python==${version}
+            pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple socketdev==${version}
             \`\`\``;
 
             if (botComment) {
@@ -118,9 +118,9 @@ jobs:
           VERSION: ${{ env.VERSION }}
         run: |
           for i in {1..30}; do
-            if pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple socket-sdk-python==${VERSION}; then
+            if pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple socketdev==${VERSION}; then
               echo "Package ${VERSION} is now available and installable on Test PyPI"
-              pip uninstall -y socket-sdk-python
+              pip uninstall -y socketdev
               echo "success=true" >> $GITHUB_OUTPUT
               exit 0
             fi

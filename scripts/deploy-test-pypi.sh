@@ -7,7 +7,7 @@ BACKUP_FILE="${VERSION_FILE}.bak"
 
 # Get existing versions from TestPyPI
 echo "Checking existing versions on TestPyPI..."
-EXISTING_VERSIONS=$(curl -s https://test.pypi.org/pypi/socket-sdk-python/json | python -c "
+EXISTING_VERSIONS=$(curl -s https://test.pypi.org/pypi/socketdev/json | python -c "
 import sys, json
 data = json.load(sys.stdin)
 versions = [v for v in data.get('releases', {}).keys() if v.startswith('$ORIGINAL_VERSION.dev')]
