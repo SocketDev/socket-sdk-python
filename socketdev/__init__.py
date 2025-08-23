@@ -20,7 +20,18 @@ from socketdev.version import __version__
 from socketdev.labels import Labels
 from socketdev.licensemetadata import LicenseMetadata
 from socketdev.log import log
+import warnings
 
+
+# Deprecation warning for socket-sdk-python package
+warnings.warn(
+    "The 'socket-sdk-python' package is deprecated and will no longer receive updates. "
+    "Please migrate to the new 'socketdev' package: pip install socketdev. "
+    "The API remains the same, only the package name has changed. "
+    "For more information, see: https://github.com/SocketDev/socket-sdk-python",
+    DeprecationWarning,
+    stacklevel=2
+)
 
 __author__ = "socket.dev"
 __version__ = __version__
