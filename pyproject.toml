@@ -1,21 +1,18 @@
 [build-system]
-requires = [
-    "setuptools==68.2.2",
-    "wheel"
-]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "socket-sdk-python"
-dynamic = ["version"]
+version = "2.2.3"
 requires-python = ">= 3.9"
 dependencies = [
     'requests',
     'typing-extensions>=4.12.2'
 ]
 readme = "README.rst"
-license = {text = "MIT"}
-description = "Socket Security Python SDK"
+license = {file = "LICENSE"}
+description = "Socket Security Python SDK [DEPRECATED: Please use 'socketdev' package instead]"
 keywords = ["socketsecurity", "socket.dev", "sca", "oss", "security", "sdk"]
 authors = [
     {name = "Douglas Coburn", email = "douglas@socket.dev"}
@@ -24,7 +21,7 @@ maintainers = [
     {name = "Douglas Coburn", email = "douglas@socket.dev"}
 ]
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
+    "Development Status :: 7 - Inactive",
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
@@ -34,13 +31,19 @@ classifiers = [
     "Programming Language :: Python :: 3.14"
 ]
 
+[tool.hatch.version]
+path = "socketdev/version.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["socketdev"]
+
 # modern, faster linter and language server. install with `pip install -e ".[dev]"`
 [project.optional-dependencies]
 dev = [
     "ruff>=0.3.0",
-    "twine>=4.0.0",
-    "wheel>=0.40.0",
-    "build>=1.0.0"
+    "hatch>=1.14.0",
+    "hatchling>=1.27.0",
+    "twine>=4.0.0"
 ]
 test = [
     "pytest>=7.0.0",
@@ -49,12 +52,6 @@ test = [
 
 [project.urls]
 Homepage = "https://github.com/socketdev/socket-sdk-python"
-
-[tool.setuptools.packages.find]
-include = ["socketdev", "socketdev.*"]
-
-[tool.setuptools.dynamic]
-version = {attr = "socketdev.version.__version__"}
 
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.

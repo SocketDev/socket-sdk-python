@@ -1,7 +1,7 @@
 name: Version Check
 on:
   pull_request:
-    types: [opened, synchronize]
+    types: [opened, synchronize, ready_for_review]
     paths:
       - 'socketdev/**'
       - 'setup.py'
@@ -19,22 +19,13 @@ jobs:
         id: version_check
         run: |
           # Get version from current PR
-          PR_VERSION=$(grep -o '__version__ = "[^"]*"' socketdev/version.py | cut -d'"' -f2)
-          echo "Debug PR version: $PR_VERSION"
-          echo "PR_VERSION=${PR_VERSION}" >> $GITHUB_ENV
+          PR_VERSION=$(grep -o "__version__.*" socketdev/version.py | awk '{print $3}' | tr -d '"' | tr -d "'")
+          echo "PR_VERSION=$PR_VERSION" >> $GITHUB_ENV
 
-          # Get version from main branch - try both locations
+          # Get version from main branch
           git checkout origin/main
-          if [ -f socketdev/version.py ]; then
-            MAIN_VERSION=$(grep -o '__version__ = "[^"]*"' socketdev/version.py | cut -d'"' -f2)
-          else
-            # Fall back to old location in __init__.py
-            # Use more specific grep to avoid matching the imported version
-            MAIN_VERSION=$(grep -o '^__version__ = "[^"]*"' socketdev/__init__.py | cut -d'"' -f2)
-          fi
-          
-          echo "Debug main version: $MAIN_VERSION"
-          echo "MAIN_VERSION=${MAIN_VERSION}" >> $GITHUB_ENV
+          MAIN_VERSION=$(grep -o "__version__.*" socketdev/version.py | awk '{print $3}' | tr -d '"' | tr -d "'")
+          echo "MAIN_VERSION=$MAIN_VERSION" >> $GITHUB_ENV
 
           # Compare versions using Python
           python3 -c "
@@ -85,7 +76,7 @@ jobs:
                   owner: owner,
                   repo: repo,
                   comment_id: versionComment.id,
-                  body: `❌ **Version Check Failed**\n\nPlease increment the version. Current version in main: ${process.env.MAIN_VERSION}, PR version: ${process.env.PR_VERSION}`
+                  body: `❌ **Version Check Failed**\n\nPlease increment...`
                 });
               }
             } else if (!success) {
@@ -94,6 +85,6 @@ jobs:
                 owner: owner,
                 repo: repo,
                 issue_number: prNumber,
-                body: `❌ **Version Check Failed**\n\nPlease increment the version. Current version in main: ${process.env.MAIN_VERSION}, PR version: ${process.env.PR_VERSION}`
+                body: `❌ **Version Check Failed**\n\nPlease increment...`
               });
             }
