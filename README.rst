@@ -122,7 +122,7 @@ Export a Socket SBOM as an SPDX SBOM
 
 fullscans.get(org_slug)
 """""""""""""""""""""""
-Retrieve the Fullscans information for around Organization
+Retrieve the Fullscans information for an Organization
 
 **Usage:**
 
@@ -296,7 +296,7 @@ Retrieve the dependencies for the organization associated with the API Key
     ]
     params = {
         "repository": "username/repo-name",
-        "branch": "dependency-branch
+        "branch": "dependency-branch"
     }
     print(socket.dependencies.post(file_names, params))
 
@@ -307,7 +307,7 @@ Retrieve the dependencies for the organization associated with the API Key
 
 repos.get()
 """""""""""
-Get a list of information about the tracked repositores
+Get a list of information about the tracked repositories
 
 **Usage:**
 
@@ -319,7 +319,7 @@ Get a list of information about the tracked repositores
 
 **PARAMETERS:**
 
-- **sort** - The key to sort on froom the repo properties. Defaults to `created_at`
+- **sort** - The key to sort on from the repo properties. Defaults to `created_at`
 - **direction** - Can be `desc` or `asc`. Defaults to `desc`
 - **per_page** - Integer between 1 to 100. Defaults to `10`
 - **page** - Integer page number defaults to `1`. If there are no more results it will be `0`
@@ -356,7 +356,7 @@ Create a new Socket Repository
 
 repos.repo()
 """"""""""""
-Get a list of information about the tracked repositores
+Get a list of information about the tracked repositories
 
 **Usage:**
 
@@ -364,7 +364,7 @@ Get a list of information about the tracked repositores
 
     from socketdev import socketdev
     socket = socketdev(token="REPLACE_ME")
-    print(socket.repos.repo(org_slug="example", repo_name="example-repo")
+    print(socket.repos.repo(org_slug="example", repo_name="example-repo"))
 
 repos.update()
 """"""""""""""
@@ -406,7 +406,7 @@ Delete a Socket Repository
 
     from socketdev import socketdev
     socket = socketdev(token="REPLACE_ME")
-    print(socket.repos.delete(org_slug="example", repo_name="example-repo")
+    print(socket.repos.delete(org_slug="example", repo_name="example-repo"))
 
 **PARAMETERS:**
 
@@ -530,7 +530,7 @@ Create a new project health report with the provided files
 
 Deprecated: repositories.get()
 """"""""""""""""""""""""""""""
-Get a list of information about the tracked repositores
+Get a list of information about the tracked repositories
 
 **Usage:**
 
