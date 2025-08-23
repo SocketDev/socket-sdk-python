@@ -3,8 +3,8 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "socket-sdk-python"
-version = "2.2.3"
+name = "socketdev"
+version = "3.0.0"
 requires-python = ">= 3.9"
 dependencies = [
     'requests',
@@ -12,7 +12,7 @@ dependencies = [
 ]
 readme = "README.rst"
 license = {file = "LICENSE"}
-description = "Socket Security Python SDK [DEPRECATED: Please use 'socketdev' package instead]"
+description = "Socket Security Python SDK"
 keywords = ["socketsecurity", "socket.dev", "sca", "oss", "security", "sdk"]
 authors = [
     {name = "Douglas Coburn", email = "douglas@socket.dev"}
@@ -21,7 +21,7 @@ maintainers = [
     {name = "Douglas Coburn", email = "douglas@socket.dev"}
 ]
 classifiers = [
-    "Development Status :: 7 - Inactive",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
@@ -51,7 +51,7 @@ test = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/socketdev/socket-sdk-python"
+Homepage = "https://github.com/socketdev/socketdev"
 
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.

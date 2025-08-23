@@ -39,7 +39,7 @@ jobs:
         env:
           VERSION: ${{ env.VERSION }}
         run: |
-          if curl -s -f https://pypi.org/pypi/socket-sdk-python/$VERSION/json > /dev/null; then
+          if curl -s -f https://pypi.org/pypi/socketdev/$VERSION/json > /dev/null; then
             echo "Version ${VERSION} already exists on PyPI"
             echo "pypi_exists=true" >> $GITHUB_OUTPUT
           else
@@ -62,9 +62,9 @@ jobs:
           VERSION: ${{ env.VERSION }}
         run: |
           for i in {1..30}; do
-            if pip install socket-sdk-python==${VERSION}; then
+            if pip install socketdev==${VERSION}; then
               echo "Package ${VERSION} is now available and installable on PyPI"
-              pip uninstall -y socket-sdk-python
+              pip uninstall -y socketdev
               echo "success=true" >> $GITHUB_OUTPUT
               exit 0
             fi

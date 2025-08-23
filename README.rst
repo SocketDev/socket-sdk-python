@@ -1,16 +1,6 @@
 
-socket-python-sdk
-#################
-
-.. warning::
-   **DEPRECATED**: This package is deprecated. Please migrate to the new ``socketdev`` package:
-   
-   .. code-block:: bash
-      
-      pip uninstall socket-sdk-python
-      pip install socketdev
-   
-   The API remains exactly the same, only the package name has changed. This package will no longer receive updates.
+socketdev
+#########
 
 Purpose
 -------
