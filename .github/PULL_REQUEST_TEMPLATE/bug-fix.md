@@ -1,4 +1,4 @@
-<!--Description: Briefly describe the bug and its impact. If there's a related Linear ticket or Sentry issue, link it here. ⬇️ -->
+<!--Description: Briefly describe the bug and its impact. ⬇️ -->
 
 ## Root Cause
 <!-- Concise explanation of what caused the bug ⬇️ -->
