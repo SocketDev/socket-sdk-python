@@ -192,7 +192,7 @@ Create a full scan from a set of package manifest files. Returns a full scan inc
 +------------------------+------------+-------------------------------------------------------------------------------+
 | tmp                    | False      | Boolean temporary flag                                                        |
 +------------------------+------------+-------------------------------------------------------------------------------+
-| integration_type       | False      | IntegrationType enum value (e.g., "api", "github")                           |
+| integration_type       | False      | IntegrationType enum value (e.g., "api", "github")                            |
 +------------------------+------------+-------------------------------------------------------------------------------+
 | integration_org_slug   | False      | Organization slug for integration                                             |
 +------------------------+------------+-------------------------------------------------------------------------------+
@@ -214,8 +214,8 @@ Delete an existing full scan.
 - **org_slug (str)** - The organization name
 - **full_scan_id (str)** - The ID of the full scan
 
-fullscans.stream_diff(org_slug, before, after, use_types=True, include_license_details="true", **kwargs)
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+fullscans.stream_diff(org_slug, before, after, use_types=True, include_license_details="true", \*\*kwargs)
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 Stream a diff between two full scans. Returns a scan diff.
 
 **Usage:**
@@ -829,7 +829,7 @@ List all historical snapshots for an organization.
 - **query_params (dict, optional)** – Optional query parameters
 
 diffscans.list(org_slug, params=None)
-""""""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""""""""
 List all diff scans for an organization.
 
 **Usage:**
@@ -846,7 +846,7 @@ List all diff scans for an organization.
 - **params (dict, optional)** – Optional query parameters for filtering
 
 diffscans.get(org_slug, diff_scan_id)
-""""""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""""""""
 Fetch a specific diff scan by ID.
 
 **Usage:**
@@ -885,7 +885,7 @@ Create a diff scan from two full scan IDs.
 - **params (dict)** – Parameters including before and after scan IDs
 
 diffscans.create_from_repo(org_slug, repo_slug, files, params=None)
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 Create a diff scan from repository files.
 
 **Usage:**
@@ -906,7 +906,7 @@ Create a diff scan from repository files.
 - **params (dict, optional)** – Optional parameters for the scan
 
 diffscans.gfm(org_slug, diff_scan_id)
-""""""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""""""""
 Get GitHub Flavored Markdown comments for a diff scan.
 
 **Usage:**
@@ -923,7 +923,7 @@ Get GitHub Flavored Markdown comments for a diff scan.
 - **diff_scan_id (str)** – The ID of the diff scan
 
 diffscans.delete(org_slug, diff_scan_id)
-"""""""""""""""""""""""""""""""""""""""
+""""""""""""""""""""""""""""""""""""""""
 Delete a specific diff scan.
 
 **Usage:**
@@ -939,8 +939,8 @@ Delete a specific diff scan.
 - **org_slug (str)** – The organization name
 - **diff_scan_id (str)** – The ID of the diff scan to delete
 
-threatfeed.get(org_slug=None, **kwargs)
-"""""""""""""""""""""""""""""""""""""""
+threatfeed.get(org_slug=None, \*\*kwargs)
+"""""""""""""""""""""""""""""""""""""""""""
 Get threat feed items for an organization or globally.
 
 **Usage:**
@@ -961,8 +961,8 @@ Get threat feed items for an organization or globally.
 - **org_slug (str, optional)** – The organization name (recommended for new implementations)
 - **kwargs** – Query parameters like per_page, page_cursor, sort, etc.
 
-apitokens.create(org_slug, **kwargs)
-"""""""""""""""""""""""""""""""""""
+apitokens.create(org_slug, \*\*kwargs)
+""""""""""""""""""""""""""""""""""""""
 Create a new API token for an organization.
 
 **Usage:**
@@ -983,8 +983,8 @@ Create a new API token for an organization.
 - **org_slug (str)** – The organization name
 - **kwargs** – Token configuration parameters
 
-apitokens.update(org_slug, **kwargs)
-"""""""""""""""""""""""""""""""""""
+apitokens.update(org_slug, \*\*kwargs)
+""""""""""""""""""""""""""""""""""""""
 Update an existing API token.
 
 **Usage:**
@@ -1005,8 +1005,8 @@ Update an existing API token.
 - **org_slug (str)** – The organization name
 - **kwargs** – Token update parameters
 
-auditlog.get(org_slug, **kwargs)
-""""""""""""""""""""""""""""""""
+auditlog.get(org_slug, \*\*kwargs)
+""""""""""""""""""""""""""""""""""""
 Get audit log entries for an organization.
 
 **Usage:**
@@ -1022,8 +1022,8 @@ Get audit log entries for an organization.
 - **org_slug (str)** – The organization name
 - **kwargs** – Query parameters like limit, cursor, etc.
 
-analytics.get_org(filter, **kwargs)
-"""""""""""""""""""""""""""""""""""
+analytics.get_org(filter, \*\*kwargs)
+"""""""""""""""""""""""""""""""""""""""
 Get organization analytics (deprecated - use Historical module instead).
 
 **Usage:**
@@ -1040,8 +1040,8 @@ Get organization analytics (deprecated - use Historical module instead).
 - **filter (str)** – Analytics filter type
 - **kwargs** – Additional query parameters
 
-analytics.get_repo(name, filter, **kwargs)
-""""""""""""""""""""""""""""""""""""""""""
+analytics.get_repo(name, filter, \*\*kwargs)
+""""""""""""""""""""""""""""""""""""""""""""""
 Get repository analytics (deprecated - use Historical module instead).
 
 **Usage:**
@@ -1059,8 +1059,8 @@ Get repository analytics (deprecated - use Historical module instead).
 - **filter (str)** – Analytics filter type
 - **kwargs** – Additional query parameters
 
-alerttypes.get(alert_types=None, language="en-US", **kwargs)
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+alerttypes.get(alert_types=None, language="en-US", \*\*kwargs)
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 Get alert types metadata.
 
 **Usage:**
@@ -1084,7 +1084,7 @@ Get alert types metadata.
 - **kwargs** – Additional query parameters
 
 triage.list_alert_triage(org_slug, query_params=None)
-""""""""""""""""""""""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""""""""""""""""""""""""
 Get list of triaged alerts for an organization.
 
 **Usage:**
