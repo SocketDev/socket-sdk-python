@@ -110,9 +110,9 @@ Export a Socket SBOM as an SPDX SBOM
     - **project_version (str)** - Filter by project version
     - **project_id (str)** - Filter by project ID
 
-fullscans.get(org_slug)
-"""""""""""""""""""""""
-Retrieve the Fullscans information for an Organization
+fullscans.get(org_slug, params)
+"""""""""""""""""""""""""""""""
+Retrieve the Fullscans information for an Organization with query parameters
 
 **Usage:**
 
@@ -120,11 +120,20 @@ Retrieve the Fullscans information for an Organization
 
     from socketdev import socketdev
     socket = socketdev(token="REPLACE_ME")
-    print(socket.fullscans.get("org_slug"))
+    
+    # Query parameters for filtering full scans
+    params = {
+        "repo": "my-repo",
+        "branch": "main",
+        "limit": 10,
+        "offset": 0
+    }
+    print(socket.fullscans.get("org_slug", params))
 
 **PARAMETERS:**
 
 - **org_slug (str)** - The organization name
+- **params (dict)** - Query parameters for filtering results (required)
 
 fullscans.post(files, params)
 """""""""""""""""""""""""""""
@@ -135,29 +144,30 @@ Create a full scan from a set of package manifest files. Returns a full scan inc
 .. code-block:: python
 
     from socketdev import socketdev
+    from socketdev.fullscans import FullScanParams
+    
     socket = socketdev(token="REPLACE_ME")
     files = [
         "/path/to/manifest/package.json"
     ]
-    params = {
-    "org_slug": "org_name",
-    "repo": "TestRepo",
-    "branch": "main",
-    "commit_message": "Test Commit Message",
-    "commit_hash": "",
-    "pull_request": "",
-    "committers": "commiter",
-    "make_default_branch": False,
-    "set_as_pending_head": False,
-    "tmp": ""
-    }
+    params = FullScanParams(
+        org_slug="org_name",
+        repo="TestRepo",
+        branch="main",
+        commit_message="Test Commit Message",
+        commit_hash="abc123def456",
+        pull_request=123,
+        committers=["committer1", "committer2"],
+        make_default_branch=False,
+        set_as_pending_head=False
+    )
 
     print(socket.fullscans.post(files, params))
 
 **PARAMETERS:**
 
 - **files (list)** - List of file paths of manifest files
-- **params (dict)** - List of parameters to create a fullscan
+- **params (FullScanParams)** - FullScanParams object containing scan configuration
 
 +------------------------+------------+-------------------------------------------------------------------------------+
 | Parameter              | Required   | Description                                                                   |
@@ -168,20 +178,23 @@ Create a full scan from a set of package manifest files. Returns a full scan inc
 +------------------------+------------+-------------------------------------------------------------------------------+
 | branch                 | False      | The string name in a git approved name for branches.                          |
 +------------------------+------------+-------------------------------------------------------------------------------+
-| committers             | False      | The string name of the person doing the commit or running the CLI.            |
-|                        |            | Can be specified multiple times to have more than one committer.              |
+| committers             | False      | List of committer names (List[str]).                                          |
 +------------------------+------------+-------------------------------------------------------------------------------+
 | pull_request           | False      | The integer for the PR or MR number.                                          |
 +------------------------+------------+-------------------------------------------------------------------------------+
 | commit_message         | False      | The string for a commit message if there is one.                              |
 +------------------------+------------+-------------------------------------------------------------------------------+
-| make_default_branch    | False      | If the flag is specified this will signal that this is the default branch.    |
+| make_default_branch    | False      | Boolean to signal that this is the default branch.                            |
 +------------------------+------------+-------------------------------------------------------------------------------+
 | commit_hash            | False      | Optional git commit hash                                                      |
 +------------------------+------------+-------------------------------------------------------------------------------+
-| set_as_pending_head    | False      |                                                                               |
+| set_as_pending_head    | False      | Boolean to set as pending head                                                |
 +------------------------+------------+-------------------------------------------------------------------------------+
-| tmp                    | False      |                                                                               |
+| tmp                    | False      | Boolean temporary flag                                                        |
++------------------------+------------+-------------------------------------------------------------------------------+
+| integration_type       | False      | IntegrationType enum value (e.g., "api", "github")                           |
++------------------------+------------+-------------------------------------------------------------------------------+
+| integration_org_slug   | False      | Organization slug for integration                                             |
 +------------------------+------------+-------------------------------------------------------------------------------+
 
 fullscans.delete(org_slug, full_scan_id)
@@ -194,15 +207,15 @@ Delete an existing full scan.
 
     from socketdev import socketdev
     socket = socketdev(token="REPLACE_ME")
-    print(socket.fullscans.delete(org_slug, full_scan_id))
+    print(socket.fullscans.delete("org_slug", "full_scan_id"))
 
 **PARAMETERS:**
 
 - **org_slug (str)** - The organization name
 - **full_scan_id (str)** - The ID of the full scan
 
-fullscans.stream_diff(org_slug, before, after, preview, include_license_details)
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+fullscans.stream_diff(org_slug, before, after, use_types=True, include_license_details="true", **kwargs)
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 Stream a diff between two full scans. Returns a scan diff.
 
 **Usage:**
@@ -212,16 +225,27 @@ Stream a diff between two full scans. Returns a scan diff.
     from socketdev import socketdev
     socket = socketdev(token="REPLACE_ME")
     print(socket.fullscans.stream_diff("org_slug", "before_scan_id", "after_scan_id"))
+    
+    # With additional parameters
+    print(socket.fullscans.stream_diff(
+        "org_slug", 
+        "before_scan_id", 
+        "after_scan_id",
+        use_types=False,
+        include_license_details="false"
+    ))
 
 **PARAMETERS:**
 
 - **org_slug (str)** - The organization name
 - **before (str)** - The base full scan ID
 - **after (str)** - The comparison full scan ID
-- **include_license_details (bool)** - Include license details. Can greatly increase response size. Defaults to False.
+- **use_types (bool)** - Whether to return typed response objects (default: True)
+- **include_license_details (str)** - Include license details ("true"/"false"). Can greatly increase response size. Defaults to "true".
+- **kwargs** - Additional query parameters
 
-fullscans.stream(org_slug, full_scan_id)
-""""""""""""""""""""""""""""""""""""""""
+fullscans.stream(org_slug, full_scan_id, use_types=False)
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 Stream all SBOM artifacts for a full scan.
 
 **Usage:**
@@ -230,15 +254,19 @@ Stream all SBOM artifacts for a full scan.
 
     from socketdev import socketdev
     socket = socketdev(token="REPLACE_ME")
-    print(socket.fullscans.stream(org_slug, full_scan_id))
+    print(socket.fullscans.stream("org_slug", "full_scan_id"))
+    
+    # With typed response
+    print(socket.fullscans.stream("org_slug", "full_scan_id", use_types=True))
 
 **PARAMETERS:**
 
 - **org_slug (str)** - The organization name
 - **full_scan_id (str)** - The ID of the full scan
+- **use_types (bool)** - Whether to return typed response objects (default: False)
 
-fullscans.metadata(org_slug, full_scan_id)
-""""""""""""""""""""""""""""""""""""""""""
+fullscans.metadata(org_slug, full_scan_id, use_types=False)
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 Get metadata for a single full scan
 
 **Usage:**
@@ -247,12 +275,34 @@ Get metadata for a single full scan
 
     from socketdev import socketdev
     socket = socketdev(token="REPLACE_ME")
-    print(socket.fullscans.metadata(org_slug, full_scan_id))
+    print(socket.fullscans.metadata("org_slug", "full_scan_id"))
+    
+    # With typed response
+    print(socket.fullscans.metadata("org_slug", "full_scan_id", use_types=True))
 
 **PARAMETERS:**
 
 - **org_slug (str)** - The organization name
 - **full_scan_id (str)** - The ID of the full scan
+- **use_types (bool)** - Whether to return typed response objects (default: False)
+
+fullscans.gfm(org_slug, before, after)
+""""""""""""""""""""""""""""""""""""""
+Get GitHub Flavored Markdown diff between two full scans.
+
+**Usage:**
+
+.. code-block:: python
+
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
+    print(socket.fullscans.gfm("org_slug", "before_scan_id", "after_scan_id"))
+
+**PARAMETERS:**
+
+- **org_slug (str)** - The organization name
+- **before (str)** - The base full scan ID
+- **after (str)** - The comparison full scan ID
 
 dependencies.get(limit, offset)
 """""""""""""""""""""""""""""""
@@ -777,3 +827,292 @@ List all historical snapshots for an organization.
 
 - **org_slug (str)** – The organization name
 - **query_params (dict, optional)** – Optional query parameters
+
+diffscans.list(org_slug, params=None)
+""""""""""""""""""""""""""""""""""""
+List all diff scans for an organization.
+
+**Usage:**
+
+.. code-block:: python
+
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
+    print(socket.diffscans.list("org_slug", {"limit": 10, "offset": 0}))
+
+**PARAMETERS:**
+
+- **org_slug (str)** – The organization name
+- **params (dict, optional)** – Optional query parameters for filtering
+
+diffscans.get(org_slug, diff_scan_id)
+""""""""""""""""""""""""""""""""""""
+Fetch a specific diff scan by ID.
+
+**Usage:**
+
+.. code-block:: python
+
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
+    print(socket.diffscans.get("org_slug", "diff_scan_id"))
+
+**PARAMETERS:**
+
+- **org_slug (str)** – The organization name
+- **diff_scan_id (str)** – The ID of the diff scan to retrieve
+
+diffscans.create_from_ids(org_slug, params)
+"""""""""""""""""""""""""""""""""""""""""""
+Create a diff scan from two full scan IDs.
+
+**Usage:**
+
+.. code-block:: python
+
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
+    params = {
+        "before": "full_scan_id_1",
+        "after": "full_scan_id_2",
+        "description": "Compare two scans"
+    }
+    print(socket.diffscans.create_from_ids("org_slug", params))
+
+**PARAMETERS:**
+
+- **org_slug (str)** – The organization name
+- **params (dict)** – Parameters including before and after scan IDs
+
+diffscans.create_from_repo(org_slug, repo_slug, files, params=None)
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+Create a diff scan from repository files.
+
+**Usage:**
+
+.. code-block:: python
+
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
+    files = ["/path/to/package.json"]
+    params = {"branch": "main", "commit": "abc123"}
+    print(socket.diffscans.create_from_repo("org_slug", "repo_slug", files, params))
+
+**PARAMETERS:**
+
+- **org_slug (str)** – The organization name
+- **repo_slug (str)** – The repository name
+- **files (list)** – List of file paths to scan
+- **params (dict, optional)** – Optional parameters for the scan
+
+diffscans.gfm(org_slug, diff_scan_id)
+""""""""""""""""""""""""""""""""""""
+Get GitHub Flavored Markdown comments for a diff scan.
+
+**Usage:**
+
+.. code-block:: python
+
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
+    print(socket.diffscans.gfm("org_slug", "diff_scan_id"))
+
+**PARAMETERS:**
+
+- **org_slug (str)** – The organization name
+- **diff_scan_id (str)** – The ID of the diff scan
+
+diffscans.delete(org_slug, diff_scan_id)
+"""""""""""""""""""""""""""""""""""""""
+Delete a specific diff scan.
+
+**Usage:**
+
+.. code-block:: python
+
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
+    print(socket.diffscans.delete("org_slug", "diff_scan_id"))
+
+**PARAMETERS:**
+
+- **org_slug (str)** – The organization name
+- **diff_scan_id (str)** – The ID of the diff scan to delete
+
+threatfeed.get(org_slug=None, **kwargs)
+"""""""""""""""""""""""""""""""""""""""
+Get threat feed items for an organization or globally.
+
+**Usage:**
+
+.. code-block:: python
+
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
+    
+    # Get org-specific threat feed
+    print(socket.threatfeed.get("org_slug", per_page=50, sort="created_at"))
+    
+    # Get global threat feed (deprecated)
+    print(socket.threatfeed.get())
+
+**PARAMETERS:**
+
+- **org_slug (str, optional)** – The organization name (recommended for new implementations)
+- **kwargs** – Query parameters like per_page, page_cursor, sort, etc.
+
+apitokens.create(org_slug, **kwargs)
+"""""""""""""""""""""""""""""""""""
+Create a new API token for an organization.
+
+**Usage:**
+
+.. code-block:: python
+
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
+    token_config = {
+        "name": "My API Token",
+        "permissions": ["read", "write"],
+        "expires_at": "2024-12-31T23:59:59Z"
+    }
+    print(socket.apitokens.create("org_slug", **token_config))
+
+**PARAMETERS:**
+
+- **org_slug (str)** – The organization name
+- **kwargs** – Token configuration parameters
+
+apitokens.update(org_slug, **kwargs)
+"""""""""""""""""""""""""""""""""""
+Update an existing API token.
+
+**Usage:**
+
+.. code-block:: python
+
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
+    update_params = {
+        "token_id": "token_123",
+        "name": "Updated Token Name",
+        "permissions": ["read"]
+    }
+    print(socket.apitokens.update("org_slug", **update_params))
+
+**PARAMETERS:**
+
+- **org_slug (str)** – The organization name
+- **kwargs** – Token update parameters
+
+auditlog.get(org_slug, **kwargs)
+""""""""""""""""""""""""""""""""
+Get audit log entries for an organization.
+
+**Usage:**
+
+.. code-block:: python
+
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
+    print(socket.auditlog.get("org_slug", limit=100, cursor="abc123"))
+
+**PARAMETERS:**
+
+- **org_slug (str)** – The organization name
+- **kwargs** – Query parameters like limit, cursor, etc.
+
+analytics.get_org(filter, **kwargs)
+"""""""""""""""""""""""""""""""""""
+Get organization analytics (deprecated - use Historical module instead).
+
+**Usage:**
+
+.. code-block:: python
+
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
+    # DEPRECATED: Use socket.historical.list() or socket.historical.trend() instead
+    print(socket.analytics.get_org("alerts", start_date="2024-01-01"))
+
+**PARAMETERS:**
+
+- **filter (str)** – Analytics filter type
+- **kwargs** – Additional query parameters
+
+analytics.get_repo(name, filter, **kwargs)
+""""""""""""""""""""""""""""""""""""""""""
+Get repository analytics (deprecated - use Historical module instead).
+
+**Usage:**
+
+.. code-block:: python
+
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
+    # DEPRECATED: Use socket.historical.list() or socket.historical.trend() instead
+    print(socket.analytics.get_repo("repo_name", "alerts", start_date="2024-01-01"))
+
+**PARAMETERS:**
+
+- **name (str)** – Repository name
+- **filter (str)** – Analytics filter type
+- **kwargs** – Additional query parameters
+
+alerttypes.get(alert_types=None, language="en-US", **kwargs)
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+Get alert types metadata.
+
+**Usage:**
+
+.. code-block:: python
+
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
+    
+    # Get metadata for specific alert types
+    alert_list = ["supply_chain_risk", "license_risk"]
+    print(socket.alerttypes.get(alert_list, language="en-US"))
+    
+    # Get all alert types metadata
+    print(socket.alerttypes.get())
+
+**PARAMETERS:**
+
+- **alert_types (list, optional)** – List of alert type strings to get metadata for
+- **language (str)** – Language for alert metadata (default: en-US)
+- **kwargs** – Additional query parameters
+
+triage.list_alert_triage(org_slug, query_params=None)
+""""""""""""""""""""""""""""""""""""""""""""""""""""
+Get list of triaged alerts for an organization.
+
+**Usage:**
+
+.. code-block:: python
+
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
+    query_params = {"status": "triaged", "limit": 50}
+    print(socket.triage.list_alert_triage("org_slug", query_params))
+
+**PARAMETERS:**
+
+- **org_slug (str)** – The organization name
+- **query_params (dict, optional)** – Optional query parameters for filtering
+
+openapi.get()
+"""""""""""""
+Retrieve the OpenAPI specification for the Socket API.
+
+**Usage:**
+
+.. code-block:: python
+
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
+    print(socket.openapi.get())
+
+**PARAMETERS:**
+
+None required.
