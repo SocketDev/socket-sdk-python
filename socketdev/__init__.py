@@ -19,6 +19,11 @@ from socketdev.utils import Utils, IntegrationType, INTEGRATION_TYPES
 from socketdev.version import __version__
 from socketdev.labels import Labels
 from socketdev.licensemetadata import LicenseMetadata
+from socketdev.threatfeed import ThreatFeed
+from socketdev.apitokens import ApiTokens
+from socketdev.auditlog import AuditLog
+from socketdev.analytics import Analytics
+from socketdev.alerttypes import AlertTypes
 from socketdev.log import log
 
 __author__ = "socket.dev"
@@ -62,6 +67,11 @@ class socketdev:
         self.labels = Labels(self.api)
         self.licensemetadata = LicenseMetadata(self.api)
         self.diffscans = DiffScans(self.api)
+        self.threatfeed = ThreatFeed(self.api)
+        self.apitokens = ApiTokens(self.api)
+        self.auditlog = AuditLog(self.api)
+        self.analytics = Analytics(self.api)
+        self.alerttypes = AlertTypes(self.api)
 
     @staticmethod
     def set_timeout(timeout: int):
