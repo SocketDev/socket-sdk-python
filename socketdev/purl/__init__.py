@@ -33,7 +33,7 @@ class Purl:
                         purl.append(item)
                     except json.JSONDecodeError:
                         continue
-            purl_deduped = Dedupe.dedupe(purl)
+            purl_deduped = Dedupe.dedupe(purl, batched=True)
             return purl_deduped
 
         log.error(f"Error posting {components} to the Purl API: {response.status_code}")

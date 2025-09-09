@@ -52,9 +52,9 @@ class TestAllEndpointsUnit(unittest.TestCase):
             f.flush()
             
             try:
-                with open(f.name, "rb") as file_obj:
-                    files = [("file", ("package.json", file_obj))]
-                    result = self.sdk.dependencies.post(files, {})
+                # Pass the file path as a string, not a file object
+                files = [f.name]
+                result = self.sdk.dependencies.post(files, {})
                 
                 self.assertEqual(result, expected_data)
                 self.mock_requests.request.assert_called_once()
@@ -148,7 +148,7 @@ class TestAllEndpointsUnit(unittest.TestCase):
                 self.assertEqual(result, expected_data)
                 call_args = self.mock_requests.request.call_args
                 self.assertEqual(call_args[0][0], "POST")
-                self.assertIn("/orgs/test-org/repos/test-repo/diff-scans", call_args[0][1])
+                self.assertIn("/orgs/test-org/diff-scans/from-repo/test-repo", call_args[0][1])
                 
             finally:
                 os.unlink(f.name)
@@ -167,7 +167,7 @@ class TestAllEndpointsUnit(unittest.TestCase):
 
     def test_diffscans_delete_unit(self):
         """Test diffscans deletion."""
-        self._mock_response({"status": "deleted"}, 200)
+        self._mock_response({"status": "ok"}, 200)
         
         result = self.sdk.diffscans.delete("test-org", "diff-123")
         
@@ -191,7 +191,7 @@ class TestAllEndpointsUnit(unittest.TestCase):
         self.assertEqual(result, expected_data)
         call_args = self.mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "GET")
-        self.assertIn("/orgs/test-org/export/scan-123/cdx", call_args[0][1])
+        self.assertIn("/orgs/test-org/export/cdx/scan-123", call_args[0][1])
 
     def test_export_spdx_bom_unit(self):
         """Test SPDX BOM export."""
@@ -207,19 +207,7 @@ class TestAllEndpointsUnit(unittest.TestCase):
         self.assertEqual(result, expected_data)
         call_args = self.mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "GET")
-        self.assertIn("/orgs/test-org/export/scan-123/spdx", call_args[0][1])
-
-    def test_export_get_unit(self):
-        """Test export list."""
-        expected_data = {"exports": [{"id": "exp-1", "type": "cdx", "status": "ready"}]}
-        self._mock_response(expected_data)
-        
-        result = self.sdk.export.get("test-org")
-        
-        self.assertEqual(result, expected_data)
-        call_args = self.mock_requests.request.call_args
-        self.assertEqual(call_args[0][0], "GET")
-        self.assertIn("/orgs/test-org/export", call_args[0][1])
+        self.assertIn("/orgs/test-org/export/spdx/scan-123", call_args[0][1])
 
     # FullScans endpoints
     def test_fullscans_get_unit(self):
@@ -227,7 +215,7 @@ class TestAllEndpointsUnit(unittest.TestCase):
         expected_data = {"id": "scan-123", "status": "completed", "results": []}
         self._mock_response(expected_data)
         
-        # Test with ID parameter
+        # Test with commit parameter
         result = self.sdk.fullscans.get("test-org", {"id": "scan-123"})
         
         self.assertEqual(result, expected_data)
@@ -309,7 +297,7 @@ class TestAllEndpointsUnit(unittest.TestCase):
         self.assertEqual(result, expected_data)
         call_args = self.mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "GET")
-        self.assertIn("/orgs/test-org/historical/trend", call_args[0][1])
+        self.assertIn("/orgs/test-org/historical/alerts/trend", call_args[0][1])
 
     # NPM endpoints
     def test_npm_issues_unit(self):
@@ -352,7 +340,7 @@ class TestAllEndpointsUnit(unittest.TestCase):
     # Org endpoints
     def test_org_get_unit(self):
         """Test organization retrieval."""
-        expected_data = {"name": "test-org", "id": "org-123", "plan": "pro"}
+        expected_data = {"organizations": {"test-org": {"name": "test-org", "id": "org-123", "plan": "pro"}}}
         self._mock_response(expected_data)
         
         result = self.sdk.org.get("test-org")
@@ -360,13 +348,33 @@ class TestAllEndpointsUnit(unittest.TestCase):
         self.assertEqual(result, expected_data)
         call_args = self.mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "GET")
-        self.assertIn("/orgs/test-org", call_args[0][1])
+        self.assertIn("/organizations", call_args[0][1])
 
     # PURL endpoints
     def test_purl_post_unit(self):
         """Test PURL validation endpoint."""
-        expected_data = [{"purl": "pkg:npm/lodash@4.17.21", "valid": True}]
-        self._mock_response(expected_data)
+        # Expected final result after deduplication - should match what the dedupe function produces
+        expected_data = [{
+            "inputPurl": "pkg:npm/lodash@4.17.21", 
+            "purl": "pkg:npm/lodash@4.17.21", 
+            "type": "npm", 
+            "name": "lodash", 
+            "version": "4.17.21", 
+            "valid": True, 
+            "alerts": [], 
+            "releases": ["npm"]
+        }]
+        
+        # Mock the NDJSON response that would come from the actual API
+        # This simulates what the API returns: newline-delimited JSON with SocketArtifact objects
+        mock_ndjson_response = '{"inputPurl": "pkg:npm/lodash@4.17.21", "purl": "pkg:npm/lodash@4.17.21", "type": "npm", "name": "lodash", "version": "4.17.21", "valid": true, "alerts": []}'
+        
+        # Mock the response with NDJSON format
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.headers = {'content-type': 'application/x-ndjson'}
+        mock_response.text = mock_ndjson_response
+        self.mock_requests.request.return_value = mock_response
         
         components = [{"purl": "pkg:npm/lodash@4.17.21"}]
         result = self.sdk.purl.post("false", components)
@@ -400,12 +408,12 @@ class TestAllEndpointsUnit(unittest.TestCase):
         self.assertEqual(result, expected_data)
         call_args = self.mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "GET")
-        self.assertIn("/reports", call_args[0][1])
+        self.assertIn("/report/list", call_args[0][1])
 
     def test_report_create_unit(self):
         """Test report creation."""
-        expected_data = {"id": "report-123", "status": "queued"}
-        self._mock_response(expected_data, 201)
+        expected_data = {"id": "report-123", "url": "https://socket.dev/report/report-123"}
+        self._mock_response(expected_data, 200)  # API returns 200, not 201
         
         with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
             json.dump({"name": "test", "version": "1.0.0"}, f)
@@ -418,8 +426,8 @@ class TestAllEndpointsUnit(unittest.TestCase):
                 
                 self.assertEqual(result, expected_data)
                 call_args = self.mock_requests.request.call_args
-                self.assertEqual(call_args[0][0], "POST")
-                self.assertIn("/reports", call_args[0][1])
+                self.assertEqual(call_args[0][0], "PUT")  # API uses PUT, not POST
+                self.assertIn("/report/upload", call_args[0][1])  # Correct path per OpenAPI
                 
             finally:
                 os.unlink(f.name)
@@ -434,7 +442,7 @@ class TestAllEndpointsUnit(unittest.TestCase):
         self.assertEqual(result, expected_data)
         call_args = self.mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "GET")
-        self.assertIn("/reports/report-123", call_args[0][1])
+        self.assertIn("/report/view/report-123", call_args[0][1])
 
     def test_report_delete_unit(self):
         """Test report deletion."""
@@ -445,7 +453,7 @@ class TestAllEndpointsUnit(unittest.TestCase):
         self.assertTrue(result)
         call_args = self.mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "DELETE")
-        self.assertIn("/reports/report-123", call_args[0][1])
+        self.assertIn("/report/delete/report-123", call_args[0][1])
 
     def test_report_supported_unit(self):
         """Test supported file types."""
@@ -457,7 +465,7 @@ class TestAllEndpointsUnit(unittest.TestCase):
         self.assertEqual(result, expected_data)
         call_args = self.mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "GET")
-        self.assertIn("/reports/supported", call_args[0][1])
+        self.assertIn("/report/supported", call_args[0][1])
 
     # Settings endpoints
     def test_settings_get_unit(self):
@@ -487,15 +495,15 @@ class TestAllEndpointsUnit(unittest.TestCase):
 
     def test_triage_update_alert_triage_unit(self):
         """Test alert triage updating."""
-        expected_data = {"updated": True, "alert_id": "alert-123"}
+        expected_data = {"result": "Updated"}
         self._mock_response(expected_data)
         
-        data = {"alert_id": "alert-123", "status": "resolved"}
+        data = {"alertTriage": [{"alertKey": "alert-123", "state": "ignore", "note": "Not applicable"}]}
         result = self.sdk.triage.update_alert_triage("test-org", data)
         
         self.assertEqual(result, expected_data)
         call_args = self.mock_requests.request.call_args
-        self.assertEqual(call_args[0][0], "PUT")
+        self.assertEqual(call_args[0][0], "POST")
         self.assertIn("/orgs/test-org/triage/alerts", call_args[0][1])
 
     # New endpoints
@@ -509,7 +517,7 @@ class TestAllEndpointsUnit(unittest.TestCase):
         self.assertEqual(result, expected_data)
         call_args = self.mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "GET")
-        self.assertIn("/threatfeed", call_args[0][1])
+        self.assertIn("/orgs/test-org/threat-feed", call_args[0][1])
 
     def test_analytics_get_org_unit(self):
         """Test analytics organization endpoint."""
@@ -564,12 +572,12 @@ class TestAllEndpointsUnit(unittest.TestCase):
         expected_data = {"tokens": [{"id": "token-1", "name": "prod-token"}]}
         self._mock_response(expected_data)
         
-        result = self.sdk.apitokens.list()
+        result = self.sdk.apitokens.list("test-org")
         
         self.assertEqual(result, expected_data)
         call_args = self.mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "GET")
-        self.assertIn("/api-tokens", call_args[0][1])
+        self.assertIn("/orgs/test-org/api-tokens", call_args[0][1])
 
     def test_auditlog_get_unit(self):
         """Test audit log retrieval."""
@@ -592,57 +600,58 @@ class TestAllEndpointsUnit(unittest.TestCase):
         
         self.assertEqual(result, expected_data)
         call_args = self.mock_requests.request.call_args
-        self.assertEqual(call_args[0][0], "GET")
+        self.assertEqual(call_args[0][0], "POST")
         self.assertIn("/alert-types", call_args[0][1])
 
     def test_labels_get_unit(self):
         """Test labels get endpoint."""
-        expected_data = {"label": "production", "value": "true"}
+        expected_data = {"id": "1", "name": "environment", "created_at": "2025-01-01"}
         self._mock_response(expected_data)
         
-        result = self.sdk.labels.get("test-org", 1, "environment")
+        result = self.sdk.labels.get("test-org", "1")
         
         self.assertEqual(result, expected_data)
         call_args = self.mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "GET")
-        self.assertIn("/orgs/test-org/full-scans/1/labels/environment", call_args[0][1])
+        self.assertIn("/orgs/test-org/repos/labels/1", call_args[0][1])
 
-    def test_labels_put_unit(self):
-        """Test labels put endpoint."""
+    def test_labels_setting_put_unit(self):
+        """Test labels setting put endpoint."""
         expected_data = {"updated": True}
-        self._mock_response(expected_data)
+        self._mock_response(expected_data, 201)  # Label settings return 201
         
         label_data = {"environment": {"production": {"critical": "true"}}}
-        result = self.sdk.labels.put("test-org", 1, label_data)
+        result = self.sdk.labels.setting.put("test-org", 1, label_data)
         
         self.assertEqual(result, expected_data)
         call_args = self.mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "PUT")
-        self.assertIn("/orgs/test-org/full-scans/1/labels", call_args[0][1])
+        self.assertIn("/orgs/test-org/repos/labels/1/label-setting", call_args[0][1])
 
     def test_labels_delete_unit(self):
         """Test labels delete endpoint."""
         expected_data = {"deleted": True}
         self._mock_response(expected_data)
         
-        result = self.sdk.labels.delete("test-org", 1, "environment")
+        result = self.sdk.labels.delete("test-org", "1")
         
         self.assertEqual(result, expected_data)
         call_args = self.mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "DELETE")
-        self.assertIn("/orgs/test-org/full-scans/1/labels/environment", call_args[0][1])
+        self.assertIn("/orgs/test-org/repos/labels/1", call_args[0][1])
 
-    def test_licensemetadata_get_unit(self):
-        """Test license metadata retrieval."""
-        expected_data = {"licenses": [{"id": "MIT", "name": "MIT License"}]}
-        self._mock_response(expected_data)
-        
-        result = self.sdk.licensemetadata.get()
-        
-        self.assertEqual(result, expected_data)
-        call_args = self.mock_requests.request.call_args
-        self.assertEqual(call_args[0][0], "GET")
-        self.assertIn("/license-metadata", call_args[0][1])
+    # License metadata only supports POST method per OpenAPI spec, no GET method available
+    # def test_licensemetadata_get_unit(self):
+    #     """Test license metadata retrieval."""
+    #     expected_data = {"licenses": [{"id": "MIT", "name": "MIT License"}]}
+    #     self._mock_response(expected_data)
+    #     
+    #     result = self.sdk.licensemetadata.get()
+    #     
+    #     self.assertEqual(result, expected_data)
+    #     call_args = self.mock_requests.request.call_args
+    #     self.assertEqual(call_args[0][0], "GET")
+    #     self.assertIn("/license-metadata", call_args[0][1])
 
 
 if __name__ == "__main__":

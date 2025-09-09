@@ -30,7 +30,7 @@ class DiffScans:
         log.error(f"Error fetching diff scan: {response.status_code}, message: {response.text}")
         return {}
 
-    def create_from_repo(self, org_slug: str, repo_slug: str, files: list, params: Optional[Dict[str, Any]] = None, use_lazy_loading: bool = False, workspace: str = None, max_open_files: int = 100) -> dict:
+    def create_from_repo(self, org_slug: str, repo_slug: str, files: list, params: Optional[Dict[str, Any]] = None, use_lazy_loading: bool = False, workspace: str = None, max_open_files: int = 100, base_path: str = None) -> dict:
         """
         Create a diff scan from repo HEAD, uploading files as multipart form data.
         
@@ -45,6 +45,7 @@ class DiffScans:
             workspace: Base directory path to make file paths relative to
             max_open_files: Maximum number of files to keep open simultaneously when using 
                           lazy loading. Useful for systems with low ulimit values (default: 100)
+            base_path: Optional base path to strip from key names for cleaner file organization
         
         Returns:
             dict: API response containing diff scan results
@@ -63,7 +64,7 @@ class DiffScans:
         
         # Use lazy loading if requested
         if use_lazy_loading:
-            prepared_files = Utils.load_files_for_sending_lazy(files, workspace, max_open_files)
+            prepared_files = Utils.load_files_for_sending_lazy(files, workspace, max_open_files, base_path)
         else:
             prepared_files = files
         

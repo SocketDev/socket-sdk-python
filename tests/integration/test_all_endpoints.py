@@ -59,7 +59,8 @@ class TestAllEndpointsMocked(unittest.TestCase):
             json.dump({"name": "test", "version": "1.0.0"}, f)
             f.flush()
             try:
-                result = self.sdk.dependencies.post([("file", ("package.json", open(f.name, "rb")))], {})
+                # Pass the file path as a string, not a file object
+                result = self.sdk.dependencies.post([f.name], {})
                 self.assertIn("packages", result)
             finally:
                 os.unlink(f.name)

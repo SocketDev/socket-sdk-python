@@ -88,40 +88,35 @@ class Dedupe:
 
     @staticmethod
     def dedupe(packages: List[Dict[str, Any]], batched: bool = True) -> List[Dict[str, Any]]:
-        if batched:
-            grouped = Dedupe.consolidate_by_batch_index(packages)
-        else:
-            grouped = Dedupe.consolidate_by_order(packages)
-        return [Dedupe.consolidate_and_merge_alerts(group) for group in grouped.values()]
+        # Always group by inputPurl now, but keep the batched parameter for backward compatibility
+        grouped = Dedupe.consolidate_by_input_purl(packages)
+        results = []
+        for group in grouped.values():
+            result = Dedupe.consolidate_and_merge_alerts(group)
+            # Remove batchIndex from the result
+            if "batchIndex" in result:
+                del result["batchIndex"]
+            results.append(result)
+        return results
 
     @staticmethod
-    def consolidate_by_batch_index(packages: List[Dict[str, Any]]) -> dict[int, list[dict[str, Any]]]:
-        grouped: Dict[int, List[Dict[str, Any]]] = defaultdict(list)
+    def consolidate_by_input_purl(packages: List[Dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
+        """Group packages by their inputPurl field"""
+        grouped: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
+        
+        # Handle both list of packages and nested structure
+        if packages and isinstance(packages[0], list):
+            # If we get a nested list, flatten it
+            flat_packages = []
+            for sublist in packages:
+                if isinstance(sublist, list):
+                    flat_packages.extend(sublist)
+                else:
+                    flat_packages.append(sublist)
+            packages = flat_packages
+        
         for pkg in packages:
-            grouped[pkg["batchIndex"]].append(pkg)
-        return grouped
-
-    @staticmethod
-    def consolidate_by_order(packages: List[Dict[str, Any]]) -> dict[int, list[dict[str, Any]]]:
-        grouped: Dict[int, List[Dict[str, Any]]] = defaultdict(list)
-        batch_index = 0
-        package_purl = None
-        try:
-            for pkg in packages:
-                name = pkg["name"]
-                version = pkg["version"]
-                namespace = pkg.get("namespace")
-                ecosystem = pkg.get("type")
-                new_purl = f"pkg:{ecosystem}/"
-                if namespace:
-                    new_purl += f"{namespace}/"
-                new_purl += f"{name}@{version}"
-                if package_purl is None:
-                    package_purl = new_purl
-                if package_purl != new_purl:
-                    batch_index += 1
-                pkg["batchIndex"] = batch_index
-                grouped[pkg["batchIndex"]].append(pkg)
-        except Exception as error:
-            log.error(error)
+            # inputPurl should always exist now, fallback to purl if not found
+            group_key = pkg.get("inputPurl", pkg.get("purl", str(hash(str(pkg)))))
+            grouped[group_key].append(pkg)
         return grouped

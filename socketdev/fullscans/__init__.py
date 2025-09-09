@@ -701,8 +701,16 @@ class FullScans:
 
 
     def get(self, org_slug: str, params: dict, use_types: bool = False) -> Union[dict, GetFullScanMetadataResponse]:
-        params_arg = urllib.parse.urlencode(params)
-        path = "orgs/" + org_slug + "/full-scans?" + str(params_arg)
+        # Check if this is a request for a specific scan by ID
+        if 'id' in params and len(params) == 1:
+            # Get specific scan by ID: /orgs/{org_slug}/full-scans/{full_scan_id}
+            scan_id = params['id']
+            path = f"orgs/{org_slug}/full-scans/{scan_id}"
+        else:
+            # List scans with query parameters: /orgs/{org_slug}/full-scans?params
+            params_arg = urllib.parse.urlencode(params)
+            path = "orgs/" + org_slug + "/full-scans?" + str(params_arg)
+            
         response = self.api.do_request(path=path)
 
         if response.status_code == 200:
@@ -720,7 +728,7 @@ class FullScans:
             )
         return {}
 
-    def post(self, files: list, params: FullScanParams, use_types: bool = False, use_lazy_loading: bool = False, workspace: str = None, max_open_files: int = 100) -> Union[dict, CreateFullScanResponse]:
+    def post(self, files: list, params: FullScanParams, use_types: bool = False, use_lazy_loading: bool = False, workspace: str = None, max_open_files: int = 100, base_path: str = None) -> Union[dict, CreateFullScanResponse]:
         """
         Create a new full scan by uploading manifest files.
         
@@ -734,6 +742,7 @@ class FullScans:
             workspace: Base directory path to make file paths relative to
             max_open_files: Maximum number of files to keep open simultaneously when using 
                           lazy loading. Useful for systems with low ulimit values (default: 100)
+            base_path: Optional base path to strip from key names for cleaner file organization
         
         Returns:
             dict or CreateFullScanResponse: API response containing scan results
@@ -754,7 +763,7 @@ class FullScans:
 
         # Use lazy loading if requested
         if use_lazy_loading:
-            prepared_files = Utils.load_files_for_sending_lazy(files, workspace, max_open_files)
+            prepared_files = Utils.load_files_for_sending_lazy(files, workspace, max_open_files, base_path)
         else:
             prepared_files = files
 
