@@ -58,14 +58,29 @@ class Report:
         return {}
 
     def create(self, files: list) -> dict:
+        # Handle both file path strings and file tuples
         open_files = []
-        for name, path in files:
-            file_info = (name, (name, open(path, "rb"), "text/plain"))
-            open_files.append(file_info)
+        for file_entry in files:
+            if isinstance(file_entry, tuple) and len(file_entry) == 2:
+                name, file_data = file_entry
+                if isinstance(file_data, tuple) and len(file_data) == 2:
+                    # Format: [("field_name", ("filename", file_obj))]
+                    filename, file_obj = file_data
+                    file_info = (name, (filename, file_obj, "text/plain"))
+                    open_files.append(file_info)
+                else:
+                    # Format: [("field_name", "file_path")]
+                    file_info = (name, (name, open(file_data, "rb"), "text/plain"))
+                    open_files.append(file_info)
+            else:
+                # Handle other formats if needed
+                log.error(f"Unexpected file format: {file_entry}")
+                return {}
+                
         path = "report/upload"
         payload = {}
         response = self.api.do_request(path=path, method="PUT", files=open_files, payload=payload)
-        if response.status_code == 200:
+        if response.status_code in (200, 201):
             return response.json()
         log.error(f"Error creating report: {response.status_code}")
         log.error(response.text)

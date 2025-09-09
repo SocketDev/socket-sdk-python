@@ -233,7 +233,7 @@ class Utils:
         return integration_type  # type: ignore
     
     @staticmethod
-    def load_files_for_sending_lazy(files: List[str], workspace: str = None, max_open_files: int = 100) -> List[Tuple[str, Tuple[str, LazyFileLoader]]]:
+    def load_files_for_sending_lazy(files: List[str], workspace: str = None, max_open_files: int = 100, base_path: str = None) -> List[Tuple[str, Tuple[str, LazyFileLoader]]]:
         """
         Prepares files for sending to the Socket API using lazy loading.
         
@@ -246,6 +246,7 @@ class Utils:
             files: List of file paths from find_files()
             workspace: Base directory path to make paths relative to
             max_open_files: Maximum number of files to keep open simultaneously (default: 100)
+            base_path: Optional base path to strip from key names for cleaner file organization
 
         Returns:
             List of tuples formatted for requests multipart upload:
@@ -257,6 +258,8 @@ class Utils:
         send_files = []
         if workspace and "\\" in workspace:
             workspace = workspace.replace("\\", "/")
+        if base_path and "\\" in base_path:
+            base_path = base_path.replace("\\", "/")
         
         for file_path in files:
             # Normalize file path
@@ -265,14 +268,33 @@ class Utils:
             
             _, name = file_path.rsplit("/", 1)
 
-            # Calculate the key (relative path from workspace)
-            if workspace and file_path.startswith(workspace):
+            # Calculate the key name for the form data
+            key = file_path
+            
+            # If base_path is provided, strip it from the file path to create the key
+            if base_path:
+                # Normalize base_path to ensure consistent handling of trailing slashes
+                normalized_base_path = base_path.rstrip("/") + "/" if not base_path.endswith("/") else base_path
+                if key.startswith(normalized_base_path):
+                    key = key[len(normalized_base_path):]
+                elif key.startswith(base_path.rstrip("/")):
+                    # Handle case where base_path matches exactly without trailing slash
+                    stripped_base = base_path.rstrip("/")
+                    if key.startswith(stripped_base + "/") or key == stripped_base:
+                        key = key[len(stripped_base):]
+                        key = key.lstrip("/")
+            
+            # If workspace is provided and base_path wasn't used, fall back to workspace logic
+            elif workspace and file_path.startswith(workspace):
                 key = file_path[len(workspace):]
-            else:
-                key = file_path
-
-            key = key.lstrip("/")
-            key = key.lstrip("./")
+                key = key.lstrip("/")
+                key = key.lstrip("./")
+            
+            # If neither base_path nor workspace matched, clean up the key
+            if key == file_path:
+                # No base_path or workspace stripping occurred, clean up leading parts
+                key = key.lstrip("/")
+                key = key.lstrip("./")
 
             # Create lazy file loader instead of opening file immediately
             # Use the relative path (key) as filename instead of truncated basename
