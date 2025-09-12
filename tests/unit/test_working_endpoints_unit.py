@@ -346,15 +346,15 @@ class TestWorkingEndpointsUnit(unittest.TestCase):
         """Test fullscans get - CORRECTED PARAMETER HANDLING."""
         expected_data = {"id": "scan-123", "status": "completed"}
         self._mock_response(expected_data)
-        
-        # The actual API uses query parameters, not path parameters
+
+        # When getting a specific scan by ID, it uses path parameters
         result = self.sdk.fullscans.get("test-org", {"id": "scan-123"})
-        
+
         self.assertEqual(result, expected_data)
         call_args = self.mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "GET")
-        # Path includes query params, not path segments
-        self.assertIn("/orgs/test-org/full-scans?id=scan-123", call_args[0][1])
+        # Single ID param creates path segment, not query params
+        self.assertIn("/orgs/test-org/full-scans/scan-123", call_args[0][1])
 
     def test_diffscans_create_from_repo_corrected_unit(self):
         """Test diffscans creation from repo - CORRECTED PATH."""
