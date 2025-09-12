@@ -233,7 +233,7 @@ class Utils:
         return integration_type  # type: ignore
     
     @staticmethod
-    def load_files_for_sending_lazy(files: List[str], workspace: str = None, max_open_files: int = 100, base_path: str = None) -> List[Tuple[str, Tuple[str, LazyFileLoader]]]:
+    def load_files_for_sending_lazy(files: List[str], workspace: str = None, max_open_files: int = 100, base_path: str = None, base_paths: List[str] = None) -> List[Tuple[str, Tuple[str, LazyFileLoader]]]:
         """
         Prepares files for sending to the Socket API using lazy loading.
         
@@ -247,6 +247,7 @@ class Utils:
             workspace: Base directory path to make paths relative to
             max_open_files: Maximum number of files to keep open simultaneously (default: 100)
             base_path: Optional base path to strip from key names for cleaner file organization
+            base_paths: Optional list of base paths to strip from key names (takes precedence over base_path)
 
         Returns:
             List of tuples formatted for requests multipart upload:
@@ -260,6 +261,8 @@ class Utils:
             workspace = workspace.replace("\\", "/")
         if base_path and "\\" in base_path:
             base_path = base_path.replace("\\", "/")
+        if base_paths:
+            base_paths = [bp.replace("\\", "/") if "\\" in bp else bp for bp in base_paths]
         
         for file_path in files:
             # Normalize file path
@@ -270,29 +273,51 @@ class Utils:
 
             # Calculate the key name for the form data
             key = file_path
+            path_stripped = False
             
-            # If base_path is provided, strip it from the file path to create the key
-            if base_path:
+            # If base_paths is provided, try to strip one of the paths from the file path
+            if base_paths:
+                for bp in base_paths:
+                    # Normalize base_path to ensure consistent handling of trailing slashes
+                    normalized_base_path = bp.rstrip("/") + "/" if not bp.endswith("/") else bp
+                    if key.startswith(normalized_base_path):
+                        key = key[len(normalized_base_path):]
+                        path_stripped = True
+                        break
+                    elif key.startswith(bp.rstrip("/")):
+                        # Handle case where base_path matches exactly without trailing slash
+                        stripped_base = bp.rstrip("/")
+                        if key.startswith(stripped_base + "/") or key == stripped_base:
+                            key = key[len(stripped_base):]
+                            key = key.lstrip("/")
+                            path_stripped = True
+                            break
+            
+            # If base_path is provided and no base_paths matched, use single base_path
+            elif base_path:
                 # Normalize base_path to ensure consistent handling of trailing slashes
                 normalized_base_path = base_path.rstrip("/") + "/" if not base_path.endswith("/") else base_path
                 if key.startswith(normalized_base_path):
                     key = key[len(normalized_base_path):]
+                    path_stripped = True
                 elif key.startswith(base_path.rstrip("/")):
                     # Handle case where base_path matches exactly without trailing slash
                     stripped_base = base_path.rstrip("/")
                     if key.startswith(stripped_base + "/") or key == stripped_base:
                         key = key[len(stripped_base):]
                         key = key.lstrip("/")
+                        path_stripped = True
             
-            # If workspace is provided and base_path wasn't used, fall back to workspace logic
-            elif workspace and file_path.startswith(workspace):
+            # If workspace is provided and no base paths matched, fall back to workspace logic
+            if not path_stripped and workspace and file_path.startswith(workspace):
                 key = file_path[len(workspace):]
                 key = key.lstrip("/")
                 key = key.lstrip("./")
+                path_stripped = True
             
-            # If neither base_path nor workspace matched, clean up the key
-            if key == file_path:
-                # No base_path or workspace stripping occurred, clean up leading parts
+            # If no path stripping occurred, clean up the key
+            if not path_stripped:
+                # No base_path, base_paths, or workspace stripping occurred, clean up leading parts
                 key = key.lstrip("/")
                 key = key.lstrip("./")
 

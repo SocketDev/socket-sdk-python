@@ -728,7 +728,7 @@ class FullScans:
             )
         return {}
 
-    def post(self, files: list, params: FullScanParams, use_types: bool = False, use_lazy_loading: bool = False, workspace: str = None, max_open_files: int = 100, base_path: str = None) -> Union[dict, CreateFullScanResponse]:
+    def post(self, files: list, params: FullScanParams, use_types: bool = False, use_lazy_loading: bool = False, workspace: str = None, max_open_files: int = 100, base_path: str = None, base_paths: List[str] = None) -> Union[dict, CreateFullScanResponse]:
         """
         Create a new full scan by uploading manifest files.
         
@@ -743,6 +743,7 @@ class FullScans:
             max_open_files: Maximum number of files to keep open simultaneously when using 
                           lazy loading. Useful for systems with low ulimit values (default: 100)
             base_path: Optional base path to strip from key names for cleaner file organization
+            base_paths: Optional list of base paths to strip from key names (takes precedence over base_path)
         
         Returns:
             dict or CreateFullScanResponse: API response containing scan results
@@ -763,7 +764,7 @@ class FullScans:
 
         # Use lazy loading if requested
         if use_lazy_loading:
-            prepared_files = Utils.load_files_for_sending_lazy(files, workspace, max_open_files, base_path)
+            prepared_files = Utils.load_files_for_sending_lazy(files, workspace, max_open_files, base_path, base_paths)
         else:
             prepared_files = files
 

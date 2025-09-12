@@ -152,7 +152,7 @@ class TestSocketSDKIntegration(unittest.TestCase):
         self.created_scan_ids.append(scan_id)
         
         # Get the scan
-        scan_info = self.sdk.fullscans.get(self.org_slug, scan_id)
+        scan_info = self.sdk.fullscans.get(self.org_slug, {"id": scan_id})
         self.assertIsInstance(scan_info, dict)
         
         # List scans
