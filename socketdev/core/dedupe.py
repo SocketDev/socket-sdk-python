@@ -13,7 +13,7 @@ class Dedupe:
         return (
             alert["type"],
             alert["severity"],
-            alert["category"],
+            alert.get("category"),
             Dedupe.normalize_file_path(alert.get("file")),
             alert.get("start"),
             alert.get("end")
@@ -25,7 +25,7 @@ class Dedupe:
             return (
                 alert["type"],
                 alert["severity"],
-                alert["category"],
+                alert.get("category"),
                 Dedupe.normalize_file_path(alert.get("file")),
                 alert.get("start"),
                 alert.get("end")
@@ -39,21 +39,29 @@ class Dedupe:
 
             for alert in pkg.get("alerts", []):
                 identity = alert_identity(alert)
-                file = Dedupe.normalize_file_path(alert.get("file"))
 
                 if identity not in alert_map:
-                    alert_map[identity] = {
+                    # Build alert dict with only fields that exist in the original alert
+                    consolidated_alert = {
                         "key": alert["key"],  # keep the first key seen
                         "type": alert["type"],
                         "severity": alert["severity"],
-                        "category": alert["category"],
-                        "file": file,
-                        "start": alert.get("start"),
-                        "end": alert.get("end"),
                         "releases": [release],
                         "props": alert.get("props", []),
                         "action": alert["action"]
                     }
+                    
+                    # Only include optional fields if they exist in the original alert
+                    if "category" in alert:
+                        consolidated_alert["category"] = alert["category"]
+                    if "file" in alert:
+                        consolidated_alert["file"] = Dedupe.normalize_file_path(alert["file"])
+                    if "start" in alert:
+                        consolidated_alert["start"] = alert["start"]
+                    if "end" in alert:
+                        consolidated_alert["end"] = alert["end"]
+                    
+                    alert_map[identity] = consolidated_alert
                 else:
                     if release not in alert_map[identity]["releases"]:
                         alert_map[identity]["releases"].append(release)
