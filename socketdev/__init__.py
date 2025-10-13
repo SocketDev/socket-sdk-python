@@ -24,6 +24,7 @@ from socketdev.apitokens import ApiTokens
 from socketdev.auditlog import AuditLog
 from socketdev.analytics import Analytics
 from socketdev.alerttypes import AlertTypes
+from socketdev.basics import Basics
 from socketdev.log import log
 
 __author__ = "socket.dev"
@@ -72,6 +73,7 @@ class socketdev:
         self.auditlog = AuditLog(self.api)
         self.analytics = Analytics(self.api)
         self.alerttypes = AlertTypes(self.api)
+        self.basics = Basics(self.api)
 
     @staticmethod
     def set_timeout(timeout: int):
