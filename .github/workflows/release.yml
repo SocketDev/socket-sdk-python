@@ -54,7 +54,7 @@ jobs:
 
       - name: Publish to PyPI
         if: steps.version_check.outputs.pypi_exists != 'true'
-        uses: pypa/gh-action-pypi-publish@67339c736fd9354cd4f8cb0b744f2b82a74b5c70
+        uses: pypa/gh-action-pypi-publish@ab69e431e9c9f48a3310be0a56527c679f56e04d
 
       - name: Verify package is installable
         id: verify_package
