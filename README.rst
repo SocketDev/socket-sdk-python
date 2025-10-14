@@ -304,6 +304,46 @@ Get GitHub Flavored Markdown diff between two full scans.
 - **before (str)** - The base full scan ID
 - **after (str)** - The comparison full scan ID
 
+basics.get_config(org_slug, use_types)
+""""""""""""""""""""""""""""""""""""""
+Get Socket Basics configuration for an organization. Socket Basics is a CI/CD security scanning suite that includes SAST scanning, secret detection, container security, and dependency analysis.
+
+**Usage:**
+
+.. code-block:: python
+
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
+    
+    # Basic usage - returns dictionary
+    config = socket.basics.get_config("org_slug")
+    print(f"Python SAST enabled: {config['pythonSastEnabled']}")
+    print(f"Secret scanning enabled: {config['secretScanningEnabled']}")
+    
+    # Using typed response objects
+    from socketdev.basics import SocketBasicsConfig, SocketBasicsResponse
+    response = socket.basics.get_config("org_slug", use_types=True)
+    if response.success and response.config:
+        print(f"JavaScript SAST: {response.config.javascriptSastEnabled}")
+        print(f"Trivy scanning: {response.config.trivyImageEnabled}")
+
+**PARAMETERS:**
+
+- **org_slug (str)** - The organization name
+- **use_types (bool)** - Whether to return typed response objects (default: False)
+
+**Socket Basics Features:**
+
+- **Python SAST** - Static analysis for Python code
+- **Go SAST** - Static analysis for Go code  
+- **JavaScript SAST** - Static analysis for JavaScript/TypeScript code
+- **Secret Scanning** - Detection of hardcoded secrets and credentials
+- **Trivy Image Scanning** - Vulnerability scanning for Docker images
+- **Trivy Dockerfile Scanning** - Vulnerability scanning for Dockerfiles
+- **Socket SCA** - Supply chain analysis for dependencies
+- **Socket Scanning** - General dependency security scanning
+- **Additional Parameters** - Custom configuration options
+
 dependencies.get(limit, offset)
 """""""""""""""""""""""""""""""
 Retrieve the dependencies for the organization associated with the API Key
