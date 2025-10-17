@@ -269,63 +269,77 @@ class Utils:
             if "\\" in file_path:
                 file_path = file_path.replace("\\", "/")
             
-            _, name = file_path.rsplit("/", 1)
+            for file_path in files:
+                # Normalize file path
+                if "\\" in file_path:
+                    file_path = file_path.replace("\\", "/")
 
-            # Calculate the key name for the form data
-            key = file_path
-            path_stripped = False
-            
-            # If base_paths is provided, try to strip one of the paths from the file path
-            if base_paths:
-                for bp in base_paths:
-                    # Normalize base_path to ensure consistent handling of trailing slashes
-                    normalized_base_path = bp.rstrip("/") + "/" if not bp.endswith("/") else bp
+                # Skip directories
+                if os.path.isdir(file_path):
+                    continue
+
+                # Handle file path splitting safely
+                if "/" in file_path:
+                    _, name = file_path.rsplit("/", 1)
+                else:
+                    name = file_path
+
+                # Calculate the key name for the form data
+                key = file_path
+                path_stripped = False
+
+                # If base_paths is provided, try to strip one of the paths from the file path
+                if base_paths:
+                    for bp in base_paths:
+                        normalized_base_path = bp.rstrip("/") + "/" if not bp.endswith("/") else bp
+                        if key.startswith(normalized_base_path):
+                            key = key[len(normalized_base_path):]
+                            path_stripped = True
+                            break
+                        elif key.startswith(bp.rstrip("/")):
+                            stripped_base = bp.rstrip("/")
+                            if key.startswith(stripped_base + "/") or key == stripped_base:
+                                key = key[len(stripped_base):]
+                                key = key.lstrip("/")
+                                path_stripped = True
+                                break
+                elif base_path:
+                    normalized_base_path = base_path.rstrip("/") + "/" if not base_path.endswith("/") else base_path
                     if key.startswith(normalized_base_path):
                         key = key[len(normalized_base_path):]
                         path_stripped = True
-                        break
-                    elif key.startswith(bp.rstrip("/")):
-                        # Handle case where base_path matches exactly without trailing slash
-                        stripped_base = bp.rstrip("/")
+                    elif key.startswith(base_path.rstrip("/")):
+                        stripped_base = base_path.rstrip("/")
                         if key.startswith(stripped_base + "/") or key == stripped_base:
                             key = key[len(stripped_base):]
                             key = key.lstrip("/")
                             path_stripped = True
-                            break
-            
-            # If base_path is provided and no base_paths matched, use single base_path
-            elif base_path:
-                # Normalize base_path to ensure consistent handling of trailing slashes
-                normalized_base_path = base_path.rstrip("/") + "/" if not base_path.endswith("/") else base_path
-                if key.startswith(normalized_base_path):
-                    key = key[len(normalized_base_path):]
+
+                # If workspace is provided and no base paths matched, fall back to workspace logic
+                if not path_stripped and workspace and file_path.startswith(workspace):
+                    key = file_path[len(workspace):]
+                    # Remove all leading slashes (for absolute paths)
+                    while key.startswith("/"):
+                        key = key[1:]
                     path_stripped = True
-                elif key.startswith(base_path.rstrip("/")):
-                    # Handle case where base_path matches exactly without trailing slash
-                    stripped_base = base_path.rstrip("/")
-                    if key.startswith(stripped_base + "/") or key == stripped_base:
-                        key = key[len(stripped_base):]
-                        key = key.lstrip("/")
-                        path_stripped = True
-            
-            # If workspace is provided and no base paths matched, fall back to workspace logic
-            if not path_stripped and workspace and file_path.startswith(workspace):
-                key = file_path[len(workspace):]
-                key = key.lstrip("/")
-                key = key.lstrip("./")
-                path_stripped = True
-            
-            # If no path stripping occurred, clean up the key
-            if not path_stripped:
-                # No base_path, base_paths, or workspace stripping occurred, clean up leading parts
-                key = key.lstrip("/")
-                key = key.lstrip("./")
 
-            # Create lazy file loader instead of opening file immediately
-            # Use the relative path (key) as filename instead of truncated basename
-            lazy_file = LazyFileLoader(file_path, key)
-            payload = (key, (key, lazy_file))
-            send_files.append(payload)
+                # Clean up relative path prefixes, but preserve filename dots
+                while key.startswith("./"):
+                    key = key[2:]
+                while key.startswith("../"):
+                    key = key[3:]
+                # Remove any remaining leading slashes (for absolute paths)
+                while key.startswith("/"):
+                    key = key[1:]
 
-        log.debug(f"Prepared {len(send_files)} files for lazy loading")
-        return send_files
+                # Remove Windows drive letter if present (C:/...)
+                if len(key) > 2 and key[1] == ':' and (key[2] == '/' or key[2] == '\\'):
+                    key = key[2:]
+                    while key.startswith("/"):
+                        key = key[1:]
+
+                # Create lazy file loader instead of opening file immediately
+                lazy_file = LazyFileLoader(file_path, key)
+                payload = (key, (key, lazy_file))
+                send_files.append(payload)
+            return send_files
