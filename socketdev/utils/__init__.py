@@ -1,4 +1,4 @@
-from typing import Literal, List, Tuple
+from typing import Literal, List, Tuple, Optional
 import logging
 import os
 import weakref
@@ -233,7 +233,7 @@ class Utils:
         return integration_type  # type: ignore
     
     @staticmethod
-    def load_files_for_sending_lazy(files: List[str], workspace: str = None, max_open_files: int = 100, base_path: str = None, base_paths: List[str] = None) -> List[Tuple[str, Tuple[str, LazyFileLoader]]]:
+    def load_files_for_sending_lazy(files: List[str], workspace: Optional[str] = None, max_open_files: int = 100, base_path: Optional[str] = None, base_paths: Optional[List[str]] = None) -> List[Tuple[str, Tuple[str, LazyFileLoader]]]:
         """
         Prepares files for sending to the Socket API using lazy loading.
         
@@ -342,4 +342,6 @@ class Utils:
                 lazy_file = LazyFileLoader(file_path, key)
                 payload = (key, (key, lazy_file))
                 send_files.append(payload)
-            return send_files
+
+        log.debug(f"Prepared {len(send_files)} files for lazy loading")
+        return send_files

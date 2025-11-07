@@ -25,6 +25,7 @@ from socketdev.auditlog import AuditLog
 from socketdev.analytics import Analytics
 from socketdev.alerttypes import AlertTypes
 from socketdev.basics import Basics
+from socketdev.uploadmanifests import UploadManifests
 from socketdev.log import log
 
 __author__ = "socket.dev"
@@ -74,6 +75,7 @@ class socketdev:
         self.analytics = Analytics(self.api)
         self.alerttypes = AlertTypes(self.api)
         self.basics = Basics(self.api)
+        self.uploadmanifests = UploadManifests(self.api)
 
     @staticmethod
     def set_timeout(timeout: int):
