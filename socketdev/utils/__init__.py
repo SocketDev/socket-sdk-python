@@ -1,4 +1,4 @@
-from typing import Literal, List, Tuple
+from typing import Literal, List, Tuple, Optional
 import logging
 import os
 import weakref
@@ -233,7 +233,7 @@ class Utils:
         return integration_type  # type: ignore
     
     @staticmethod
-    def load_files_for_sending_lazy(files: List[str], workspace: str = None, max_open_files: int = 100, base_path: str = None, base_paths: List[str] = None) -> List[Tuple[str, Tuple[str, LazyFileLoader]]]:
+    def load_files_for_sending_lazy(files: List[str], workspace: Optional[str] = None, max_open_files: int = 100, base_path: Optional[str] = None, base_paths: Optional[List[str]] = None) -> List[Tuple[str, Tuple[str, LazyFileLoader]]]:
         """
         Prepares files for sending to the Socket API using lazy loading.
         
@@ -268,78 +268,75 @@ class Utils:
             # Normalize file path
             if "\\" in file_path:
                 file_path = file_path.replace("\\", "/")
-            
-            for file_path in files:
-                # Normalize file path
-                if "\\" in file_path:
-                    file_path = file_path.replace("\\", "/")
 
-                # Skip directories
-                if os.path.isdir(file_path):
-                    continue
+            # Skip directories
+            if os.path.isdir(file_path):
+                continue
 
-                # Handle file path splitting safely
-                if "/" in file_path:
-                    _, name = file_path.rsplit("/", 1)
-                else:
-                    name = file_path
+            # Handle file path splitting safely
+            if "/" in file_path:
+                _, name = file_path.rsplit("/", 1)
+            else:
+                name = file_path
 
-                # Calculate the key name for the form data
-                key = file_path
-                path_stripped = False
+            # Calculate the key name for the form data
+            key = file_path
+            path_stripped = False
 
-                # If base_paths is provided, try to strip one of the paths from the file path
-                if base_paths:
-                    for bp in base_paths:
-                        normalized_base_path = bp.rstrip("/") + "/" if not bp.endswith("/") else bp
-                        if key.startswith(normalized_base_path):
-                            key = key[len(normalized_base_path):]
-                            path_stripped = True
-                            break
-                        elif key.startswith(bp.rstrip("/")):
-                            stripped_base = bp.rstrip("/")
-                            if key.startswith(stripped_base + "/") or key == stripped_base:
-                                key = key[len(stripped_base):]
-                                key = key.lstrip("/")
-                                path_stripped = True
-                                break
-                elif base_path:
-                    normalized_base_path = base_path.rstrip("/") + "/" if not base_path.endswith("/") else base_path
+            # If base_paths is provided, try to strip one of the paths from the file path
+            if base_paths:
+                for bp in base_paths:
+                    normalized_base_path = bp.rstrip("/") + "/" if not bp.endswith("/") else bp
                     if key.startswith(normalized_base_path):
                         key = key[len(normalized_base_path):]
                         path_stripped = True
-                    elif key.startswith(base_path.rstrip("/")):
-                        stripped_base = base_path.rstrip("/")
+                        break
+                    elif key.startswith(bp.rstrip("/")):
+                        stripped_base = bp.rstrip("/")
                         if key.startswith(stripped_base + "/") or key == stripped_base:
                             key = key[len(stripped_base):]
                             key = key.lstrip("/")
                             path_stripped = True
-
-                # If workspace is provided and no base paths matched, fall back to workspace logic
-                if not path_stripped and workspace and file_path.startswith(workspace):
-                    key = file_path[len(workspace):]
-                    # Remove all leading slashes (for absolute paths)
-                    while key.startswith("/"):
-                        key = key[1:]
+                            break
+            elif base_path:
+                normalized_base_path = base_path.rstrip("/") + "/" if not base_path.endswith("/") else base_path
+                if key.startswith(normalized_base_path):
+                    key = key[len(normalized_base_path):]
                     path_stripped = True
+                elif key.startswith(base_path.rstrip("/")):
+                    stripped_base = base_path.rstrip("/")
+                    if key.startswith(stripped_base + "/") or key == stripped_base:
+                        key = key[len(stripped_base):]
+                        key = key.lstrip("/")
+                        path_stripped = True
 
-                # Clean up relative path prefixes, but preserve filename dots
-                while key.startswith("./"):
-                    key = key[2:]
-                while key.startswith("../"):
-                    key = key[3:]
-                # Remove any remaining leading slashes (for absolute paths)
+            # If workspace is provided and no base paths matched, fall back to workspace logic
+            if not path_stripped and workspace and file_path.startswith(workspace):
+                key = file_path[len(workspace):]
+                # Remove all leading slashes (for absolute paths)
+                while key.startswith("/"):
+                    key = key[1:]
+                path_stripped = True
+
+            # Clean up relative path prefixes, but preserve filename dots
+            while key.startswith("./"):
+                key = key[2:]
+            while key.startswith("../"):
+                key = key[3:]
+            # Remove any remaining leading slashes (for absolute paths)
+            while key.startswith("/"):
+                key = key[1:]
+
+            # Remove Windows drive letter if present (C:/...)
+            if len(key) > 2 and key[1] == ':' and (key[2] == '/' or key[2] == '\\'):
+                key = key[2:]
                 while key.startswith("/"):
                     key = key[1:]
 
-                # Remove Windows drive letter if present (C:/...)
-                if len(key) > 2 and key[1] == ':' and (key[2] == '/' or key[2] == '\\'):
-                    key = key[2:]
-                    while key.startswith("/"):
-                        key = key[1:]
+            # Create lazy file loader instead of opening file immediately
+            lazy_file = LazyFileLoader(file_path, key)
+            payload = (key, (key, lazy_file))
+            send_files.append(payload)
 
-                # Create lazy file loader instead of opening file immediately
-                lazy_file = LazyFileLoader(file_path, key)
-                payload = (key, (key, lazy_file))
-                send_files.append(payload)
-            return send_files
+        log.debug(f"Prepared {len(send_files)} files for lazy loading")
+        return send_files
