@@ -25,12 +25,16 @@ class API:
         self.encoded_key = None
         self.api_url = "https://api.socket.dev/v0"
         self.request_timeout = 30
+        self.allow_unverified = False
 
     def encode_key(self, token: str):
         self.encoded_key = base64.b64encode(token.encode()).decode("ascii")
 
     def set_timeout(self, timeout: int):
         self.request_timeout = timeout
+
+    def set_allow_unverified(self, allow_unverified: bool):
+        self.allow_unverified = allow_unverified
 
     def do_request(
         self,
@@ -58,7 +62,8 @@ class API:
         try:
             
             response = requests.request(
-                method.upper(), url, headers=headers, data=payload, files=files, timeout=self.request_timeout
+                method.upper(), url, headers=headers, data=payload, files=files, 
+                timeout=self.request_timeout, verify=not self.allow_unverified
             )
             request_duration = time.time() - start_time
 

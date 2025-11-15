@@ -20,7 +20,8 @@ Initializing the module
 **PARAMETERS:**
 
 - **token (str)** - The Socket API Key for your Organization
-- **Timeout (int)** - The number of seconds to wait before failing the connection
+- **timeout (int)** - The number of seconds to wait before failing the connection
+- **allow_unverified (bool)** - Whether to skip SSL certificate verification (default: False). Set to True for testing with self-signed certificates.
 
 Supported Functions
 -------------------

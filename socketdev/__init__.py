@@ -44,11 +44,12 @@ request_timeout = 1200
 
 
 class socketdev:
-    def __init__(self, token: str, timeout: int = 1200):
+    def __init__(self, token: str, timeout: int = 1200, allow_unverified: bool = False):
         self.api = API()
         self.token = token + ":"
         self.api.encode_key(self.token)
         self.api.set_timeout(timeout)
+        self.api.set_allow_unverified(allow_unverified)
 
         self.dependencies = Dependencies(self.api)
         self.export = Export(self.api)
