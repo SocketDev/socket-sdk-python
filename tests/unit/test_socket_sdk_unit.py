@@ -36,6 +36,20 @@ class TestSocketSDKUnit(unittest.TestCase):
         for component in expected_components:
             self.assertTrue(hasattr(sdk, component), f"SDK missing component: {component}")
 
+    def test_sdk_initialization_with_allow_unverified(self):
+        """Test that the SDK initializes correctly with allow_unverified option."""
+        # Test default behavior (allow_unverified=False)
+        sdk_default = socketdev(token="test-token")
+        self.assertFalse(sdk_default.api.allow_unverified)
+        
+        # Test with allow_unverified=True
+        sdk_unverified = socketdev(token="test-token", allow_unverified=True)
+        self.assertTrue(sdk_unverified.api.allow_unverified)
+        
+        # Test with explicit allow_unverified=False
+        sdk_verified = socketdev(token="test-token", allow_unverified=False)
+        self.assertFalse(sdk_verified.api.allow_unverified)
+
     def test_fullscan_params_creation(self):
         """Test FullScanParams dataclass creation and conversion."""
         params = FullScanParams(
