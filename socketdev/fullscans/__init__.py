@@ -896,3 +896,34 @@ class FullScans:
         error_message = response.json().get("error", {}).get("message", "Unknown error")
         log.error(f"Error getting diff scan results: {response.status_code}, message: {error_message}")
         return {}
+
+    def finalize_tier1(
+        self,
+        full_scan_id: str,
+        tier1_reachability_scan_id: str,
+    ) -> bool:
+        """
+        Finalize a tier 1 reachability scan by associating it with a full scan.
+
+        Args:
+            full_scan_id: The ID of the full scan to associate with the tier 1 scan
+            tier1_reachability_scan_id: The tier 1 reachability scan ID from the facts file
+
+        Returns:
+            True if successful, False otherwise
+        """
+        path = "tier1-reachability-scan/finalize"
+        payload = json.dumps({
+            "tier1_reachability_scan_id": tier1_reachability_scan_id,
+            "report_run_id": full_scan_id
+        })
+
+        response = self.api.do_request(
+            path=path,
+            method="POST",
+            payload=payload
+        )
+
+        if response.status_code in (200, 201, 204):
+            return True
+        return False
