@@ -450,8 +450,8 @@ class DiffArtifact:
     id: str
     type: str
     name: str
-    version: str
     licenseDetails: List[LicenseDetail]
+    version: Optional[str] = None
     score: Optional[SocketScore] = None
     author: List[str] = field(default_factory=list)
     alerts: List[SocketAlert] = field(default_factory=list)
@@ -500,7 +500,7 @@ class DiffArtifact:
             type=data["type"],
             name=data["name"],
             score=score,
-            version=data["version"],
+            version=data.get("version"),
             alerts=[SocketAlert.from_dict(alert) for alert in data.get("alerts", [])],
             licenseDetails=license_details,
             files=data.get("files"),
