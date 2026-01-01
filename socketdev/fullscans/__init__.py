@@ -117,7 +117,7 @@ class FullScanParams:
             commit_hash=data.get("commit_hash"),
             pull_request=data.get("pull_request"),
             committers=data.get("committers"),
-            integration_type=IntegrationType(integration_type) if integration_type else None,
+            integration_type=integration_type if integration_type is not None else None,
             integration_org_slug=data.get("integration_org_slug"),
             make_default_branch=data.get("make_default_branch"),
             set_as_pending_head=data.get("set_as_pending_head"),
@@ -181,11 +181,12 @@ class CreateFullScanResponse:
 
     @classmethod
     def from_dict(cls, data: dict) -> "CreateFullScanResponse":
+        data_value = data.get("data")
         return cls(
             success=data["success"],
             status=data["status"],
             message=data.get("message"),
-            data=FullScanMetadata.from_dict(data.get("data")) if data.get("data") else None,
+            data=FullScanMetadata.from_dict(data_value) if data_value else None,
         )
 
 
@@ -204,11 +205,12 @@ class GetFullScanMetadataResponse:
 
     @classmethod
     def from_dict(cls, data: dict) -> "GetFullScanMetadataResponse":
+        data_value = data.get("data")
         return cls(
             success=data["success"],
             status=data["status"],
             message=data.get("message"),
-            data=FullScanMetadata.from_dict(data.get("data")) if data.get("data") else None,
+            data=FullScanMetadata.from_dict(data_value) if data_value else None,
         )
 
 
@@ -619,11 +621,12 @@ class StreamDiffResponse:
 
     @classmethod
     def from_dict(cls, data: dict) -> "StreamDiffResponse":
+        data_value = data.get("data")
         return cls(
             success=data["success"],
             status=data["status"],
             message=data.get("message"),
-            data=FullScanDiffReport.from_dict(data.get("data")) if data.get("data") else None,
+            data=FullScanDiffReport.from_dict(data_value) if data_value else None,
         )
 
 
@@ -631,7 +634,7 @@ class StreamDiffResponse:
 class SocketArtifact(SocketPURL, SocketArtifactLink):
     id: str
     alerts: List[SocketAlert]
-    score: SocketScore
+    score: Optional[SocketScore] = None
     author: Optional[List[str]] = field(default_factory=list)
     batchIndex: Optional[int] = None
     license: Optional[str] = None
@@ -647,8 +650,25 @@ class SocketArtifact(SocketPURL, SocketArtifactLink):
 
     @classmethod
     def from_dict(cls, data: dict) -> "SocketArtifact":
-        purl_data = {k: data.get(k) for k in SocketPURL.__dataclass_fields__}
-        link_data = {k: data.get(k) for k in SocketArtifactLink.__dataclass_fields__}
+        # Extract PURL fields
+        purl_type = data.get("type")
+        purl_data = {
+            "type": SocketPURL_Type(purl_type) if purl_type else SocketPURL_Type.UNKNOWN,
+            "name": data.get("name"),
+            "namespace": data.get("namespace"),
+            "release": data.get("release"),
+            "subpath": data.get("subpath"),
+            "version": data.get("version"),
+        }
+        
+        # Extract Link fields
+        link_data = {
+            "topLevelAncestors": data.get("topLevelAncestors", []),
+            "direct": data.get("direct", False),
+            "artifact": data.get("artifact"),
+            "dependencies": data.get("dependencies"),
+            "manifestFiles": [SocketManifestReference.from_dict(m) for m in data["manifestFiles"]] if data.get("manifestFiles") else None,
+        }
 
         alerts = data.get("alerts")
         license_attrib = data.get("licenseAttrib")
@@ -728,7 +748,17 @@ class FullScans:
             )
         return {}
 
-    def post(self, files: list, params: FullScanParams, use_types: bool = False, use_lazy_loading: bool = False, workspace: str = None, max_open_files: int = 100, base_path: str = None, base_paths: List[str] = None) -> Union[dict, CreateFullScanResponse]:
+    def post(
+            self,
+            files: list,
+            params: FullScanParams,
+            use_types: bool = False,
+            use_lazy_loading: bool = False,
+            workspace: Optional[str] = None,
+            max_open_files: int = 100,
+            base_path: Optional[str] = None,
+            base_paths: Optional[List[str]] = None
+        ) -> Union[dict, CreateFullScanResponse]:
         """
         Create a new full scan by uploading manifest files.
         
@@ -927,3 +957,117 @@ class FullScans:
         if response.status_code in (200, 201, 204):
             return True
         return False
+
+    def archive(self, tar_files: Optional[Union[str, List[str]]] = None, files: Optional[List[str]] = None, workspace: Optional[str] = None, use_lazy_loading: bool = True, params: Optional[FullScanParams] = None) -> dict:
+        """
+        Create a full scan by uploading one or more archives.
+        
+        Supported archive formats include .tar, .tar.gz/.tgz, and .zip.
+
+        Args:
+            tar_files: Path(s) to archive file(s) to upload (.tar, .tar.gz, .tgz, or .zip)
+                      Can be a single string or a list of strings
+            files: List of files to bundle into a .tar.gz and upload (alternative to tar_files)
+            workspace: Base directory path to make file paths relative to when creating tar.gz
+            use_lazy_loading: Whether to use lazy file loading (default: True)
+            params: FullScanParams object containing scan configuration (repo, org_slug, branch, 
+                   commit_message, commit_hash, pull_request, committers, integration_type, 
+                   integration_org_slug, make_default_branch, set_as_pending_head, tmp)
+
+        Returns:
+            dict with the full scan creation response
+        
+        Raises:
+            ValueError: If neither tar_files nor files is provided, or if both are provided,
+                       or if params is None
+        """
+        if tar_files is None and files is None:
+            raise ValueError("Either tar_files or files must be provided")
+        
+        if tar_files is not None and files is not None:
+            raise ValueError("Cannot provide both tar_files and files - choose one")
+        
+        if params is None:
+            raise ValueError("params argument is required")
+        
+        Utils.validate_integration_type(params.integration_type if params.integration_type else "api")
+        org_slug = str(params.org_slug)
+        params_dict = params.to_dict()
+        params_dict.pop("org_slug")
+        params_arg = urllib.parse.urlencode(params_dict)
+        path = f"orgs/{org_slug}/full-scans/archive?" + str(params_arg)
+        
+        # Prepare files for upload
+        if tar_files:
+            # Archive file(s) - use lazy loading to prepare them
+            if use_lazy_loading:
+                upload_files = Utils.prepare_archive_files_for_upload(tar_files)
+            else:
+                # For backward compatibility, fall back to opening files directly
+                files_list = [tar_files] if isinstance(tar_files, str) else tar_files
+                upload_files = []
+                for file_path in files_list:
+                    filename = file_path.rsplit("/", 1)[-1] if "/" in file_path else file_path
+                    with open(file_path, 'rb') as f:
+                        upload_files.append(("file", (filename, f.read())))
+        else:
+            # Multiple files - bundle into tar.gz
+            log.debug(f"Creating tar.gz archive from {len(files)} files")
+            tar_buffer = Utils.create_tar_gz_from_files(files, workspace)
+            
+            # Prepare the tar.gz for upload
+            archive_name = "archive.tar.gz"
+            upload_files = [("file", (archive_name, tar_buffer))]
+
+        response = self.api.do_request(path=path, method="POST", files=upload_files)
+
+        if response.status_code in (200, 201):
+            return response.json()
+
+        error_message = response.json().get("error", {}).get("message", "Unknown error")
+        log.error(f"Error creating full scan from archive: {response.status_code}, message: {error_message}")
+        return {}
+
+    def rescan(self, org_slug: str, full_scan_id: str) -> dict:
+        """
+        Trigger a rescan of an existing full scan.
+
+        Args:
+            org_slug: Organization slug
+            full_scan_id: The ID of the full scan to rescan
+
+        Returns:
+            dict with the rescan response
+        """
+        path = f"orgs/{org_slug}/full-scans/{full_scan_id}/rescan"
+
+        response = self.api.do_request(path=path, method="POST", payload="{}")
+
+        if response.status_code in (200, 201):
+            return response.json()
+
+        error_message = response.json().get("error", {}).get("message", "Unknown error")
+        log.error(f"Error rescanning full scan: {response.status_code}, message: {error_message}")
+        return {}
+
+    def get_tar_files(self, org_slug: str, full_scan_id: str) -> bytes:
+        """
+        Download full scan files as a tar archive.
+
+        Args:
+            org_slug: Organization slug
+            full_scan_id: The ID of the full scan
+
+        Returns:
+            bytes containing the tar archive, or empty bytes on error
+        """
+        path = f"orgs/{org_slug}/full-scans/{full_scan_id}/files/tar"
+
+        response = self.api.do_request(path=path, method="GET")
+
+        if response.status_code == 200:
+            return response.content
+
+        error_message = response.json().get("error", {}).get("message", "Unknown error") if response.text else "Unknown error"
+        log.error(f"Error downloading tar files: {response.status_code}, message: {error_message}")
+        return b""

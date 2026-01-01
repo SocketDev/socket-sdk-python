@@ -47,6 +47,25 @@ class Historical:
         log.error(response.text)
         return {}
 
+    def dependencies_trend(self, org_slug: str, query_params: dict = None) -> dict:
+        """Get historical dependency trends data for an org.
+
+        Args:
+            org_slug: Organization slug
+            query_params: Optional dictionary of query parameters
+        """
+        path = f"orgs/{org_slug}/historical/dependencies/trend"
+        if query_params:
+            path += "?" + urlencode(query_params)
+
+        response = self.api.do_request(path=path)
+        if response.status_code == 200:
+            return response.json()
+
+        log.error(f"Error getting historical dependencies trend: {response.status_code}")
+        log.error(response.text)
+        return {}
+
     class Snapshots:
         """Submodule for managing historical snapshots."""
 

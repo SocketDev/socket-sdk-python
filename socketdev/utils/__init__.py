@@ -1,8 +1,11 @@
-from typing import Literal, List, Tuple, Optional
+from typing import Literal, List, Tuple, Optional, Union
 import logging
 import os
 import weakref
 from threading import Lock
+import tarfile
+import tempfile
+import io
 
 log = logging.getLogger("socketdev")
 
@@ -133,6 +136,7 @@ class LazyFileLoader:
     def read(self, size: int = -1):
         """Read from the file, opening it if needed."""
         self._ensure_open()
+        assert self._file is not None
         data = self._file.read(size)
         self._position = self._file.tell()
         
@@ -145,6 +149,7 @@ class LazyFileLoader:
     def readline(self, size: int = -1):
         """Read a line from the file."""
         self._ensure_open()
+        assert self._file is not None
         data = self._file.readline(size)
         self._position = self._file.tell()
         return data
@@ -162,6 +167,7 @@ class LazyFileLoader:
         elif whence == 2:  # SEEK_END
             # We need to open the file to get its size
             self._ensure_open()
+            assert self._file is not None
             result = self._file.seek(offset, whence)
             self._position = self._file.tell()
             return result
@@ -340,3 +346,97 @@ class Utils:
 
         log.debug(f"Prepared {len(send_files)} files for lazy loading")
         return send_files
+    
+    @staticmethod
+    def create_tar_gz_from_files(files: List[str], workspace: Optional[str] = None) -> io.BytesIO:
+        """
+        Create a tar.gz archive from a list of files.
+        
+        Args:
+            files: List of file paths to include in the archive
+            workspace: Base directory path to make paths relative to
+            
+        Returns:
+            io.BytesIO: In-memory tar.gz archive
+        """
+        tar_buffer = io.BytesIO()
+        
+        # Normalize workspace path
+        if workspace and "\\" in workspace:
+            workspace = workspace.replace("\\", "/")
+        if workspace:
+            workspace = workspace.rstrip("/")
+        
+        with tarfile.open(fileobj=tar_buffer, mode='w:gz') as tar:
+            for file_path in files:
+                # Normalize file path
+                normalized_path = file_path.replace("\\", "/") if "\\" in file_path else file_path
+                
+                # Skip if file doesn't exist
+                if not os.path.exists(normalized_path):
+                    log.warning(f"File not found, skipping: {normalized_path}")
+                    continue
+                
+                # Skip directories
+                if os.path.isdir(normalized_path):
+                    log.debug(f"Skipping directory: {normalized_path}")
+                    continue
+                
+                # Calculate arcname (the name in the archive)
+                arcname = normalized_path
+                if workspace:
+                    workspace_with_slash = workspace + "/"
+                    if normalized_path.startswith(workspace_with_slash):
+                        arcname = normalized_path[len(workspace_with_slash):]
+                    elif normalized_path.startswith(workspace):
+                        arcname = normalized_path[len(workspace):].lstrip("/")
+                
+                # Clean up relative path prefixes
+                while arcname.startswith("./"):
+                    arcname = arcname[2:]
+                while arcname.startswith("../"):
+                    arcname = arcname[3:]
+                arcname = arcname.lstrip("/")
+                
+                # Remove Windows drive letter if present
+                if len(arcname) > 2 and arcname[1] == ':' and (arcname[2] == '/' or arcname[2] == '\\'):
+                    arcname = arcname[2:].lstrip("/")
+                
+                log.debug(f"Adding to archive: {normalized_path} as {arcname}")
+                tar.add(normalized_path, arcname=arcname)
+        
+        # Seek to beginning so it can be read
+        tar_buffer.seek(0)
+        log.debug(f"Created tar.gz archive with {len(files)} files")
+        return tar_buffer
+    
+    @staticmethod
+    def prepare_archive_files_for_upload(tar_files: Union[str, List[str]]) -> List[Tuple[str, Tuple[str, LazyFileLoader]]]:
+        """
+        Prepare archive files for upload to the API.
+        
+        Args:
+            tar_files: Path or list of paths to archive files (.tar, .tar.gz, .tgz, .zip)
+            
+        Returns:
+            List of tuples formatted for requests multipart upload
+        """
+        files_list = [tar_files] if isinstance(tar_files, str) else tar_files
+        prepared_files = []
+        
+        for file_path in files_list:
+            # Normalize path
+            normalized_path = file_path.replace("\\", "/") if "\\" in file_path else file_path
+            
+            # Get filename
+            if "/" in normalized_path:
+                _, filename = normalized_path.rsplit("/", 1)
+            else:
+                filename = normalized_path
+            
+            # Create lazy file loader
+            lazy_file = LazyFileLoader(normalized_path, filename)
+            prepared_files.append(("file", (filename, lazy_file)))
+        
+        log.debug(f"Prepared {len(prepared_files)} archive files for upload")
+        return prepared_files
