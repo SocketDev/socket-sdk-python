@@ -52,7 +52,7 @@ request_timeout = 1200
 
 
 class socketdev:
-    def __init__(self, token: Optional[str] = None, timeout: int = 1200, allow_unverified: bool = False):
+    def __init__(self, token: Optional[str] = None, timeout: int = 1200, allow_unverified: bool = False, user_agent: Optional[str] = None):
         # Try to get token from environment variables if not provided
         if token is None:
             token = (
@@ -73,6 +73,8 @@ class socketdev:
         self.api.encode_key(self.token)
         self.api.set_timeout(timeout)
         self.api.set_allow_unverified(allow_unverified)
+        if user_agent is not None:
+            self.api.set_user_agent(user_agent)
 
         self.dependencies = Dependencies(self.api)
         self.export = Export(self.api)
