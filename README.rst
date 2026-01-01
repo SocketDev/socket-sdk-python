@@ -22,6 +22,7 @@ Initializing the module
 - **token (str)** - The Socket API Key for your Organization
 - **timeout (int)** - The number of seconds to wait before failing the connection
 - **allow_unverified (bool)** - Whether to skip SSL certificate verification (default: False). Set to True for testing with self-signed certificates.
+- **user_agent (str, optional)** - Custom User-Agent string to use in API requests. If not provided, defaults to "SocketSDKPython/{version}"
 
 Supported Functions
 -------------------
@@ -99,6 +100,35 @@ Export a Socket SBOM as an SPDX SBOM
         project_version="1.0.0"
     )
     print(socket.export.spdx_bom("org_slug", "sbom_id", query_params))
+
+**PARAMETERS:**
+
+- **org_slug (str)** - The organization name
+- **id (str)** - The ID of either a full scan or an SBOM report
+- **query_params (ExportQueryParams)** - Optional query parameters for filtering:
+    - **author (str)** - Filter by author
+    - **project_group (str)** - Filter by project group
+    - **project_name (str)** - Filter by project name
+    - **project_version (str)** - Filter by project version
+    - **project_id (str)** - Filter by project ID
+
+export.openvex_bom(org_slug, id, query_params)
+""""""""""""""""""""""""""""""""""""""""""""""
+Export a Socket SBOM as an OpenVEX SBOM
+
+**Usage:**
+
+.. code-block:: python
+
+    from socketdev import socketdev
+    from socketdev.export import ExportQueryParams
+
+    socket = socketdev(token="REPLACE_ME")
+    query_params = ExportQueryParams(
+        project_name="my-project",
+        project_version="1.0.0"
+    )
+    print(socket.export.openvex_bom("org_slug", "sbom_id", query_params))
 
 **PARAMETERS:**
 
@@ -304,6 +334,24 @@ Get GitHub Flavored Markdown diff between two full scans.
 - **org_slug (str)** - The organization name
 - **before (str)** - The base full scan ID
 - **after (str)** - The comparison full scan ID
+
+fullscans.finalize_tier1(full_scan_id, tier1_reachability_scan_id)
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+Finalize a tier 1 reachability scan by associating it with a full scan.
+
+**Usage:**
+
+.. code-block:: python
+
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
+    success = socket.fullscans.finalize_tier1("full_scan_id", "tier1_reachability_scan_id")
+    print(f"Finalization successful: {success}")
+
+**PARAMETERS:**
+
+- **full_scan_id (str)** - The ID of the full scan to associate with the tier 1 scan
+- **tier1_reachability_scan_id (str)** - The tier 1 reachability scan ID from the facts file
 
 basics.get_config(org_slug, use_types)
 """"""""""""""""""""""""""""""""""""""
@@ -1157,3 +1205,272 @@ Retrieve the OpenAPI specification for the Socket API.
 **PARAMETERS:**
 
 None required.
+
+webhooks.list(org_slug, \*\*query_params)
+"""""""""""""""""""""""""""""""""""""""""""
+List all webhooks for an organization.
+
+**Usage:**
+
+.. code-block:: python
+
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
+    print(socket.webhooks.list("org_slug"))
+    
+    # With query parameters
+    print(socket.webhooks.list("org_slug", limit=10, offset=0))
+
+**PARAMETERS:**
+
+- **org_slug (str)** - The organization slug
+- **query_params** - Optional query parameters for filtering
+
+webhooks.create(org_slug, \*\*kwargs)
+""""""""""""""""""""""""""""""""""""""
+Create a new webhook for an organization.
+
+**Usage:**
+
+.. code-block:: python
+
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
+    webhook_config = {
+        "url": "https://example.com/webhook",
+        "events": ["alert.created", "scan.completed"]
+    }
+    print(socket.webhooks.create("org_slug", **webhook_config))
+
+**PARAMETERS:**
+
+- **org_slug (str)** - The organization slug
+- **kwargs** - Webhook configuration parameters
+
+webhooks.get(org_slug, webhook_id)
+""""""""""""""""""""""""""""""""""
+Get details for a specific webhook.
+
+**Usage:**
+
+.. code-block:: python
+
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
+    print(socket.webhooks.get("org_slug", "webhook_id"))
+
+**PARAMETERS:**
+
+- **org_slug (str)** - The organization slug
+- **webhook_id (str)** - The webhook ID
+
+webhooks.update(org_slug, webhook_id, \*\*kwargs)
+"""""""""""""""""""""""""""""""""""""""""""""""""""
+Update an existing webhook.
+
+**Usage:**
+
+.. code-block:: python
+
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
+    updates = {
+        "url": "https://example.com/new-webhook",
+        "events": ["alert.created"]
+    }
+    print(socket.webhooks.update("org_slug", "webhook_id", **updates))
+
+**PARAMETERS:**
+
+- **org_slug (str)** - The organization slug
+- **webhook_id (str)** - The webhook ID
+- **kwargs** - Webhook configuration parameters to update
+
+webhooks.delete(org_slug, webhook_id)
+"""""""""""""""""""""""""""""""""""""
+Delete a webhook.
+
+**Usage:**
+
+.. code-block:: python
+
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
+    print(socket.webhooks.delete("org_slug", "webhook_id"))
+
+**PARAMETERS:**
+
+- **org_slug (str)** - The organization slug
+- **webhook_id (str)** - The webhook ID
+
+telemetry.get_config(org_slug)
+""""""""""""""""""""""""""""""
+Get telemetry configuration for an organization.
+
+**Usage:**
+
+.. code-block:: python
+
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
+    print(socket.telemetry.get_config("org_slug"))
+
+**PARAMETERS:**
+
+- **org_slug (str)** - The organization slug
+
+telemetry.update_config(org_slug, \*\*kwargs)
+""""""""""""""""""""""""""""""""""""""""""""""
+Update telemetry configuration for an organization.
+
+**Usage:**
+
+.. code-block:: python
+
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
+    config = {
+        "enabled": True,
+        "sampling_rate": 0.5
+    }
+    print(socket.telemetry.update_config("org_slug", **config))
+
+**PARAMETERS:**
+
+- **org_slug (str)** - The organization slug
+- **kwargs** - Configuration parameters to update
+
+alerts.get(org_slug, \*\*query_params)
+"""""""""""""""""""""""""""""""""""""""
+Get alerts for an organization.
+
+**Usage:**
+
+.. code-block:: python
+
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
+    print(socket.alerts.get("org_slug"))
+    
+    # With query parameters
+    print(socket.alerts.get("org_slug", severity="high", limit=50))
+
+**PARAMETERS:**
+
+- **org_slug (str)** - The organization slug
+- **query_params** - Optional query parameters for filtering
+
+fixes.get(org_slug, \*\*query_params)
+""""""""""""""""""""""""""""""""""""""
+Get available fixes for an organization.
+
+**Usage:**
+
+.. code-block:: python
+
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
+    print(socket.fixes.get("org_slug"))
+    
+    # With query parameters
+    print(socket.fixes.get("org_slug", ecosystem="npm"))
+
+**PARAMETERS:**
+
+- **org_slug (str)** - The organization slug
+- **query_params** - Optional query parameters for filtering
+
+supportedfiles.get(org_slug)
+""""""""""""""""""""""""""""
+Get list of supported manifest file types for an organization.
+
+**Usage:**
+
+.. code-block:: python
+
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
+    print(socket.supportedfiles.get("org_slug"))
+
+**PARAMETERS:**
+
+- **org_slug (str)** - The organization slug
+
+alertfullscansearch.search(org_slug, \*\*query_params)
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""
+Search alerts across full scans.
+
+**Usage:**
+
+.. code-block:: python
+
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
+    search_params = {
+        "query": "CVE-2024-1234",
+        "limit": 20
+    }
+    print(socket.alertfullscansearch.search("org_slug", **search_params))
+
+**PARAMETERS:**
+
+- **org_slug (str)** - The organization slug
+- **query_params** - Optional query parameters for filtering
+
+historical.dependencies_trend(org_slug, query_params)
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
+Get historical dependency trends data for an organization.
+
+**Usage:**
+
+.. code-block:: python
+
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
+    query_params = {
+        "from": "2024-01-01",
+        "to": "2024-12-31"
+    }
+    print(socket.historical.dependencies_trend("org_slug", query_params))
+
+**PARAMETERS:**
+
+- **org_slug (str)** - The organization slug
+- **query_params (dict, optional)** - Optional query parameters for date filtering
+
+historical.snapshots.create(org_slug)
+"""""""""""""""""""""""""""""""""""""
+Create a new snapshot for an organization.
+
+**Usage:**
+
+.. code-block:: python
+
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
+    print(socket.historical.snapshots.create("org_slug"))
+
+**PARAMETERS:**
+
+- **org_slug (str)** - The organization slug
+
+historical.snapshots.list(org_slug, query_params)
+"""""""""""""""""""""""""""""""""""""""""""""""""
+List historical snapshots for an organization.
+
+**Usage:**
+
+.. code-block:: python
+
+    from socketdev import socketdev
+    socket = socketdev(token="REPLACE_ME")
+    print(socket.historical.snapshots.list("org_slug"))
+    
+    # With query parameters
+    query_params = {"limit": 10, "offset": 0}
+    print(socket.historical.snapshots.list("org_slug", query_params))
+
+**PARAMETERS:**
+
+- **org_slug (str)** - The organization slug
+- **query_params (dict, optional)** - Optional query parameters for filtering
