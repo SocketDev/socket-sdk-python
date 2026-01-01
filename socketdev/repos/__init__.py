@@ -58,11 +58,12 @@ class GetRepoResponse:
 
     @classmethod
     def from_dict(cls, data: dict) -> "GetRepoResponse":
+        data_field = data.get("data")
         return cls(
             success=data["success"],
             status=data["status"],
             message=data.get("message"),
-            data=RepositoryInfo.from_dict(data.get("data")) if data.get("data") else None,
+            data=RepositoryInfo.from_dict(data_field) if data_field is not None else None,
         )
 
 

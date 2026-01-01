@@ -1,3 +1,4 @@
+import os
 from socketdev.core.api import API
 from socketdev.dependencies import Dependencies
 from socketdev.diffscans import DiffScans
@@ -26,7 +27,14 @@ from socketdev.analytics import Analytics
 from socketdev.alerttypes import AlertTypes
 from socketdev.basics import Basics
 from socketdev.uploadmanifests import UploadManifests
+from socketdev.alertfullscansearch import AlertFullScanSearch
+from socketdev.alerts import Alerts
+from socketdev.fixes import Fixes
+from socketdev.supportedfiles import SupportedFiles
+from socketdev.webhooks import Webhooks
+from socketdev.telemetry import Telemetry
 from socketdev.log import log
+from typing import Optional
 
 __author__ = "socket.dev"
 __version__ = __version__
@@ -44,7 +52,22 @@ request_timeout = 1200
 
 
 class socketdev:
-    def __init__(self, token: str, timeout: int = 1200, allow_unverified: bool = False):
+    def __init__(self, token: Optional[str] = None, timeout: int = 1200, allow_unverified: bool = False):
+        # Try to get token from environment variables if not provided
+        if token is None:
+            token = (
+                os.getenv("SOCKET_SECURITY_API_TOKEN") or
+                os.getenv("SOCKET_SECURITY_API_KEY") or
+                os.getenv("SOCKET_API_KEY") or
+                os.getenv("SOCKET_API_TOKEN")
+            )
+        
+        if token is None:
+            raise ValueError(
+                "API token is required. Provide it as a parameter or set one of these environment variables: "
+                "SOCKET_SECURITY_API_TOKEN, SOCKET_SECURITY_API_KEY, SOCKET_API_KEY, SOCKET_API_TOKEN"
+            )
+        
         self.api = API()
         self.token = token + ":"
         self.api.encode_key(self.token)
@@ -77,6 +100,12 @@ class socketdev:
         self.alerttypes = AlertTypes(self.api)
         self.basics = Basics(self.api)
         self.uploadmanifests = UploadManifests(self.api)
+        self.alertfullscansearch = AlertFullScanSearch(self.api)
+        self.alerts = Alerts(self.api)
+        self.fixes = Fixes(self.api)
+        self.supportedfiles = SupportedFiles(self.api)
+        self.webhooks = Webhooks(self.api)
+        self.telemetry = Telemetry(self.api)
 
     @staticmethod
     def set_timeout(timeout: int):

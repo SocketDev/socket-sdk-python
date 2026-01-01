@@ -73,3 +73,28 @@ class Export:
         log.error(f"Error exporting SPDX BOM: {response.status_code}")
         log.error(response.text)
         return {}
+
+    def openvex_bom(
+        self, org_slug: str, id: str, query_params: Optional[ExportQueryParams] = None, use_types: bool = False
+    ) -> dict:
+        """
+        Export a Socket SBOM as an OpenVEX SBOM
+        :param org_slug: String - The slug of the organization
+        :param id: String - The id of either a full scan or an sbom report
+        :param query_params: Optional[ExportQueryParams] - Query parameters for filtering
+        :param use_types: Optional[bool] - Whether to return typed responses
+        :return: dict
+        """
+        path = f"orgs/{org_slug}/export/openvex/{id}"
+        if query_params:
+            path += query_params.to_query_params()
+        response = self.api.do_request(path=path)
+
+        if response.status_code == 200:
+            return response.json()
+            # TODO: Add typed response when types are defined
+
+        log.error(f"Error exporting OpenVEX BOM: {response.status_code}")
+        log.error(response.text)
+        return {}
+
