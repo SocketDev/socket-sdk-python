@@ -26,6 +26,7 @@ class API:
         self.api_url = "https://api.socket.dev/v0"
         self.request_timeout = 30
         self.allow_unverified = False
+        self.user_agent = None
 
     def encode_key(self, token: str):
         self.encoded_key = base64.b64encode(token.encode()).decode("ascii")
@@ -35,6 +36,9 @@ class API:
 
     def set_allow_unverified(self, allow_unverified: bool):
         self.allow_unverified = allow_unverified
+
+    def set_user_agent(self, user_agent: str):
+        self.user_agent = user_agent
 
     def do_request(
         self,
@@ -48,9 +52,10 @@ class API:
             raise APIKeyMissing
 
         if headers is None:
+            user_agent_string = self.user_agent if self.user_agent is not None else f"SocketSDKPython/{__version__}"
             headers = {
                 "Authorization": f"Basic {self.encoded_key}",
-                "User-Agent": f"SocketSDKPython/{__version__}",
+                "User-Agent": user_agent_string,
                 "accept": "application/json",
             }
         url = f"{self.api_url}/{path}"
