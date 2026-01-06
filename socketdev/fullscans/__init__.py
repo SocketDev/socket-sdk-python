@@ -798,6 +798,14 @@ class FullScans:
         org_slug = str(params.org_slug)
         params_dict = params.to_dict()
         params_dict.pop("org_slug")
+        # Remove pull_request param if it's None, 0, or not an integer
+        if hasattr(params, 'pull_request') and (
+            params.pull_request is None or 
+            not isinstance(params.pull_request, int) or 
+            params.pull_request == 0
+        ):
+            print("Removing pull_request param from FullScanParams as it is None, 0, or not an integer")
+            params_dict.pop("pull_request")
         params_arg = urllib.parse.urlencode(params_dict)
         path = "orgs/" + org_slug + "/full-scans?" + str(params_arg)
 
