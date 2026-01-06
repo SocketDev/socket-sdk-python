@@ -227,6 +227,8 @@ Create a full scan from a set of package manifest files. Returns a full scan inc
 +------------------------+------------+-------------------------------------------------------------------------------+
 | integration_org_slug   | False      | Organization slug for integration                                             |
 +------------------------+------------+-------------------------------------------------------------------------------+
+| scan_type              | False      | ScanType enum value: "socket", "socket_tier1", or "socket_basics"             |
++------------------------+------------+-------------------------------------------------------------------------------+
 
 fullscans.delete(org_slug, full_scan_id)
 """"""""""""""""""""""""""""""""""""""""

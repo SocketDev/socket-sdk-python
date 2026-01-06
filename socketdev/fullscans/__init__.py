@@ -41,6 +41,12 @@ class DiffType(str, Enum):
     UPDATED = "updated"
 
 
+class ScanType(str, Enum):
+    SOCKET = "socket"
+    SOCKET_TIER1 = "socket_tier1"
+    SOCKET_BASICS = "socket_basics"
+
+
 @dataclass(kw_only=True)
 class SocketPURL:
     type: SocketPURL_Type
@@ -99,6 +105,7 @@ class FullScanParams:
     make_default_branch: Optional[bool] = None
     set_as_pending_head: Optional[bool] = None
     tmp: Optional[bool] = None
+    scan_type: Optional[ScanType] = None
 
     def __getitem__(self, key):
         return getattr(self, key)
@@ -109,6 +116,7 @@ class FullScanParams:
     @classmethod
     def from_dict(cls, data: dict) -> "FullScanParams":
         integration_type = data.get("integration_type")
+        scan_type = data.get("scan_type")
         return cls(
             repo=data["repo"],
             org_slug=data.get("org_slug"),
@@ -122,6 +130,7 @@ class FullScanParams:
             make_default_branch=data.get("make_default_branch"),
             set_as_pending_head=data.get("set_as_pending_head"),
             tmp=data.get("tmp"),
+            scan_type=ScanType(scan_type) if scan_type is not None else None,
         )
 
 
