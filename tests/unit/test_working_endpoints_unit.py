@@ -209,10 +209,10 @@ class TestWorkingEndpointsUnit(unittest.TestCase):
         self._mock_response(expected_data, 201)
 
         params = FullScanParams(
-            repo="assembly",
+            repo="test-repo",
             org_slug="test-org",
             branch="main",
-            workspace="grofers",
+            workspace="test-workspace",
         )
 
         with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
@@ -229,8 +229,8 @@ class TestWorkingEndpointsUnit(unittest.TestCase):
                 self.assertEqual(call_args[0][0], "POST")
                 # Confirm workspace landed in the request URL query string
                 request_url = call_args[0][1]
-                self.assertIn("workspace=grofers", request_url)
-                self.assertIn("repo=assembly", request_url)
+                self.assertIn("workspace=test-workspace", request_url)
+                self.assertIn("repo=test-repo", request_url)
 
             finally:
                 os.unlink(f.name)
