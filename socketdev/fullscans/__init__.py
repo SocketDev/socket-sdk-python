@@ -106,6 +106,7 @@ class FullScanParams:
     set_as_pending_head: Optional[bool] = None
     tmp: Optional[bool] = None
     scan_type: Optional[ScanType] = None
+    workspace: Optional[str] = None
 
     def __getitem__(self, key):
         return getattr(self, key)
@@ -131,6 +132,7 @@ class FullScanParams:
             set_as_pending_head=data.get("set_as_pending_head"),
             tmp=data.get("tmp"),
             scan_type=ScanType(scan_type) if scan_type is not None else None,
+            workspace=data.get("workspace"),
         )
 
 

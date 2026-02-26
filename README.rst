@@ -184,6 +184,7 @@ Create a full scan from a set of package manifest files. Returns a full scan inc
     params = FullScanParams(
         org_slug="org_name",
         repo="TestRepo",
+        workspace="my-workspace",
         branch="main",
         commit_message="Test Commit Message",
         commit_hash="abc123def456",
@@ -222,6 +223,8 @@ Create a full scan from a set of package manifest files. Returns a full scan inc
 | set_as_pending_head    | False      | Boolean to set as pending head                                                |
 +------------------------+------------+-------------------------------------------------------------------------------+
 | tmp                    | False      | Boolean temporary flag                                                        |
++------------------------+------------+-------------------------------------------------------------------------------+
+| workspace              | False      | The workspace of the repository to associate the full-scan with.              |
 +------------------------+------------+-------------------------------------------------------------------------------+
 | integration_type       | False      | IntegrationType enum value (e.g., "api", "github")                            |
 +------------------------+------------+-------------------------------------------------------------------------------+

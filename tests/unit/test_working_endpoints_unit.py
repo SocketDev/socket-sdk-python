@@ -203,6 +203,38 @@ class TestWorkingEndpointsUnit(unittest.TestCase):
             finally:
                 os.unlink(f.name)
 
+    def test_fullscans_post_with_workspace_unit(self):
+        """Test that workspace is included in the query string when set on FullScanParams."""
+        expected_data = {"id": "new-scan"}
+        self._mock_response(expected_data, 201)
+
+        params = FullScanParams(
+            repo="test-repo",
+            org_slug="test-org",
+            branch="main",
+            workspace="test-workspace",
+        )
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            json.dump({"name": "test", "version": "1.0.0"}, f)
+            f.flush()
+
+            try:
+                with open(f.name, "rb") as file_obj:
+                    files = [("file", ("package.json", file_obj))]
+                    result = self.sdk.fullscans.post(files, params)
+
+                self.assertEqual(result, expected_data)
+                call_args = self.mock_requests.request.call_args
+                self.assertEqual(call_args[0][0], "POST")
+                # Confirm workspace landed in the request URL query string
+                request_url = call_args[0][1]
+                self.assertIn("workspace=test-workspace", request_url)
+                self.assertIn("repo=test-repo", request_url)
+
+            finally:
+                os.unlink(f.name)
+
     def test_triage_list_alert_triage_unit(self):
         """Test triage list alerts - WORKING."""
         expected_data = {"alerts": []}
