@@ -1,5 +1,6 @@
 import json
 import urllib.parse
+import warnings
 from socketdev.log import log
 from ..core.dedupe import Dedupe
 
@@ -8,8 +9,21 @@ class Purl:
     def __init__(self, api):
         self.api = api
 
-    def post(self, license: str = "false", components: list = None, **kwargs) -> list:
-        path = "purl?"
+    def post(
+        self,
+        license: str = "false",
+        components: list = None,
+        org_slug: str = None,
+        **kwargs,
+    ) -> list:
+        if org_slug is None:
+            warnings.warn(
+                "Calling purl.post() without org_slug uses the deprecated POST /v0/purl endpoint. "
+                "Pass org_slug to migrate to POST /v0/orgs/{org_slug}/purl.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        path = f"orgs/{org_slug}/purl?" if org_slug else "purl?"
         if components is None:
             components = []
         purls = {"components": components}
