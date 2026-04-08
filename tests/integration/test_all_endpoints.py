@@ -181,13 +181,13 @@ class TestAllEndpointsMocked(unittest.TestCase):
     def test_npm_issues_mocked(self):
         """Test npm issues endpoint."""
         self._mock_success_response([{"type": "security", "severity": "high"}])
-        result = self.sdk.npm.issues("lodash", "4.17.21")
+        result = self.sdk.npm.issues("lodash", "4.18.1")
         self.assertIsInstance(result, list)
 
     def test_npm_score_mocked(self):
         """Test npm score endpoint."""
         self._mock_success_response([{"category": "security", "value": 85}])
-        result = self.sdk.npm.score("lodash", "4.17.21")
+        result = self.sdk.npm.score("lodash", "4.18.1")
         self.assertIsInstance(result, list)
 
     # OpenAPI endpoints
@@ -206,9 +206,13 @@ class TestAllEndpointsMocked(unittest.TestCase):
 
     # PURL endpoints
     def test_purl_post_mocked(self):
-        """Test purl post endpoint."""
-        self._mock_success_response([{"purl": "pkg:npm/lodash@4.17.21", "valid": True}])
-        result = self.sdk.purl.post("false", [{"purl": "pkg:npm/lodash@4.17.21"}])
+        """Test org-scoped purl post endpoint."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.headers = {'content-type': 'application/x-ndjson'}
+        mock_response.text = '{"inputPurl": "pkg:npm/lodash@4.18.1", "purl": "pkg:npm/lodash@4.18.1", "type": "npm", "name": "lodash", "version": "4.18.1", "valid": true, "alerts": []}'
+        self.mock_requests.request.return_value = mock_response
+        result = self.sdk.purl.post("false", [{"purl": "pkg:npm/lodash@4.18.1"}], org_slug="test-org")
         self.assertIsInstance(result, list)
 
     # Quota endpoints
@@ -372,7 +376,7 @@ class TestAllEndpointsIntegration(unittest.TestCase):
         test_package = {
             "name": "test-integration-package",
             "version": "1.0.0",
-            "dependencies": {"lodash": "4.17.21"}
+            "dependencies": {"lodash": "4.18.1"}
         }
         with open(cls.package_json_path, 'w') as f:
             json.dump(test_package, f, indent=2)
@@ -414,20 +418,20 @@ class TestAllEndpointsIntegration(unittest.TestCase):
     # NPM endpoints (should work for public packages)
     def test_npm_issues_integration(self):
         """Test npm issues endpoint."""
-        result = self._try_endpoint(self.sdk.npm.issues, "lodash", "4.17.21")
+        result = self._try_endpoint(self.sdk.npm.issues, "lodash", "4.18.1")
         if result:
             self.assertIsInstance(result, list)
 
     def test_npm_score_integration(self):
         """Test npm score endpoint."""
-        result = self._try_endpoint(self.sdk.npm.score, "lodash", "4.17.21")
+        result = self._try_endpoint(self.sdk.npm.score, "lodash", "4.18.1")
         if result:
             self.assertIsInstance(result, list)
 
     # PURL endpoints
     def test_purl_post_integration(self):
         """Test purl post endpoint."""
-        components = [{"purl": "pkg:npm/lodash@4.17.21"}]
+        components = [{"purl": "pkg:npm/lodash@4.18.1"}]
         result = self._try_endpoint(self.sdk.purl.post, "false", components)
         if result:
             self.assertIsInstance(result, list)
@@ -515,7 +519,7 @@ class TestAllEndpointsIntegration(unittest.TestCase):
         """Test dependencies get endpoint."""
         result = self._try_endpoint(
             self.sdk.dependencies.get, 
-            self.org_slug, "npm", "lodash", "4.17.21"
+            self.org_slug, "npm", "lodash", "4.18.1"
         )
         if result:
             self.assertIsInstance(result, dict)

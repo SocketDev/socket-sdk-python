@@ -53,7 +53,7 @@ class TestSocketSDKIntegration(unittest.TestCase):
             "name": "test-integration-project",
             "version": "1.0.0",
             "dependencies": {
-                "lodash": "4.17.21"
+                "lodash": "4.18.1"
             }
         }
         
@@ -264,7 +264,7 @@ class TestSocketSDKIntegration(unittest.TestCase):
         """Test NPM-related endpoints."""
         # Test getting package issues - this should work for most packages
         try:
-            issues = self.sdk.npm.issues("lodash", "4.17.21")
+            issues = self.sdk.npm.issues("lodash", "4.18.1")
             self.assertIsInstance(issues, dict)
         except Exception as e:
             print(f"NPM issues endpoint not available: {e}")
@@ -281,9 +281,13 @@ class TestSocketSDKIntegration(unittest.TestCase):
         """Test PURL (Package URL) functionality."""
         try:
             # Test with a common npm package
-            purl = "pkg:npm/lodash@4.17.21"
-            result = self.sdk.purl.post([purl])
-            self.assertIsInstance(result, dict)
+            purl = "pkg:npm/lodash@4.18.1"
+            result = self.sdk.purl.post(
+                license="false",
+                components=[{"purl": purl}],
+                org_slug=self.org_slug,
+            )
+            self.assertIsInstance(result, list)
         except Exception as e:
             print(f"PURL endpoint not available: {e}")
 

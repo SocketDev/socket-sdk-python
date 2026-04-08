@@ -44,11 +44,11 @@ class TestAllEndpointsUnit(unittest.TestCase):
     # Dependencies endpoints
     def test_dependencies_post_unit(self):
         """Test dependencies post with proper file handling."""
-        expected_data = {"packages": [{"name": "lodash", "version": "4.17.21"}]}
+        expected_data = {"packages": [{"name": "lodash", "version": "4.18.1"}]}
         self._mock_response(expected_data)
         
         with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
-            json.dump({"name": "test-package", "dependencies": {"lodash": "4.17.21"}}, f)
+            json.dump({"name": "test-package", "dependencies": {"lodash": "4.18.1"}}, f)
             f.flush()
             
             try:
@@ -72,12 +72,12 @@ class TestAllEndpointsUnit(unittest.TestCase):
         expected_data = {"dependencies": [{"name": "sub-dependency", "version": "1.0.0"}]}
         self._mock_response(expected_data)
         
-        result = self.sdk.dependencies.get("test-org", "npm", "lodash", "4.17.21")
+        result = self.sdk.dependencies.get("test-org", "npm", "lodash", "4.18.1")
         
         self.assertEqual(result, expected_data)
         call_args = self.mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "GET")
-        self.assertIn("/orgs/test-org/dependencies/npm/lodash/4.17.21", call_args[0][1])
+        self.assertIn("/orgs/test-org/dependencies/npm/lodash/4.18.1", call_args[0][1])
 
     # DiffScans endpoints
     def test_diffscans_list_unit(self):
@@ -305,24 +305,24 @@ class TestAllEndpointsUnit(unittest.TestCase):
         expected_data = [{"type": "security", "severity": "high", "title": "Test issue"}]
         self._mock_response(expected_data)
         
-        result = self.sdk.npm.issues("lodash", "4.17.21")
+        result = self.sdk.npm.issues("lodash", "4.18.1")
         
         self.assertEqual(result, expected_data)
         call_args = self.mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "GET")
-        self.assertIn("/npm/lodash/4.17.21/issues", call_args[0][1])
+        self.assertIn("/npm/lodash/4.18.1/issues", call_args[0][1])
 
     def test_npm_score_unit(self):
         """Test npm score endpoint."""
         expected_data = [{"category": "security", "value": 85}]
         self._mock_response(expected_data)
         
-        result = self.sdk.npm.score("lodash", "4.17.21")
+        result = self.sdk.npm.score("lodash", "4.18.1")
         
         self.assertEqual(result, expected_data)
         call_args = self.mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "GET")
-        self.assertIn("/npm/lodash/4.17.21/score", call_args[0][1])
+        self.assertIn("/npm/lodash/4.18.1/score", call_args[0][1])
 
     # OpenAPI endpoints
     def test_openapi_get_unit(self):
@@ -352,14 +352,14 @@ class TestAllEndpointsUnit(unittest.TestCase):
 
     # PURL endpoints
     def test_purl_post_unit(self):
-        """Test PURL validation endpoint."""
+        """Test org-scoped PURL validation endpoint."""
         # Expected final result after deduplication - should match what the dedupe function produces
         expected_data = [{
-            "inputPurl": "pkg:npm/lodash@4.17.21", 
-            "purl": "pkg:npm/lodash@4.17.21", 
+            "inputPurl": "pkg:npm/lodash@4.18.1", 
+            "purl": "pkg:npm/lodash@4.18.1", 
             "type": "npm", 
             "name": "lodash", 
-            "version": "4.17.21", 
+            "version": "4.18.1", 
             "valid": True, 
             "alerts": [], 
             "releases": ["npm"]
@@ -367,7 +367,7 @@ class TestAllEndpointsUnit(unittest.TestCase):
         
         # Mock the NDJSON response that would come from the actual API
         # This simulates what the API returns: newline-delimited JSON with SocketArtifact objects
-        mock_ndjson_response = '{"inputPurl": "pkg:npm/lodash@4.17.21", "purl": "pkg:npm/lodash@4.17.21", "type": "npm", "name": "lodash", "version": "4.17.21", "valid": true, "alerts": []}'
+        mock_ndjson_response = '{"inputPurl": "pkg:npm/lodash@4.18.1", "purl": "pkg:npm/lodash@4.18.1", "type": "npm", "name": "lodash", "version": "4.18.1", "valid": true, "alerts": []}'
         
         # Mock the response with NDJSON format
         mock_response = Mock()
@@ -376,13 +376,30 @@ class TestAllEndpointsUnit(unittest.TestCase):
         mock_response.text = mock_ndjson_response
         self.mock_requests.request.return_value = mock_response
         
-        components = [{"purl": "pkg:npm/lodash@4.17.21"}]
-        result = self.sdk.purl.post("false", components)
+        components = [{"purl": "pkg:npm/lodash@4.18.1"}]
+        result = self.sdk.purl.post("false", components, org_slug="test-org")
         
         self.assertEqual(result, expected_data)
         call_args = self.mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "POST")
+        self.assertIn("/orgs/test-org/purl", call_args[0][1])
+
+    def test_purl_post_unit_legacy_path(self):
+        """Test legacy PURL validation endpoint remains available for compatibility."""
+        mock_ndjson_response = '{"inputPurl": "pkg:npm/lodash@4.18.1", "purl": "pkg:npm/lodash@4.18.1", "type": "npm", "name": "lodash", "version": "4.18.1", "valid": true, "alerts": []}'
+
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.headers = {'content-type': 'application/x-ndjson'}
+        mock_response.text = mock_ndjson_response
+        self.mock_requests.request.return_value = mock_response
+
+        self.sdk.purl.post("false", [{"purl": "pkg:npm/lodash@4.18.1"}])
+
+        call_args = self.mock_requests.request.call_args
+        self.assertEqual(call_args[0][0], "POST")
         self.assertIn("/purl", call_args[0][1])
+        self.assertNotIn("/orgs/", call_args[0][1])
 
     # Quota endpoints
     def test_quota_get_unit(self):

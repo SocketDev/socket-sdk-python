@@ -110,13 +110,13 @@ class TestSocketSDKUnit(unittest.TestCase):
             type=SocketPURL_Type.NPM,
             name="lodash",
             namespace=None,
-            release="4.17.21"
+            release="4.18.1"
         )
         
         self.assertEqual(purl.type, SocketPURL_Type.NPM)
         self.assertEqual(purl.name, "lodash")
         self.assertIsNone(purl.namespace)
-        self.assertEqual(purl.release, "4.17.21")
+        self.assertEqual(purl.release, "4.18.1")
 
     def test_integration_types(self):
         """Test that all integration types are available."""
@@ -223,7 +223,7 @@ class TestSocketSDKFileHandling(unittest.TestCase):
             "name": "test-package",
             "version": "1.0.0",
             "dependencies": {
-                "lodash": "4.17.21"
+                "lodash": "4.18.1"
             }
         }
         
