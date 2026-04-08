@@ -29,7 +29,7 @@ Supported Functions
 
 
 purl.post(license, components, org_slug=None)
-"""""""""""""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""""""""""""""""
 Retrieve package information for one or more PURLs. Pass ``org_slug`` to use the
 current org-scoped endpoint. Omitting ``org_slug`` keeps the legacy deprecated
 endpoint for backwards compatibility.
