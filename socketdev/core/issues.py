@@ -37,6 +37,7 @@ __all__ = [
 	"installScripts",
 	"gptSecurity",
 	"gptAnomaly",
+	"gptDidYouMean",
 	"gptMalware",
 	"potentialVulnerability",
 	"invalidPackageJSON",
@@ -784,6 +785,26 @@ class gptMalware:
 		self.title = "AI detected potential malware"
 		self.emoji = "\ud83e\udd16"
 		self.nextStepTitle = "What is AI detected malware?"
+
+	def __str__(self):
+		return json.dumps(self.__dict__)
+
+
+class gptDidYouMean:
+	description: str
+	props: dict
+	suggestion: str
+	title: str
+	emoji: str
+	nextStepTitle: str
+
+	def __init__(self):
+		self.description = "AI analysis flagged this package name as closely resembling another popular package; it may not be the package you intended."
+		self.props = {"alternatePackage": "Alternate package", "detectedAt": "Detected at"}
+		self.suggestion = "Verify the package identifier before installing. Typosquat attacks rely on near-miss package names; using care with similarly-named packages is the simplest defense."
+		self.title = "AI detected possible typosquat"
+		self.emoji = "\ud83e\udd16"
+		self.nextStepTitle = "What is an AI detected typosquat?"
 
 	def __str__(self):
 		return json.dumps(self.__dict__)
@@ -1946,6 +1967,7 @@ class AllIssues:
 	installScripts: installScripts
 	gptSecurity: gptSecurity
 	gptAnomaly: gptAnomaly
+	gptDidYouMean: gptDidYouMean
 	gptMalware: gptMalware
 	potentialVulnerability: potentialVulnerability
 	invalidPackageJSON: invalidPackageJSON
@@ -2040,6 +2062,7 @@ class AllIssues:
 		self.installScripts = installScripts()
 		self.gptSecurity = gptSecurity()
 		self.gptAnomaly = gptAnomaly()
+		self.gptDidYouMean = gptDidYouMean()
 		self.gptMalware = gptMalware()
 		self.potentialVulnerability = potentialVulnerability()
 		self.invalidPackageJSON = invalidPackageJSON()
