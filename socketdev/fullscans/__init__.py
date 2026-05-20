@@ -443,11 +443,20 @@ class SocketAlert:
 
     @classmethod
     def from_dict(cls, data: dict) -> "SocketAlert":
+        try:
+            category = SocketCategory(data["category"])
+        except ValueError:
+            log.warning(
+                "Unknown SocketCategory %r; falling back to MISCELLANEOUS. "
+                "Upgrade socketdev to pick up newer categories.",
+                data["category"],
+            )
+            category = SocketCategory.MISCELLANEOUS
         return cls(
             key=data["key"],
             type=data["type"],
             severity=SocketIssueSeverity(data["severity"]),
-            category=SocketCategory(data["category"]),
+            category=category,
             file=data.get("file"),
             start=data.get("start"),
             end=data.get("end"),
