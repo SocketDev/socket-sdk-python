@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "socketdev"
-version = "3.0.33"
+version = "3.1.0"
 requires-python = ">= 3.9"
 dependencies = [
     'requests',
@@ -50,7 +50,7 @@ test = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/socketdev/socketdev"
+Homepage = "https://github.com/SocketDev/socket-sdk-python"
 
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.

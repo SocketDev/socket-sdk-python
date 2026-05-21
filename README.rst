@@ -28,9 +28,11 @@ Supported Functions
 -------------------
 
 
-purl.post(license, components)
-""""""""""""""""""""""""""""""
-Retrieve the package information for a purl post
+purl.post(license, components, org_slug=None)
+"""""""""""""""""""""""""""""""""""""""""""""
+Retrieve package information for one or more PURLs. Pass ``org_slug`` to use the
+current org-scoped endpoint. Omitting ``org_slug`` keeps the legacy deprecated
+endpoint for backwards compatibility.
 
 **Usage:**
 
@@ -38,6 +40,7 @@ Retrieve the package information for a purl post
 
     from socketdev import socketdev
     socket = socketdev(token="REPLACE_ME")
+    org_slug = "your-org-slug"
     license = "true"
     components = [
         {
@@ -47,12 +50,13 @@ Retrieve the package information for a purl post
         "purl": "pkg:pypi/socketsecurity"
         }
     ]
-    print(socket.purl.post(license, components))
+    print(socket.purl.post(license, components, org_slug=org_slug))
 
 **PARAMETERS:**
 
 - **license (str)** - The license parameter if enabled will show alerts and license information. If disabled will only show the basic package metadata and scores. Default is true
 - **components (array{dict})** - The components list of packages urls
+- **org_slug (str, optional)** - Organization slug for the supported org-scoped PURL endpoint. If omitted, the SDK uses the deprecated legacy endpoint for backwards compatibility.
 
 export.cdx_bom(org_slug, id, query_params)
 """"""""""""""""""""""""""""""""""""""""""

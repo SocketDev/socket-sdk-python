@@ -50,24 +50,24 @@ class TestWorkingEndpointsUnit(unittest.TestCase):
         expected_data = [{"type": "security", "severity": "high"}]
         self._mock_response(expected_data)
         
-        result = self.sdk.npm.issues("lodash", "4.17.21")
+        result = self.sdk.npm.issues("lodash", "4.18.1")
         
         self.assertEqual(result, expected_data)
         call_args = self.mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "GET")
-        self.assertIn("/npm/lodash/4.17.21/issues", call_args[0][1])
+        self.assertIn("/npm/lodash/4.18.1/issues", call_args[0][1])
 
     def test_npm_score_unit(self):
         """Test NPM score endpoint - WORKING."""
         expected_data = [{"category": "security", "value": 85}]
         self._mock_response(expected_data)
         
-        result = self.sdk.npm.score("lodash", "4.17.21")
+        result = self.sdk.npm.score("lodash", "4.18.1")
         
         self.assertEqual(result, expected_data)
         call_args = self.mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "GET")
-        self.assertIn("/npm/lodash/4.17.21/score", call_args[0][1])
+        self.assertIn("/npm/lodash/4.18.1/score", call_args[0][1])
 
     def test_openapi_get_unit(self):
         """Test OpenAPI specification retrieval - WORKING."""

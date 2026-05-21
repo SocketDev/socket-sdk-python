@@ -17,3 +17,6 @@ dist
 *.cpython-312.pyc
 example-socket-export.py
 __pycache__/
+.coverage
+.coverage.*
+htmlcov/
