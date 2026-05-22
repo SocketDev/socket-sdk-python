@@ -463,7 +463,7 @@ class didYouMean:
 
 	def __init__(self):
 		self.description = "Package name is similar to other popular packages and may not be the package you want."
-		self.props = {"alternatePackage": "Alternate package", "downloads": "Downloads", "downloadsRatio": "Download ratio", "editDistance": "Edit distance"}
+		self.props = {"alternatePackage": "Alternate package", "detectedAt": "Detected at"}
 		self.suggestion = "Use care when consuming similarly named packages and ensure that you did not intend to consume a different package. Malicious packages often publish using similar names as existing popular packages."
 		self.title = "Possible typosquat attack"
 		self.emoji = "\ud83e\uddd0"
