@@ -1,21 +1,22 @@
 name: dependency-review
 
 # Supply-chain guardrails for dependency-update PRs -- for BOTH Dependabot
-# and maintainers. Inspects the changed files, then runs a Socket Firewall
-# (sfw) install smoke job for Python dependency changes, picking the firewall
-# edition per-PR:
+# and maintainers. `inspect` classifies the PR, then exactly one Socket
+# Firewall (sfw) install smoke job runs when Python deps change:
 #
-#   - Trusted SocketDev members on an in-repo (non-fork) PR, when the
-#     SOCKET_SFW_API_TOKEN secret is present -> Socket Firewall ENTERPRISE
-#     (authenticated, full org-policy enforcement).
-#   - Everything else -- Dependabot, forks, external contributors, or a
-#     missing token -> Socket Firewall FREE (anonymous, no API token), which
-#     is safe in the unprivileged `pull_request` context.
+#   - python-sfw-smoke-enterprise -- trusted SocketDev org members
+#     (author_association OWNER/MEMBER) on an in-repo (non-fork) PR. Runs the
+#     authenticated enterprise edition for full org-policy enforcement. The
+#     SOCKET_SFW_API_TOKEN is scoped to the `socket-firewall` environment, so
+#     it is the ONLY job that can read the token.
+#   - python-sfw-smoke-free -- everyone else (Dependabot, forks, outside
+#     collaborators, external contributors). Anonymous free edition, no token.
+#     This job never references the secret.
 #
-# The mode is computed in `inspect` and degrades to free whenever the token is
-# absent (e.g. before it has been added to the repo/org, or on fork PRs where
-# GitHub withholds secrets), so this workflow is safe to ship as-is and starts
-# using the enterprise edition automatically once the secret exists.
+# Splitting the jobs (rather than picking a mode in one job) keeps the token
+# out of scope on every untrusted run and satisfies zizmor's
+# `secrets-outside-env` audit without suppressing it. The free path runs in
+# the unprivileged `pull_request` context with no secret-leak surface.
 #
 # Pattern adapted from SocketDev/socket-python-cli.
 
@@ -37,7 +38,7 @@ jobs:
     outputs:
       python_deps_changed: ${{ steps.diff.outputs.python_deps_changed }}
       workflow_or_action_changed: ${{ steps.diff.outputs.workflow_or_action_changed }}
-      sfw_mode: ${{ steps.mode.outputs.sfw_mode }}
+      is_trusted: ${{ steps.trust.outputs.is_trusted }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -73,30 +74,26 @@ jobs:
             echo "workflow_or_action_changed=$(has_file '^\.github/workflows/|^\.github/actions/|^\.github/dependabot\.yml$')"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Determine Socket Firewall mode
-        id: mode
+      - name: Classify PR trust
+        id: trust
+        # Trusted == a SocketDev org member (OWNER/MEMBER) on an in-repo
+        # (non-fork) PR. Note this references NO secret -- it only decides which
+        # smoke job runs; the token stays scoped to the enterprise job.
         env:
           IS_DEPENDABOT: ${{ github.event.pull_request.user.login == 'dependabot[bot]' }}
           IS_FORK: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
           AUTHOR_ASSOC: ${{ github.event.pull_request.author_association }}
-          # Empty for fork PRs (secrets withheld) and until the secret is added.
-          SOCKET_SFW_API_TOKEN: ${{ secrets.SOCKET_SFW_API_TOKEN }}
         run: |
-          mode=firewall-free
-          # Enterprise only for a SocketDev org member (OWNER/MEMBER) on an
-          # in-repo PR, and only when the token is actually present. Everything
-          # else -- Dependabot, forks, outside collaborators, external
-          # contributors, or a missing token -- uses the free edition.
+          is_trusted=false
           if [ "$IS_DEPENDABOT" != "true" ] \
              && [ "$IS_FORK" != "true" ] \
-             && [ -n "$SOCKET_SFW_API_TOKEN" ] \
              && printf '%s' "$AUTHOR_ASSOC" | grep -qE '^(OWNER|MEMBER)$'; then
-            mode=firewall-enterprise
+            is_trusted=true
           fi
 
-          echo "sfw_mode=$mode" >> "$GITHUB_OUTPUT"
+          echo "is_trusted=$is_trusted" >> "$GITHUB_OUTPUT"
           {
-            echo "## Socket Firewall mode: \`$mode\`"
+            echo "## Socket Firewall edition: \`$([ "$is_trusted" = true ] && echo enterprise || echo free)\`"
             echo "- author_association: \`$AUTHOR_ASSOC\`"
             echo "- dependabot: \`$IS_DEPENDABOT\` | fork: \`$IS_FORK\`"
           } >> "$GITHUB_STEP_SUMMARY"
@@ -113,9 +110,11 @@ jobs:
             echo "- This workflow runs in pull_request context only; no publish secrets are exposed"
           } >> "$GITHUB_STEP_SUMMARY"
 
-  python-sfw-smoke:
+  # Untrusted PRs (Dependabot, forks, outside collaborators, externals):
+  # anonymous free edition. Never references the token.
+  python-sfw-smoke-free:
     needs: inspect
-    if: needs.inspect.outputs.python_deps_changed == 'true'
+    if: needs.inspect.outputs.python_deps_changed == 'true' && needs.inspect.outputs.is_trusted != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -127,21 +126,48 @@ jobs:
       - uses: ./.github/actions/setup-sfw
         with:
           uv: "true"
-          mode: ${{ needs.inspect.outputs.sfw_mode }}
+          mode: firewall-free
+
+      - name: Sync project through Socket Firewall (free)
+        env:
+          UV_PYTHON: "3.12"
+          UV_PYTHON_DOWNLOADS: never
+        run: sfw uv sync --locked --extra test --extra dev
+
+      - name: Import smoke test
+        run: |
+          uv run python -c "
+          import socketdev
+          from socketdev import socketdev as SocketDevClient
+          from socketdev.core.api import API
+          from socketdev.version import __version__
+          print('import smoke OK', __version__)
+          "
+
+  # Trusted SocketDev members: authenticated enterprise edition. The token is
+  # scoped to the `socket-firewall` environment, so only this job can read it.
+  python-sfw-smoke-enterprise:
+    needs: inspect
+    if: needs.inspect.outputs.python_deps_changed == 'true' && needs.inspect.outputs.is_trusted == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: socket-firewall
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-sfw
+        with:
+          uv: "true"
+          mode: firewall-enterprise
           socket-token: ${{ secrets.SOCKET_SFW_API_TOKEN }}
 
-      - name: Sync project through Socket Firewall
-        # `sfw uv sync` is the intended way to route uv through Socket Firewall
-        # (per Socket's own uv wrapper guidance). --locked verifies the exact
-        # uv.lock set and fails on lockfile drift rather than silently
-        # re-resolving, so the firewall inspects precisely what would install.
-        # Note: uv's sfw integration is quieter than npm/pip -- it does not
-        # print the "N packages fetched" footer, but interception is active.
-        #
-        # Use the runner's setup-python interpreter and forbid managed-Python
-        # downloads: .python-version pins an exact patch (3.12.7) that uv would
-        # otherwise fetch from GitHub, which the firewall's TLS interception
-        # blocks. The firewall is here to vet PyPI installs, not the toolchain.
+      - name: Sync project through Socket Firewall (enterprise)
+        # See free job for the UV_PYTHON rationale: .python-version pins an
+        # exact patch that uv would otherwise fetch from GitHub through the
+        # firewall (blocked by its TLS interception); use the runner's Python.
         env:
           UV_PYTHON: "3.12"
           UV_PYTHON_DOWNLOADS: never
