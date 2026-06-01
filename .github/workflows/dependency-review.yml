@@ -4,14 +4,14 @@ name: dependency-review
 # and maintainers. `inspect` classifies the PR, then exactly one Socket
 # Firewall (sfw) install smoke job runs when Python deps change:
 #
-#   - python-sfw-smoke-enterprise -- trusted SocketDev org members
-#     (author_association OWNER/MEMBER) on an in-repo (non-fork) PR. Runs the
+#   - python-sfw-smoke-enterprise -- trusted authors: any in-repo (non-fork)
+#     PR other than Dependabot's (i.e. someone with write access). Runs the
 #     authenticated enterprise edition for full org-policy enforcement. The
 #     SOCKET_SFW_API_TOKEN is scoped to the `socket-firewall` environment, so
 #     it is the ONLY job that can read the token.
-#   - python-sfw-smoke-free -- everyone else (Dependabot, forks, outside
-#     collaborators, external contributors). Anonymous free edition, no token.
-#     This job never references the secret.
+#   - python-sfw-smoke-free -- everyone else (Dependabot + all fork PRs from
+#     external contributors). Anonymous free edition, no token. This job never
+#     references the secret.
 #
 # Splitting the jobs (rather than picking a mode in one job) keeps the token
 # out of scope on every untrusted run and satisfies zizmor's
@@ -76,18 +76,24 @@ jobs:
 
       - name: Classify PR trust
         id: trust
-        # Trusted == a SocketDev org member (OWNER/MEMBER) on an in-repo
-        # (non-fork) PR. Note this references NO secret -- it only decides which
-        # smoke job runs; the token stays scoped to the enterprise job.
+        # Trusted == any in-repo (non-fork) PR that isn't Dependabot's. Only
+        # accounts with write access can push a branch to this repo, so a
+        # non-fork PR already implies a trusted author -- the same boundary
+        # GitHub uses to decide whether secrets are exposed at all.
+        #
+        # NB: author_association is deliberately NOT used to require strict org
+        # membership. It only reflects PUBLIC org membership, so private members
+        # (the common case) show up as CONTRIBUTOR and would be misclassified.
+        # Reliable strict-membership detection would need a read:org token or
+        # public membership. This step references NO secret regardless -- it
+        # only decides which smoke job runs.
         env:
           IS_DEPENDABOT: ${{ github.event.pull_request.user.login == 'dependabot[bot]' }}
           IS_FORK: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
           AUTHOR_ASSOC: ${{ github.event.pull_request.author_association }}
         run: |
           is_trusted=false
-          if [ "$IS_DEPENDABOT" != "true" ] \
-             && [ "$IS_FORK" != "true" ] \
-             && printf '%s' "$AUTHOR_ASSOC" | grep -qE '^(OWNER|MEMBER)$'; then
+          if [ "$IS_DEPENDABOT" != "true" ] && [ "$IS_FORK" != "true" ]; then
             is_trusted=true
           fi
 
