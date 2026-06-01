@@ -136,6 +136,14 @@ jobs:
         # re-resolving, so the firewall inspects precisely what would install.
         # Note: uv's sfw integration is quieter than npm/pip -- it does not
         # print the "N packages fetched" footer, but interception is active.
+        #
+        # Use the runner's setup-python interpreter and forbid managed-Python
+        # downloads: .python-version pins an exact patch (3.12.7) that uv would
+        # otherwise fetch from GitHub, which the firewall's TLS interception
+        # blocks. The firewall is here to vet PyPI installs, not the toolchain.
+        env:
+          UV_PYTHON: "3.12"
+          UV_PYTHON_DOWNLOADS: never
         run: sfw uv sync --locked --extra test --extra dev
 
       - name: Import smoke test
