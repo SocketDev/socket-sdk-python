@@ -6,7 +6,7 @@ name: dependency-review
 # edition per-PR:
 #
 #   - Trusted SocketDev members on an in-repo (non-fork) PR, when the
-#     SOCKET_API_TOKEN secret is present -> Socket Firewall ENTERPRISE
+#     SOCKET_SFW_API_TOKEN secret is present -> Socket Firewall ENTERPRISE
 #     (authenticated, full org-policy enforcement).
 #   - Everything else -- Dependabot, forks, external contributors, or a
 #     missing token -> Socket Firewall FREE (anonymous, no API token), which
@@ -80,7 +80,7 @@ jobs:
           IS_FORK: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
           AUTHOR_ASSOC: ${{ github.event.pull_request.author_association }}
           # Empty for fork PRs (secrets withheld) and until the secret is added.
-          SOCKET_API_TOKEN: ${{ secrets.SOCKET_API_TOKEN }}
+          SOCKET_SFW_API_TOKEN: ${{ secrets.SOCKET_SFW_API_TOKEN }}
         run: |
           mode=firewall-free
           # Enterprise only for a SocketDev org member (OWNER/MEMBER) on an
@@ -89,7 +89,7 @@ jobs:
           # contributors, or a missing token -- uses the free edition.
           if [ "$IS_DEPENDABOT" != "true" ] \
              && [ "$IS_FORK" != "true" ] \
-             && [ -n "$SOCKET_API_TOKEN" ] \
+             && [ -n "$SOCKET_SFW_API_TOKEN" ] \
              && printf '%s' "$AUTHOR_ASSOC" | grep -qE '^(OWNER|MEMBER)$'; then
             mode=firewall-enterprise
           fi
@@ -128,7 +128,7 @@ jobs:
         with:
           uv: "true"
           mode: ${{ needs.inspect.outputs.sfw_mode }}
-          socket-token: ${{ secrets.SOCKET_API_TOKEN }}
+          socket-token: ${{ secrets.SOCKET_SFW_API_TOKEN }}
 
       - name: Sync project through Socket Firewall
         # `sfw uv sync` is the intended way to route uv through Socket Firewall
