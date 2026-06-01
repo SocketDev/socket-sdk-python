@@ -1,0 +1,126 @@
+name: dependabot-review
+
+# Dependency-update PR guardrails for Dependabot-authored PRs.
+#
+# Runs only on PRs opened by dependabot[bot]. Inspects which files
+# changed, then conditionally runs a Socket Firewall (sfw) install smoke
+# job for the Python dependency set. Because sfw uses the free, anonymous
+# Socket public-data path it needs NO API key, so we can run it from the
+# unprivileged `pull_request` context without pull_request_target or any
+# of its security tradeoffs.
+#
+# Pattern adapted from SocketDev/socket-python-cli.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dependabot-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  inspect:
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      python_deps_changed: ${{ steps.diff.outputs.python_deps_changed }}
+      workflow_or_action_changed: ${{ steps.diff.outputs.workflow_or_action_changed }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Inspect changed files
+        id: diff
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          CHANGED_FILES="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+
+          {
+            echo "## Changed files"
+            echo '```'
+            printf '%s\n' "$CHANGED_FILES"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          has_file() {
+            local pattern="$1"
+            if printf '%s\n' "$CHANGED_FILES" | grep -Eq "$pattern"; then
+              echo "true"
+            else
+              echo "false"
+            fi
+          }
+
+          {
+            echo "python_deps_changed=$(has_file '^(pyproject\.toml|uv\.lock)$')"
+            echo "workflow_or_action_changed=$(has_file '^\.github/workflows/|^\.github/actions/|^\.github/dependabot\.yml$')"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Summarize review expectations
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          {
+            echo "## Dependabot Review Checklist"
+            echo "- PR: $PR_URL"
+            echo "- Confirm upstream release notes before merge"
+            echo "- Do not treat a Dependabot PR as trusted solely because of the actor"
+            echo "- This workflow runs in pull_request context only; no publish secrets are exposed"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  python-sfw-smoke:
+    needs: inspect
+    if: needs.inspect.outputs.python_deps_changed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - uses: ./.github/actions/setup-sfw
+        with:
+          uv: "true"
+
+      - name: Sync project through Socket Firewall
+        # `sfw uv sync` is the intended way to route uv through Socket Firewall
+        # (per Socket's own uv wrapper guidance). --locked verifies the exact
+        # uv.lock set and fails on lockfile drift rather than silently
+        # re-resolving, so the firewall inspects precisely what would install.
+        # Note: uv's sfw integration is quieter than npm/pip -- it does not
+        # print the "N packages fetched" footer, but interception is active.
+        run: sfw uv sync --locked --extra test --extra dev
+
+      - name: Import smoke test
+        run: |
+          uv run python -c "
+          import socketdev
+          from socketdev import socketdev as SocketDevClient
+          from socketdev.core.api import API
+          from socketdev.version import __version__
+          print('import smoke OK', __version__)
+          "
+
+  workflow-notice:
+    needs: inspect
+    if: needs.inspect.outputs.workflow_or_action_changed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Flag workflow-sensitive updates
+        run: |
+          {
+            echo "## Sensitive File Notice"
+            echo "This Dependabot PR changes workflow or dependabot config files."
+            echo "Require explicit human review before merge."
+          } >> "$GITHUB_STEP_SUMMARY"
