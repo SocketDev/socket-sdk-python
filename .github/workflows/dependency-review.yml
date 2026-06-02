@@ -129,6 +129,15 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
+      - name: Prepare SFW artifact directory
+        run: |
+          mkdir -p sfw-artifacts
+          {
+            echo "mode=firewall-free"
+            echo "pr=${{ github.event.pull_request.number }}"
+            echo "sha=${{ github.event.pull_request.head.sha }}"
+          } > sfw-artifacts/context.txt
+
       - uses: ./.github/actions/setup-sfw
         with:
           uv: "true"
@@ -138,17 +147,29 @@ jobs:
         env:
           UV_PYTHON: "3.12"
           UV_PYTHON_DOWNLOADS: never
-        run: sfw uv sync --locked --extra test --extra dev
+        run: |
+          set -o pipefail
+          sfw uv sync --locked --extra test --extra dev 2>&1 | tee sfw-artifacts/sfw-uv-sync.log
 
       - name: Import smoke test
         run: |
+          set -o pipefail
           uv run python -c "
           import socketdev
           from socketdev import socketdev as SocketDevClient
           from socketdev.core.api import API
           from socketdev.version import __version__
           print('import smoke OK', __version__)
-          "
+          " 2>&1 | tee sfw-artifacts/import-smoke.log
+
+      - name: Upload SFW report artifact
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: socket-firewall-free-${{ github.event.pull_request.number }}
+          path: sfw-artifacts/
+          if-no-files-found: warn
+          retention-days: 14
 
   # Trusted SocketDev members: authenticated enterprise edition. The token is
   # scoped to the `socket-firewall` environment, so only this job can read it.
@@ -164,6 +185,15 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
+      - name: Prepare SFW artifact directory
+        run: |
+          mkdir -p sfw-artifacts
+          {
+            echo "mode=firewall-enterprise"
+            echo "pr=${{ github.event.pull_request.number }}"
+            echo "sha=${{ github.event.pull_request.head.sha }}"
+          } > sfw-artifacts/context.txt
+
       - uses: ./.github/actions/setup-sfw
         with:
           uv: "true"
@@ -177,17 +207,29 @@ jobs:
         env:
           UV_PYTHON: "3.12"
           UV_PYTHON_DOWNLOADS: never
-        run: sfw uv sync --locked --extra test --extra dev
+        run: |
+          set -o pipefail
+          sfw uv sync --locked --extra test --extra dev 2>&1 | tee sfw-artifacts/sfw-uv-sync.log
 
       - name: Import smoke test
         run: |
+          set -o pipefail
           uv run python -c "
           import socketdev
           from socketdev import socketdev as SocketDevClient
           from socketdev.core.api import API
           from socketdev.version import __version__
           print('import smoke OK', __version__)
-          "
+          " 2>&1 | tee sfw-artifacts/import-smoke.log
+
+      - name: Upload SFW report artifact
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: socket-firewall-enterprise-${{ github.event.pull_request.number }}
+          path: sfw-artifacts/
+          if-no-files-found: warn
+          retention-days: 14
 
   workflow-notice:
     needs: inspect
