@@ -31,6 +31,7 @@ class SocketCategory(str, Enum):
     VULNERABILITY = "vulnerability"
     LICENSE = "license"
     MISCELLANEOUS = "miscellaneous"
+    OTHER = "other"  # Added to match backend API responses
 
 
 class DiffType(str, Enum):
