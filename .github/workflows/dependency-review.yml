@@ -149,7 +149,22 @@ jobs:
           UV_PYTHON_DOWNLOADS: never
         run: |
           set -o pipefail
+          set +e
           sfw uv sync --locked --extra test --extra dev 2>&1 | tee sfw-artifacts/sfw-uv-sync.log
+          sync_status=${PIPESTATUS[0]}
+
+          report_path="$(
+            sed -n 's/^.*sfw report written to: //p' sfw-artifacts/sfw-uv-sync.log |
+              tail -n 1 |
+              tr -d '\r'
+          )"
+          if [ -n "$report_path" ] && [ -f "$report_path" ]; then
+            cp "$report_path" sfw-artifacts/sfw-report.json
+          else
+            echo "No SFW report JSON found in sync output." > sfw-artifacts/sfw-report-missing.txt
+          fi
+
+          exit "$sync_status"
 
       - name: Import smoke test
         run: |
@@ -209,7 +224,22 @@ jobs:
           UV_PYTHON_DOWNLOADS: never
         run: |
           set -o pipefail
+          set +e
           sfw uv sync --locked --extra test --extra dev 2>&1 | tee sfw-artifacts/sfw-uv-sync.log
+          sync_status=${PIPESTATUS[0]}
+
+          report_path="$(
+            sed -n 's/^.*sfw report written to: //p' sfw-artifacts/sfw-uv-sync.log |
+              tail -n 1 |
+              tr -d '\r'
+          )"
+          if [ -n "$report_path" ] && [ -f "$report_path" ]; then
+            cp "$report_path" sfw-artifacts/sfw-report.json
+          else
+            echo "No SFW report JSON found in sync output." > sfw-artifacts/sfw-report-missing.txt
+          fi
+
+          exit "$sync_status"
 
       - name: Import smoke test
         run: |
