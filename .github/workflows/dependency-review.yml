@@ -144,27 +144,14 @@ jobs:
           mode: firewall-free
 
       - name: Sync project through Socket Firewall (free)
+        # pipefail keeps sfw's exit code through the tee so a firewall block
+        # still fails the job; tee captures the report for the artifact upload.
         env:
           UV_PYTHON: "3.12"
           UV_PYTHON_DOWNLOADS: never
         run: |
           set -o pipefail
-          set +e
           sfw uv sync --locked --extra test --extra dev 2>&1 | tee sfw-artifacts/sfw-uv-sync.log
-          sync_status=${PIPESTATUS[0]}
-
-          report_path="$(
-            sed -n 's/^.*sfw report written to: //p' sfw-artifacts/sfw-uv-sync.log |
-              tail -n 1 |
-              tr -d '\r'
-          )"
-          if [ -n "$report_path" ] && [ -f "$report_path" ]; then
-            cp "$report_path" sfw-artifacts/sfw-report.json
-          else
-            echo "No SFW report JSON found in sync output." > sfw-artifacts/sfw-report-missing.txt
-          fi
-
-          exit "$sync_status"
 
       - name: Import smoke test
         run: |
@@ -176,6 +163,21 @@ jobs:
           from socketdev.version import __version__
           print('import smoke OK', __version__)
           " 2>&1 | tee sfw-artifacts/import-smoke.log
+
+      - name: Collect SFW JSON report
+        # socketdev/action points sfw at SFW_JSON_REPORT_PATH (a $RUNNER_TEMP
+        # file) and reads it back in its post step to render the job summary, so
+        # COPY (don't move) the report into the bundle. sfw writes it even when
+        # it blocks an install -- always() keeps it on failures too.
+        if: always()
+        run: |
+          if [ -n "${SFW_JSON_REPORT_PATH:-}" ] && [ -f "$SFW_JSON_REPORT_PATH" ]; then
+            cp "$SFW_JSON_REPORT_PATH" "$GITHUB_WORKSPACE/sfw-artifacts/sfw-report.json"
+            echo "Collected SFW report -> sfw-artifacts/sfw-report.json"
+          else
+            echo "No SFW JSON report found at '${SFW_JSON_REPORT_PATH:-<unset>}'." \
+              > "$GITHUB_WORKSPACE/sfw-artifacts/sfw-report-missing.txt"
+          fi
 
       - name: Upload SFW report artifact
         if: always()
@@ -219,27 +221,15 @@ jobs:
         # See free job for the UV_PYTHON rationale: .python-version pins an
         # exact patch that uv would otherwise fetch from GitHub through the
         # firewall (blocked by its TLS interception); use the runner's Python.
+        #
+        # pipefail keeps sfw's exit code through the tee so a firewall block
+        # still fails the job; tee captures the report for the artifact upload.
         env:
           UV_PYTHON: "3.12"
           UV_PYTHON_DOWNLOADS: never
         run: |
           set -o pipefail
-          set +e
           sfw uv sync --locked --extra test --extra dev 2>&1 | tee sfw-artifacts/sfw-uv-sync.log
-          sync_status=${PIPESTATUS[0]}
-
-          report_path="$(
-            sed -n 's/^.*sfw report written to: //p' sfw-artifacts/sfw-uv-sync.log |
-              tail -n 1 |
-              tr -d '\r'
-          )"
-          if [ -n "$report_path" ] && [ -f "$report_path" ]; then
-            cp "$report_path" sfw-artifacts/sfw-report.json
-          else
-            echo "No SFW report JSON found in sync output." > sfw-artifacts/sfw-report-missing.txt
-          fi
-
-          exit "$sync_status"
 
       - name: Import smoke test
         run: |
@@ -251,6 +241,21 @@ jobs:
           from socketdev.version import __version__
           print('import smoke OK', __version__)
           " 2>&1 | tee sfw-artifacts/import-smoke.log
+
+      - name: Collect SFW JSON report
+        # socketdev/action points sfw at SFW_JSON_REPORT_PATH (a $RUNNER_TEMP
+        # file) and reads it back in its post step to render the job summary, so
+        # COPY (don't move) the report into the bundle. sfw writes it even when
+        # it blocks an install -- always() keeps it on failures too.
+        if: always()
+        run: |
+          if [ -n "${SFW_JSON_REPORT_PATH:-}" ] && [ -f "$SFW_JSON_REPORT_PATH" ]; then
+            cp "$SFW_JSON_REPORT_PATH" "$GITHUB_WORKSPACE/sfw-artifacts/sfw-report.json"
+            echo "Collected SFW report -> sfw-artifacts/sfw-report.json"
+          else
+            echo "No SFW JSON report found at '${SFW_JSON_REPORT_PATH:-<unset>}'." \
+              > "$GITHUB_WORKSPACE/sfw-artifacts/sfw-report-missing.txt"
+          fi
 
       - name: Upload SFW report artifact
         if: always()
