@@ -1,0 +1,281 @@
+name: dependency-review
+
+# Supply-chain guardrails for dependency-update PRs -- for BOTH Dependabot
+# and maintainers. `inspect` classifies the PR, then exactly one Socket
+# Firewall (sfw) install smoke job runs when Python deps change:
+#
+#   - python-sfw-smoke-enterprise -- trusted authors: any in-repo (non-fork)
+#     PR other than Dependabot's (i.e. someone with write access). Runs the
+#     authenticated enterprise edition for full org-policy enforcement. The
+#     SOCKET_SFW_API_TOKEN is scoped to the `socket-firewall` environment, so
+#     it is the ONLY job that can read the token.
+#   - python-sfw-smoke-free -- everyone else (Dependabot + all fork PRs from
+#     external contributors). Anonymous free edition, no token. This job never
+#     references the secret.
+#
+# Splitting the jobs (rather than picking a mode in one job) keeps the token
+# out of scope on every untrusted run and satisfies zizmor's
+# `secrets-outside-env` audit without suppressing it. The free path runs in
+# the unprivileged `pull_request` context with no secret-leak surface.
+#
+# Pattern adapted from SocketDev/socket-python-cli.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dependency-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      python_deps_changed: ${{ steps.diff.outputs.python_deps_changed }}
+      workflow_or_action_changed: ${{ steps.diff.outputs.workflow_or_action_changed }}
+      is_trusted: ${{ steps.trust.outputs.is_trusted }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Inspect changed files
+        id: diff
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          CHANGED_FILES="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+
+          {
+            echo "## Changed files"
+            echo '```'
+            printf '%s\n' "$CHANGED_FILES"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          has_file() {
+            local pattern="$1"
+            if printf '%s\n' "$CHANGED_FILES" | grep -Eq "$pattern"; then
+              echo "true"
+            else
+              echo "false"
+            fi
+          }
+
+          {
+            echo "python_deps_changed=$(has_file '^(pyproject\.toml|uv\.lock)$')"
+            echo "workflow_or_action_changed=$(has_file '^\.github/workflows/|^\.github/actions/|^\.github/dependabot\.yml$')"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Classify PR trust
+        id: trust
+        # Trusted == any in-repo (non-fork) PR that isn't Dependabot's. Only
+        # accounts with write access can push a branch to this repo, so a
+        # non-fork PR already implies a trusted author -- the same boundary
+        # GitHub uses to decide whether secrets are exposed at all.
+        #
+        # NB: author_association is deliberately NOT used to require strict org
+        # membership. It only reflects PUBLIC org membership, so private members
+        # (the common case) show up as CONTRIBUTOR and would be misclassified.
+        # Reliable strict-membership detection would need a read:org token or
+        # public membership. This step references NO secret regardless -- it
+        # only decides which smoke job runs.
+        env:
+          IS_DEPENDABOT: ${{ github.event.pull_request.user.login == 'dependabot[bot]' }}
+          IS_FORK: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
+          AUTHOR_ASSOC: ${{ github.event.pull_request.author_association }}
+        run: |
+          is_trusted=false
+          if [ "$IS_DEPENDABOT" != "true" ] && [ "$IS_FORK" != "true" ]; then
+            is_trusted=true
+          fi
+
+          echo "is_trusted=$is_trusted" >> "$GITHUB_OUTPUT"
+          {
+            echo "## Socket Firewall edition: \`$([ "$is_trusted" = true ] && echo enterprise || echo free)\`"
+            echo "- author_association: \`$AUTHOR_ASSOC\`"
+            echo "- dependabot: \`$IS_DEPENDABOT\` | fork: \`$IS_FORK\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Summarize review expectations
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          {
+            echo "## Dependency Review Checklist"
+            echo "- PR: $PR_URL"
+            echo "- Confirm upstream release notes before merge"
+            echo "- Do not treat a dependency PR as trusted solely because of the actor"
+            echo "- This workflow runs in pull_request context only; no publish secrets are exposed"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # Untrusted PRs (Dependabot, forks, outside collaborators, externals):
+  # anonymous free edition. Never references the token.
+  python-sfw-smoke-free:
+    needs: inspect
+    if: needs.inspect.outputs.python_deps_changed == 'true' && needs.inspect.outputs.is_trusted != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Prepare SFW artifact directory
+        run: |
+          mkdir -p sfw-artifacts
+          {
+            echo "mode=firewall-free"
+            echo "pr=${{ github.event.pull_request.number }}"
+            echo "sha=${{ github.event.pull_request.head.sha }}"
+          } > sfw-artifacts/context.txt
+
+      - uses: ./.github/actions/setup-sfw
+        with:
+          uv: "true"
+          mode: firewall-free
+
+      - name: Sync project through Socket Firewall (free)
+        # pipefail keeps sfw's exit code through the tee so a firewall block
+        # still fails the job; tee captures the report for the artifact upload.
+        env:
+          UV_PYTHON: "3.12"
+          UV_PYTHON_DOWNLOADS: never
+        run: |
+          set -o pipefail
+          sfw uv sync --locked --extra test --extra dev 2>&1 | tee sfw-artifacts/sfw-uv-sync.log
+
+      - name: Import smoke test
+        run: |
+          set -o pipefail
+          uv run python -c "
+          import socketdev
+          from socketdev import socketdev as SocketDevClient
+          from socketdev.core.api import API
+          from socketdev.version import __version__
+          print('import smoke OK', __version__)
+          " 2>&1 | tee sfw-artifacts/import-smoke.log
+
+      - name: Collect SFW JSON report
+        # socketdev/action points sfw at SFW_JSON_REPORT_PATH (a $RUNNER_TEMP
+        # file) and reads it back in its post step to render the job summary, so
+        # COPY (don't move) the report into the bundle. sfw writes it even when
+        # it blocks an install -- always() keeps it on failures too.
+        if: always()
+        run: |
+          if [ -n "${SFW_JSON_REPORT_PATH:-}" ] && [ -f "$SFW_JSON_REPORT_PATH" ]; then
+            cp "$SFW_JSON_REPORT_PATH" "$GITHUB_WORKSPACE/sfw-artifacts/sfw-report.json"
+            echo "Collected SFW report -> sfw-artifacts/sfw-report.json"
+          else
+            echo "No SFW JSON report found at '${SFW_JSON_REPORT_PATH:-<unset>}'." \
+              > "$GITHUB_WORKSPACE/sfw-artifacts/sfw-report-missing.txt"
+          fi
+
+      - name: Upload SFW report artifact
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: socket-firewall-free-${{ github.event.pull_request.number }}
+          path: sfw-artifacts/
+          if-no-files-found: warn
+          retention-days: 14
+
+  # Trusted SocketDev members: authenticated enterprise edition. The token is
+  # scoped to the `socket-firewall` environment, so only this job can read it.
+  python-sfw-smoke-enterprise:
+    needs: inspect
+    if: needs.inspect.outputs.python_deps_changed == 'true' && needs.inspect.outputs.is_trusted == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: socket-firewall
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Prepare SFW artifact directory
+        run: |
+          mkdir -p sfw-artifacts
+          {
+            echo "mode=firewall-enterprise"
+            echo "pr=${{ github.event.pull_request.number }}"
+            echo "sha=${{ github.event.pull_request.head.sha }}"
+          } > sfw-artifacts/context.txt
+
+      - uses: ./.github/actions/setup-sfw
+        with:
+          uv: "true"
+          mode: firewall-enterprise
+          socket-token: ${{ secrets.SOCKET_SFW_API_TOKEN }}
+
+      - name: Sync project through Socket Firewall (enterprise)
+        # See free job for the UV_PYTHON rationale: .python-version pins an
+        # exact patch that uv would otherwise fetch from GitHub through the
+        # firewall (blocked by its TLS interception); use the runner's Python.
+        #
+        # pipefail keeps sfw's exit code through the tee so a firewall block
+        # still fails the job; tee captures the report for the artifact upload.
+        env:
+          UV_PYTHON: "3.12"
+          UV_PYTHON_DOWNLOADS: never
+        run: |
+          set -o pipefail
+          sfw uv sync --locked --extra test --extra dev 2>&1 | tee sfw-artifacts/sfw-uv-sync.log
+
+      - name: Import smoke test
+        run: |
+          set -o pipefail
+          uv run python -c "
+          import socketdev
+          from socketdev import socketdev as SocketDevClient
+          from socketdev.core.api import API
+          from socketdev.version import __version__
+          print('import smoke OK', __version__)
+          " 2>&1 | tee sfw-artifacts/import-smoke.log
+
+      - name: Collect SFW JSON report
+        # socketdev/action points sfw at SFW_JSON_REPORT_PATH (a $RUNNER_TEMP
+        # file) and reads it back in its post step to render the job summary, so
+        # COPY (don't move) the report into the bundle. sfw writes it even when
+        # it blocks an install -- always() keeps it on failures too.
+        if: always()
+        run: |
+          if [ -n "${SFW_JSON_REPORT_PATH:-}" ] && [ -f "$SFW_JSON_REPORT_PATH" ]; then
+            cp "$SFW_JSON_REPORT_PATH" "$GITHUB_WORKSPACE/sfw-artifacts/sfw-report.json"
+            echo "Collected SFW report -> sfw-artifacts/sfw-report.json"
+          else
+            echo "No SFW JSON report found at '${SFW_JSON_REPORT_PATH:-<unset>}'." \
+              > "$GITHUB_WORKSPACE/sfw-artifacts/sfw-report-missing.txt"
+          fi
+
+      - name: Upload SFW report artifact
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: socket-firewall-enterprise-${{ github.event.pull_request.number }}
+          path: sfw-artifacts/
+          if-no-files-found: warn
+          retention-days: 14
+
+  workflow-notice:
+    needs: inspect
+    if: needs.inspect.outputs.workflow_or_action_changed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Flag workflow-sensitive updates
+        run: |
+          {
+            echo "## Sensitive File Notice"
+            echo "This PR changes workflow, composite-action, or dependabot config files."
+            echo "Require explicit human review before merge."
+          } >> "$GITHUB_STEP_SUMMARY"
