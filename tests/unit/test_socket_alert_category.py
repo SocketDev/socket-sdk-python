@@ -33,8 +33,14 @@ class TestSocketAlertCategoryParsing(unittest.TestCase):
         self.assertEqual(alert.category, SocketCategory.SUPPLY_CHAIN_RISK)
         self.assertEqual(alert.severity, SocketIssueSeverity.LOW)
 
-    def test_unknown_category_falls_back_to_miscellaneous(self):
+    def test_other_category_is_recognized(self):
+        # "other" is a known backend category as of CE-225; it should resolve to
+        # SocketCategory.OTHER rather than falling back to MISCELLANEOUS.
         alert = SocketAlert.from_dict(self._base_payload("other"))
+        self.assertEqual(alert.category, SocketCategory.OTHER)
+
+    def test_unknown_category_falls_back_to_miscellaneous(self):
+        alert = SocketAlert.from_dict(self._base_payload("somethingCompletelyNew"))
         self.assertEqual(alert.category, SocketCategory.MISCELLANEOUS)
 
     def test_unknown_category_does_not_raise(self):
@@ -46,7 +52,7 @@ class TestSocketAlertCategoryParsing(unittest.TestCase):
 
     def test_unknown_category_emits_warning(self):
         with self.assertLogs("socketdev", level=logging.WARNING) as captured:
-            SocketAlert.from_dict(self._base_payload("other"))
+            SocketAlert.from_dict(self._base_payload("somethingCompletelyNew"))
         self.assertTrue(
             any("Unknown SocketCategory" in message for message in captured.output),
             f"expected a warning about the unknown category, got: {captured.output}",
