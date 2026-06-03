@@ -310,8 +310,9 @@ jobs:
           NEEDS_JSON: ${{ toJSON(needs) }}
         run: |
           echo "$NEEDS_JSON"
-          # Fail iff any needed job reported failure or cancelled; success and
-          # skipped both pass. jq returns the count of offending results.
+          # Fail if and only if a needed job reported failure or cancelled;
+          # success and skipped both pass. jq returns the count of offending
+          # results.
           bad="$(printf '%s' "$NEEDS_JSON" \
             | jq '[to_entries[] | select(.value.result == "failure" or .value.result == "cancelled")] | length')"
 
