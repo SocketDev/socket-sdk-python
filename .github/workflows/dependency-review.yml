@@ -279,3 +279,51 @@ jobs:
             echo "This PR changes workflow, composite-action, or dependabot config files."
             echo "Require explicit human review before merge."
           } >> "$GITHUB_STEP_SUMMARY"
+
+  # Aggregator gate -- the single check intended to become the required status
+  # check on main. The Socket Firewall smoke jobs are conditional (deps-changed
+  # gates them, and exactly one of free/enterprise runs per PR), so neither can
+  # be required directly: a required check whose job is `if:`-skipped is never
+  # created and sits at "Expected -- Waiting for status to be reported"
+  # forever, permanently blocking merge (this hits every Dependabot/fork PR and
+  # every PR that doesn't touch deps).
+  #
+  # This job runs unconditionally (`if: always()`), depends on all the
+  # conditional jobs, and fails ONLY when one of them actually failed or was
+  # cancelled. A `skipped` dependency passes -- so the gate is green when no
+  # deps changed, and otherwise satisfied by whichever smoke path ran (free for
+  # Dependabot/forks, enterprise for trusted maintainers). A real Socket
+  # Firewall block surfaces as a smoke-job failure and thus a gate failure.
+  #
+  # NOT YET wired into branch protection -- added during a soak period so the
+  # check is visible before it becomes blocking. Requiring it before it lands
+  # on main would strand every other open PR on the trap above.
+  sfw-gate:
+    name: Socket Firewall Gate
+    needs: [inspect, python-sfw-smoke-free, python-sfw-smoke-enterprise, workflow-notice]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Evaluate dependency-review results
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
+        run: |
+          echo "$NEEDS_JSON"
+          # Fail iff any needed job reported failure or cancelled; success and
+          # skipped both pass. jq returns the count of offending results.
+          bad="$(printf '%s' "$NEEDS_JSON" \
+            | jq '[to_entries[] | select(.value.result == "failure" or .value.result == "cancelled")] | length')"
+
+          {
+            echo "## Socket Firewall Gate"
+            printf '%s\n' "$NEEDS_JSON" | jq -r 'to_entries[] | "- \(.key): \(.value.result)"'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$bad" -ne 0 ]; then
+            echo "Gate failed: $bad upstream job(s) failed or were cancelled." >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::Socket Firewall Gate failed -- $bad upstream job(s) failed or were cancelled."
+            exit 1
+          fi
+
+          echo "Gate passed." >> "$GITHUB_STEP_SUMMARY"
