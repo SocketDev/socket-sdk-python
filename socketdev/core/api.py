@@ -112,7 +112,7 @@ class API:
                 raise APIInsufficientQuota(status_code=429)
             if response.status_code == 502:
                 log.error(f"Upstream server error{path_str}{headers_str}")
-                raise APIBadGateway(status_code=502)
+                raise APIBadGateway()
             if response.status_code >= 400:
                 try:
                     error_json = response.json()

@@ -76,5 +76,5 @@ class APIConnectionError(APIFailure):
 class APIBadGateway(APIFailure):
     """Raised when the upstream server returns a 502 Bad Gateway error"""
 
-    def __init__(self, *args, status_code: Optional[int] = 502):
-        super().__init__(*args, status_code=status_code)
+    def __init__(self, *args):
+        super().__init__(*args, status_code=502)
