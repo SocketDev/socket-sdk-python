@@ -76,26 +76,26 @@ class API:
             path_str = f"\nPath: {url}"
 
             if response.status_code == 401:
-                raise APIAccessDenied(f"Unauthorized{path_str}{headers_str}")
+                raise APIAccessDenied(f"Unauthorized{path_str}{headers_str}", status_code=401)
             if response.status_code == 403:
                 try:
                     error_message = response.json().get("error", {}).get("message", "")
                     if "Insufficient permissions for API method" in error_message:
                         log.error(f"{error_message}{path_str}{headers_str}")
-                        raise APIInsufficientPermissions()
+                        raise APIInsufficientPermissions(status_code=403)
                     elif "Organization not allowed" in error_message:
                         log.error(f"{error_message}{path_str}{headers_str}")
-                        raise APIOrganizationNotAllowed()
+                        raise APIOrganizationNotAllowed(status_code=403)
                     elif "Insufficient max quota" in error_message:
                         log.error(f"{error_message}{path_str}{headers_str}")
-                        raise APIInsufficientQuota()
+                        raise APIInsufficientQuota(status_code=403)
                     else:
-                        raise APIAccessDenied(f"{error_message or 'Access denied'}{path_str}{headers_str}")
+                        raise APIAccessDenied(f"{error_message or 'Access denied'}{path_str}{headers_str}", status_code=403)
                 except ValueError:
-                    raise APIAccessDenied(f"Access denied{path_str}{headers_str}")
+                    raise APIAccessDenied(f"Access denied{path_str}{headers_str}", status_code=403)
             if response.status_code == 404:
                 log.error(f"Path not found {path}{path_str}{headers_str}")
-                raise APIResourceNotFound()
+                raise APIResourceNotFound(status_code=404)
             if response.status_code == 429:
                 retry_after = response.headers.get("retry-after")
                 if retry_after:
@@ -109,7 +109,7 @@ class API:
                 else:
                     time_msg = ""
                 log.error(f"Insufficient quota for API route.{time_msg}{path_str}{headers_str}")
-                raise APIInsufficientQuota()
+                raise APIInsufficientQuota(status_code=429)
             if response.status_code == 502:
                 log.error(f"Upstream server error{path_str}{headers_str}")
                 raise APIBadGateway()
@@ -124,7 +124,7 @@ class API:
                     f"Error message: {error_message}"
                 )
                 log.error(error)
-                raise APIFailure(error)
+                raise APIFailure(error, status_code=response.status_code)
 
             return response
         except Timeout:
