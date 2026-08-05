@@ -78,3 +78,22 @@ class APIBadGateway(APIFailure):
 
     def __init__(self, *args):
         super().__init__(*args, status_code=502)
+
+
+class APIPartialResponse(APIFailure):
+    """Raised by ``purl.post(strict=True)`` when the batch response omits requested inputs.
+
+    The batch purl API is fail-open: input purls whose resolution/analysis has not
+    completed are silently dropped from the response unless the caller opts in via
+    ``alerts=True`` (synthetic ``pendingScan``/``notFound`` rows) or ``poll=True`` (a
+    bounded fail-closed wait). ``strict=True`` turns that silent omission into this
+    explicit error so callers get a first-class "partial batch" signal without having
+    to diff the response themselves.
+
+    The ``missing`` attribute holds the requested purls that were absent from the
+    response (the HTTP call itself succeeded, so there is no status code).
+    """
+
+    def __init__(self, *args, missing=None):
+        super().__init__(*args)
+        self.missing = list(missing or [])

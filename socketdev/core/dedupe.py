@@ -11,8 +11,8 @@ class Dedupe:
     @staticmethod
     def alert_key(alert: dict) -> tuple:
         return (
-            alert["type"],
-            alert["severity"],
+            alert.get("type"),
+            alert.get("severity"),
             alert.get("category"),
             Dedupe.normalize_file_path(alert.get("file")),
             alert.get("start"),
@@ -23,8 +23,8 @@ class Dedupe:
     def consolidate_and_merge_alerts(package_group: List[Dict[str, Any]]) -> Dict[str, Any]:
         def alert_identity(alert: dict) -> tuple:
             return (
-                alert["type"],
-                alert["severity"],
+                alert.get("type"),
+                alert.get("severity"),
                 alert.get("category"),
                 Dedupe.normalize_file_path(alert.get("file")),
                 alert.get("start"),
@@ -41,14 +41,17 @@ class Dedupe:
                 identity = alert_identity(alert)
 
                 if identity not in alert_map:
-                    # Build alert dict with only fields that exist in the original alert
+                    # Build alert dict with only fields that exist in the original alert.
+                    # Use .get() for key/type/severity/action so synthetic status rows
+                    # (e.g. pendingScan/notFound), which are built server-side from a
+                    # minimal {type, key} base, don't raise KeyError here.
                     consolidated_alert = {
-                        "key": alert["key"],  # keep the first key seen
-                        "type": alert["type"],
-                        "severity": alert["severity"],
+                        "key": alert.get("key"),  # keep the first key seen
+                        "type": alert.get("type"),
+                        "severity": alert.get("severity"),
                         "releases": [release],
                         "props": alert.get("props", []),
-                        "action": alert["action"]
+                        "action": alert.get("action")
                     }
                     
                     # Only include optional fields if they exist in the original alert

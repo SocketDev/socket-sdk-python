@@ -1,7 +1,9 @@
 import json
 import urllib.parse
 import warnings
+from typing import Optional
 from socketdev.log import log
+from socketdev.exceptions import APIPartialResponse
 from ..core.dedupe import Dedupe
 
 
@@ -14,8 +16,55 @@ class Purl:
         license: str = "false",
         components: list = None,
         org_slug: str = None,
+        poll: Optional[bool] = None,
+        timeout_sec: Optional[int] = None,
+        alerts: Optional[bool] = None,
+        purl_errors: Optional[bool] = None,
+        strict: bool = False,
         **kwargs,
     ) -> list:
+        """POST a batch of purls to the Socket batch purl endpoint and return deduped rows.
+
+        The batch purl API (``POST /v0/purl`` and ``POST /v0/orgs/{slug}/purl``) defaults
+        to **fail-open**: any input purl whose resolution/analysis has not finished is
+        **silently omitted** from the response. A naive caller therefore cannot tell
+        "this version is clean" apart from "this version was dropped from the response".
+        The parameters below opt into the server behaviors that make omissions visible.
+
+        Args:
+            license: ``"true"``/``"false"`` — request license information (stringly-typed
+                to match the query param the API expects).
+            components: list of component dicts to score, e.g. ``[{"purl": "pkg:npm/lodash@4.18.1"}]``.
+            org_slug: organization slug. When provided, routes to the org-scoped endpoint
+                ``POST /v0/orgs/{org_slug}/purl``; otherwise the deprecated ``POST /v0/purl``.
+            poll: opt into a fail-closed bounded wait for pending analysis (``poll=True`` →
+                ``poll=true`` query param). ``None`` omits the param (server default).
+            timeout_sec: bound in seconds for the ``poll`` wait (``→ timeoutSec``). The
+                server may cap this via a feature flag. ``None`` omits the param.
+            alerts: when ``True`` (``→ alerts=true``), the server emits synthetic
+                ``pendingScan``/``notFound`` status rows instead of silently omitting
+                unresolved inputs, so callers can distinguish "no data yet" from "clean".
+            purl_errors: when ``True`` (``→ purlErrors``), the server includes per-purl
+                error rows for malformed/unresolvable inputs. ``None`` omits the param.
+            strict: client-side guard. When ``True``, compares the ``purl`` of each
+                requested component against the ``inputPurl``/``purl`` of the returned
+                rows and raises :class:`~socketdev.exceptions.APIPartialResponse` (with a
+                ``missing`` list) if any requested purl is absent from the response. This
+                surfaces partial batches even without ``alerts=True``. Only components that
+                carry a ``purl`` string are checked.
+            **kwargs: forwarded verbatim into the query string (back-compat passthrough for
+                any params not yet promoted to first-class arguments).
+
+        Returns:
+            A deduped list of result rows. When ``alerts=True``, unresolved inputs appear
+            as synthetic rows carrying ``pendingScan``/``notFound`` alerts rather than being
+            omitted. On a non-200 response, logs the error and returns ``[]`` (callers that
+            need to fail closed should treat ``[]`` as an error).
+
+        Raises:
+            APIPartialResponse: if ``strict=True`` and one or more requested component purls
+                are missing from the response.
+        """
         if org_slug is None:
             warnings.warn(
                 "Calling purl.post() without org_slug uses the deprecated POST /v0/purl endpoint. "
@@ -31,6 +80,16 @@ class Purl:
         query_args = {
             "license": license,
         }
+        # Promote the typed params into query args only when explicitly set, so existing
+        # callers keep the server's fail-open default (None => omit the param entirely).
+        if poll is not None:
+            query_args["poll"] = "true" if poll else "false"
+        if timeout_sec is not None:
+            query_args["timeoutSec"] = str(timeout_sec)
+        if alerts is not None:
+            query_args["alerts"] = "true" if alerts else "false"
+        if purl_errors is not None:
+            query_args["purlErrors"] = "true" if purl_errors else "false"
         if kwargs:
             query_args.update(kwargs)
         params = urllib.parse.urlencode(query_args)
@@ -48,8 +107,43 @@ class Purl:
                     except json.JSONDecodeError:
                         continue
             purl_deduped = Dedupe.dedupe(purl, batched=True)
+            if strict:
+                self._raise_on_missing(components, purl_deduped)
             return purl_deduped
 
         log.error(f"Error posting {components} to the Purl API: {response.status_code}")
         log.error(response.text)
         return []
+
+    @staticmethod
+    def _raise_on_missing(components: list, results: list) -> None:
+        """Raise APIPartialResponse if any requested component purl is absent from results.
+
+        Only components exposing a ``purl`` string are checked; the batch API echoes the
+        request identifier back as ``inputPurl`` (falling back to ``purl``), so we compare
+        against both.
+        """
+        requested = [
+            c["purl"]
+            for c in components
+            if isinstance(c, dict) and isinstance(c.get("purl"), str)
+        ]
+        if not requested:
+            return
+        returned = set()
+        for row in results:
+            if not isinstance(row, dict):
+                continue
+            for field in ("inputPurl", "purl"):
+                value = row.get(field)
+                if isinstance(value, str):
+                    returned.add(value)
+        missing = [purl for purl in requested if purl not in returned]
+        if missing:
+            raise APIPartialResponse(
+                "purl.post(strict=True): the batch response omitted "
+                f"{len(missing)} of {len(requested)} requested purls "
+                "(fail-open: unresolved inputs are dropped unless alerts=True/poll=True): "
+                f"{missing}",
+                missing=missing,
+            )
