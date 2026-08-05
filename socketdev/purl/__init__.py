@@ -7,6 +7,13 @@ from socketdev.exceptions import APIPartialResponse
 from ..core.dedupe import Dedupe
 
 
+def _encode_bool_query_value(value) -> str:
+    """Encode typed bools while preserving legacy string query values."""
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    return str(value)
+
+
 class Purl:
     def __init__(self, api):
         self.api = api
@@ -46,6 +53,8 @@ class Purl:
                 unresolved inputs, so callers can distinguish "no data yet" from "clean".
             purl_errors: when ``True`` (``→ purlErrors``), the server includes per-purl
                 error rows for malformed/unresolvable inputs. ``None`` omits the param.
+                For backward compatibility, legacy string values passed to the promoted
+                Boolean parameters are forwarded unchanged.
             strict: client-side guard. When ``True``, compares the exact ``purl`` string
                 of each requested component against the returned ``inputPurl`` (or the
                 ``purl`` fallback). The API defines ``inputPurl`` as the original,
@@ -86,13 +95,13 @@ class Purl:
         # Promote the typed params into query args only when explicitly set, so existing
         # callers keep the server's fail-open default (None => omit the param entirely).
         if poll is not None:
-            query_args["poll"] = "true" if poll else "false"
+            query_args["poll"] = _encode_bool_query_value(poll)
         if timeout_sec is not None:
             query_args["timeoutSec"] = str(timeout_sec)
         if alerts is not None:
-            query_args["alerts"] = "true" if alerts else "false"
+            query_args["alerts"] = _encode_bool_query_value(alerts)
         if purl_errors is not None:
-            query_args["purlErrors"] = "true" if purl_errors else "false"
+            query_args["purlErrors"] = _encode_bool_query_value(purl_errors)
         if kwargs:
             query_args.update(kwargs)
         params = urllib.parse.urlencode(query_args)

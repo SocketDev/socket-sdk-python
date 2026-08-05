@@ -524,6 +524,27 @@ class TestAllEndpointsUnit(unittest.TestCase):
         self.assertNotIn("alerts=", url)
         self.assertNotIn("purlErrors=", url)
 
+    def test_purl_post_preserves_legacy_string_boolean_params(self):
+        """Promoted params retain the pre-existing stringly kwargs behavior."""
+        self._mock_purl_ndjson(
+            '{"inputPurl": "pkg:npm/lodash@4.18.1", '
+            '"purl": "pkg:npm/lodash@4.18.1", "type": "npm", '
+            '"name": "lodash", "version": "4.18.1", "valid": true, "alerts": []}'
+        )
+
+        self.sdk.purl.post(
+            components=[{"purl": "pkg:npm/lodash@4.18.1"}],
+            org_slug="test-org",
+            poll="false",
+            alerts="false",
+            purl_errors="false",
+        )
+
+        url = self.mock_requests.request.call_args[0][1]
+        self.assertIn("poll=false", url)
+        self.assertIn("alerts=false", url)
+        self.assertIn("purlErrors=false", url)
+
     def test_purl_post_synthetic_pending_scan_row(self):
         """A synthetic pendingScan row (no severity/action) parses without raising KeyError."""
         # Synthetic status alerts are built server-side from a minimal {type, key} base.
