@@ -11,26 +11,84 @@ on:
         type: string
 
 concurrency:
-  group: publish-pr-preview-${{ github.event.pull_request.number || inputs.pr_number }}
+  group: publish-pr-preview-${{ github.event.pull_request.number || github.run_id }}
   cancel-in-progress: false
 
 jobs:
-  build:
+  context:
     if: >-
       github.event_name == 'workflow_dispatch' ||
       (github.event.label.name == 'publish-preview' &&
       github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      pr_number: ${{ steps.context.outputs.pr_number }}
+      head_sha: ${{ steps.context.outputs.head_sha }}
+    steps:
+      - name: Validate pull request context
+        id: context
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          EVENT_PR_NUMBER: ${{ github.event.pull_request.number }}
+          INPUT_PR_NUMBER: ${{ inputs.pr_number }}
+          WORKFLOW_REF: ${{ github.ref }}
+        with:
+          script: |
+            const rawPrNumber = context.eventName === 'workflow_dispatch'
+              ? process.env.INPUT_PR_NUMBER
+              : process.env.EVENT_PR_NUMBER;
+            if (!/^[1-9][0-9]*$/.test(rawPrNumber || '')) {
+              core.setFailed('Pull request number must contain ASCII digits only.');
+              return;
+            }
+
+            if (context.eventName === 'workflow_dispatch') {
+              const defaultRef = `refs/heads/${process.env.DEFAULT_BRANCH}`;
+              if (process.env.WORKFLOW_REF !== defaultRef) {
+                core.setFailed(`Run manual previews from ${defaultRef}.`);
+                return;
+              }
+            }
+
+            const prNumber = Number(rawPrNumber);
+            if (!Number.isSafeInteger(prNumber)) {
+              core.setFailed('Pull request number is outside the supported range.');
+              return;
+            }
+            const {data: pullRequest} = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber,
+            });
+            if (pullRequest.state !== 'open') {
+              core.setFailed(`Pull request #${prNumber} is not open.`);
+              return;
+            }
+            if (pullRequest.head.repo?.full_name !== `${context.repo.owner}/${context.repo.repo}`) {
+              core.setFailed('Preview publication is limited to branches in this repository.');
+              return;
+            }
+
+            core.setOutput('pr_number', String(prNumber));
+            core.setOutput('head_sha', pullRequest.head.sha);
+
+  build:
+    needs: context
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
       contents: read
     outputs:
       preview_version: ${{ steps.version.outputs.preview_version }}
-      pr_number: ${{ steps.context.outputs.pr_number }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.pull_request.head.sha || format('refs/pull/{0}/head', inputs.pr_number) }}
+          ref: ${{ needs.context.outputs.head_sha }}
           fetch-depth: 0
           persist-credentials: false
 
@@ -43,13 +101,6 @@ jobs:
 
       - name: Install distribution validator
         run: python -m pip install "twine>=4.0.0"
-
-      - name: Record preview context
-        id: context
-        env:
-          EVENT_PR_NUMBER: ${{ github.event.pull_request.number }}
-          INPUT_PR_NUMBER: ${{ inputs.pr_number }}
-        run: echo "pr_number=${EVENT_PR_NUMBER:-$INPUT_PR_NUMBER}" >> "$GITHUB_OUTPUT"
 
       - name: Inject deterministic preview version
         env:
@@ -84,7 +135,7 @@ jobs:
           retention-days: 14
 
   publish:
-    needs: build
+    needs: [context, build]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -108,7 +159,7 @@ jobs:
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           PREVIEW_VERSION: ${{ needs.build.outputs.preview_version }}
-          PR_NUMBER: ${{ needs.build.outputs.pr_number }}
+          PR_NUMBER: ${{ needs.context.outputs.pr_number }}
         with:
           script: |
             const marker = '<!-- socketdev-pr-preview -->';

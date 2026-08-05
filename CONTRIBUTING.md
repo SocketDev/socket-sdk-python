@@ -16,8 +16,6 @@ complete local check is:
 
 ```bash
 python -m pytest
-ruff check .
-ruff format --check .
 hatch build
 python -m twine check dist/*
 ```
@@ -36,14 +34,16 @@ that is trusted to run with the repository's publishing permissions.
 For a pull request from this repository, apply the `publish-preview` label. The
 `Publish PR Preview` workflow will build and validate a uniquely versioned
 `socketdev` prerelease, publish it to TestPyPI, and add or update a pull request
-comment with the exact version and installation command. Label-triggered
-publication is skipped for pull requests from forks.
+comment with the exact version and installation command. Both label-triggered
+and manually dispatched previews are limited to open pull requests whose
+branches belong to this repository.
 
 The workflow reacts when the label is added; pushing another commit while the
 label remains on the pull request does not publish a new preview. To publish the
 new pull request head or retry a failed publication, remove `publish-preview`
 and apply it again.
 
-Maintainers can also open **Actions > Publish PR Preview > Run workflow** and
-enter the pull request number. Manual dispatch is useful when a label should
-remain unchanged or a publication needs to be retried.
+Maintainers can also open **Actions > Publish PR Preview > Run workflow**, run
+it from the repository's default branch, and enter the pull request number.
+Manual dispatch is useful when a label should remain unchanged or a
+publication needs to be retried.
