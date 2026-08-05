@@ -528,6 +528,21 @@ class TestAllEndpointsUnit(unittest.TestCase):
         )
         self.assertEqual(len(result), 1)
 
+    def test_purl_post_strict_matches_original_input_before_normalization(self):
+        """strict=True matches exact inputPurl even when the canonical purl differs."""
+        requested_purl = "pkg:npm/%40scope/pkg@1.0.0"
+        server_rows = [
+            {
+                "inputPurl": requested_purl,
+                "purl": "pkg:npm/@scope/pkg@1.0.0",
+            }
+        ]
+
+        self.sdk.purl._raise_on_missing(
+            [{"purl": requested_purl}],
+            server_rows,
+        )
+
     # Quota endpoints
     def test_quota_get_unit(self):
         """Test quota retrieval."""

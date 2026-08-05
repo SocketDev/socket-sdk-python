@@ -91,9 +91,18 @@ class APIPartialResponse(APIFailure):
     to diff the response themselves.
 
     The ``missing`` attribute holds the requested purls that were absent from the
-    response (the HTTP call itself succeeded, so there is no status code).
+    response (the HTTP call itself succeeded, so there is no status code). A missing
+    row may reflect pending analysis, a malformed or unknown purl, or a response contract
+    failure, so blindly retrying is not guaranteed to succeed. Callers that need a bounded
+    wait should use ``poll=True``; callers that need omission reasons should request
+    ``alerts=True`` and/or ``purl_errors=True``.
     """
 
     def __init__(self, *args, missing=None):
         super().__init__(*args)
         self.missing = list(missing or [])
+
+    def is_transient_error(self) -> bool:
+        # The HTTP request completed successfully, and the omission reason may be
+        # permanent. Server-side polling is the explicit bounded retry mechanism.
+        return False

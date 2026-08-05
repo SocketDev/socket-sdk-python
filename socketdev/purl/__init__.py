@@ -46,12 +46,15 @@ class Purl:
                 unresolved inputs, so callers can distinguish "no data yet" from "clean".
             purl_errors: when ``True`` (``→ purlErrors``), the server includes per-purl
                 error rows for malformed/unresolvable inputs. ``None`` omits the param.
-            strict: client-side guard. When ``True``, compares the ``purl`` of each
-                requested component against the ``inputPurl``/``purl`` of the returned
-                rows and raises :class:`~socketdev.exceptions.APIPartialResponse` (with a
-                ``missing`` list) if any requested purl is absent from the response. This
-                surfaces partial batches even without ``alerts=True``. Only components that
-                carry a ``purl`` string are checked.
+            strict: client-side guard. When ``True``, compares the exact ``purl`` string
+                of each requested component against the returned ``inputPurl`` (or the
+                ``purl`` fallback). The API defines ``inputPurl`` as the original,
+                unmodified input before server normalization, so canonicalized ``purl``
+                values do not cause false omissions. Raises
+                :class:`~socketdev.exceptions.APIPartialResponse` (with a ``missing``
+                list) if any requested purl is absent from the response. This surfaces
+                partial batches even without ``alerts=True``. Only components that carry
+                a ``purl`` string are checked.
             **kwargs: forwarded verbatim into the query string (back-compat passthrough for
                 any params not yet promoted to first-class arguments).
 
@@ -127,9 +130,11 @@ class Purl:
     def _raise_on_missing(components: list, results: list) -> None:
         """Raise APIPartialResponse if any requested component purl is absent from results.
 
-        Only components exposing a ``purl`` string are checked; the batch API echoes the
-        request identifier back as ``inputPurl`` (falling back to ``purl``), including
-        under ``value`` for typed ``purlError`` stream records.
+        Only components exposing a ``purl`` string are checked. The batch API contract
+        defines ``inputPurl`` as the original, unmodified input string before server-side
+        normalization, so matching it exactly preserves the caller's identity even when
+        the response's canonical ``purl`` differs. ``purl`` is retained as a fallback,
+        and typed ``purlError`` stream records carry ``inputPurl`` under ``value``.
         """
         requested = [
             c["purl"]
