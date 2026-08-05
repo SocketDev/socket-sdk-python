@@ -113,6 +113,45 @@ class TestAllEndpointsUnit(unittest.TestCase):
         self.assertEqual(call_args[0][0], "GET")
         self.assertIn("/orgs/test-org/diff-scans/diff-123", call_args[0][1])
 
+    def test_diffscans_get_cached_unit(self):
+        """Test diffscans get passes cached/omit params through as a query string."""
+        expected_data = {
+            "diff_scan": {
+                "id": "diff-123",
+                "artifacts": {"added": [], "removed": [], "unchanged": [], "replaced": [], "updated": []},
+            }
+        }
+        self._mock_response(expected_data)
+
+        result = self.sdk.diffscans.get("test-org", "diff-123", params={"cached": "true"})
+
+        self.assertEqual(result, expected_data)
+        call_args = self.mock_requests.request.call_args
+        self.assertEqual(call_args[0][0], "GET")
+        self.assertIn("/orgs/test-org/diff-scans/diff-123?cached=true", call_args[0][1])
+
+    def test_diffscans_get_processing_unit(self):
+        """Test diffscans get surfaces 202 processing status instead of an error."""
+        self._mock_response({"status": "processing", "id": "diff-123"}, 202)
+
+        result = self.sdk.diffscans.get("test-org", "diff-123", params={"cached": "true"})
+
+        self.assertEqual(result.get("status"), "processing")
+        self.assertEqual(result.get("id"), "diff-123")
+
+    def test_diffscans_get_processing_empty_body_unit(self):
+        """Test diffscans get synthesizes the processing status when the 202 body is empty."""
+        mock_response = Mock()
+        mock_response.status_code = 202
+        mock_response.headers = {}
+        mock_response.json.side_effect = ValueError("no body")
+        mock_response.text = ""
+        self.mock_requests.request.return_value = mock_response
+
+        result = self.sdk.diffscans.get("test-org", "diff-123", params={"cached": "true"})
+
+        self.assertEqual(result, {"status": "processing", "id": "diff-123"})
+
     def test_diffscans_create_from_ids_unit(self):
         """Test diffscans creation from scan IDs."""
         expected_data = {"id": "new-diff-scan", "status": "queued"}
@@ -150,6 +189,29 @@ class TestAllEndpointsUnit(unittest.TestCase):
                 self.assertEqual(call_args[0][0], "POST")
                 self.assertIn("/orgs/test-org/diff-scans/from-repo/test-repo", call_args[0][1])
                 
+            finally:
+                os.unlink(f.name)
+
+    def test_diffscans_create_from_repo_committers_list_unit(self):
+        """Test list-valued params (committers) encode as repeated query params."""
+        self._mock_response({"id": "repo-diff-scan"}, 201)
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            json.dump({"name": "test", "version": "1.0.0"}, f)
+            f.flush()
+
+            try:
+                with open(f.name, "rb") as file_obj:
+                    files = [("file", ("package.json", file_obj))]
+                    params = {"committers": ["alice", "bob"], "branch": "main"}
+                    self.sdk.diffscans.create_from_repo("test-org", "test-repo", files, params)
+
+                call_args = self.mock_requests.request.call_args
+                url = call_args[0][1]
+                self.assertIn("committers=alice", url)
+                self.assertIn("committers=bob", url)
+                self.assertIn("branch=main", url)
+
             finally:
                 os.unlink(f.name)
 

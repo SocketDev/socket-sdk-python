@@ -21,12 +21,41 @@ class DiffScans:
         log.error(f"Error listing diff scans: {response.status_code}, message: {response.text}")
         return {}
 
-    def get(self, org_slug: str, diff_scan_id: str) -> dict:
-        """Fetch a diff scan by ID."""
+    def get(self, org_slug: str, diff_scan_id: str, params: Optional[Dict[str, Any]] = None) -> dict:
+        """Fetch a diff scan by ID.
+
+        Args:
+            org_slug: Organization slug
+            diff_scan_id: The ID of the diff scan to fetch
+            params: Optional query parameters. Supports:
+                cached: When "true", return pre-computed results immediately
+                        (200) or a processing status (202) instead of holding
+                        the connection open while the diff is computed.
+                omit_unchanged: When "true", omit unchanged artifacts.
+                omit_license_details: When "true", omit license details.
+
+        Returns:
+            dict: On 200, the API response containing the diff_scan object.
+                On 202 (results still processing when cached=true), a dict of
+                {"status": "processing", "id": diff_scan_id} so callers can
+                poll until the diff scan is ready. Empty dict on error.
+        """
+        import urllib.parse
         path = f"orgs/{org_slug}/diff-scans/{diff_scan_id}"
+        if params:
+            path += "?" + urllib.parse.urlencode(params, doseq=True)
         response = self.api.do_request(path=path, method="GET")
         if response.status_code == 200:
             return response.json()
+        if response.status_code == 202:
+            result = {"status": "processing", "id": diff_scan_id}
+            try:
+                body = response.json()
+                if isinstance(body, dict):
+                    result.update(body)
+            except ValueError:
+                pass
+            return result
         log.error(f"Error fetching diff scan: {response.status_code}, message: {response.text}")
         return {}
 
@@ -61,7 +90,8 @@ class DiffScans:
         import urllib.parse
         path = f"orgs/{org_slug}/diff-scans/from-repo/{repo_slug}"
         if params:
-            path += "?" + urllib.parse.urlencode(params)
+            # doseq=True so list values (e.g. committers) become repeated params
+            path += "?" + urllib.parse.urlencode(params, doseq=True)
         
         # Use lazy loading if requested
         if use_lazy_loading:
@@ -80,7 +110,7 @@ class DiffScans:
         import urllib.parse
         path = f"orgs/{org_slug}/diff-scans/from-ids"
         if params:
-            path += "?" + urllib.parse.urlencode(params)
+            path += "?" + urllib.parse.urlencode(params, doseq=True)
         response = self.api.do_request(path=path, method="POST")
         if response.status_code in (200, 201):
             return response.json()
