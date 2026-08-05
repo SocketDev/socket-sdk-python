@@ -124,12 +124,43 @@ def run_uv_lock() -> bool:
     return before != after
 
 
+def read_preview_id():
+    if "--preview-id" not in sys.argv:
+        return None
+
+    option_index = sys.argv.index("--preview-id")
+    try:
+        preview_id = sys.argv[option_index + 1]
+    except IndexError:
+        print("❌ `--preview-id` requires a numeric value.")
+        sys.exit(1)
+
+    if not preview_id.isascii() or not preview_id.isdigit():
+        print("❌ `--preview-id` must contain ASCII digits only.")
+        sys.exit(1)
+    return preview_id
+
+
 def main():
     dev_mode = "--dev" in sys.argv
+    skip_lock = "--skip-lock" in sys.argv
+    preview_id = read_preview_id()
     current_version = read_version_from_version_file(VERSION_FILE)
     previous_version = read_version_from_git("socketdev/version.py")
 
     print(f"Current: {current_version}, Previous: {previous_version}")
+
+    if preview_id is not None:
+        if not dev_mode:
+            print("❌ `--preview-id` can only be used with `--dev`.")
+            sys.exit(1)
+        base_version = current_version.split(".dev")[0]
+        new_version = f"{base_version}.dev{preview_id}"
+        inject_version(new_version)
+        if not skip_lock:
+            run_uv_lock()
+        print(f"✅ Prepared deterministic preview version {new_version}.")
+        sys.exit(0)
 
     if current_version == previous_version:
         if dev_mode:
