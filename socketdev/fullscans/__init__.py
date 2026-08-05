@@ -12,9 +12,46 @@ log = logging.getLogger("socketdev")
 
 class SocketPURL_Type(str, Enum):
     UNKNOWN = "unknown"
-    NPM = "npm"
-    PYPI = "pypi"
+    APK = "apk"
+    BITBUCKET = "bitbucket"
+    CARGO = "cargo"
+    COCOAPODS = "cocoapods"
+    COMPOSER = "composer"
+    CONAN = "conan"
+    CONDA = "conda"
+    CRAN = "cran"
+    DEB = "deb"
+    DOCKER = "docker"
+    GEM = "gem"
+    GENERIC = "generic"
+    GITHUB = "github"
     GOLANG = "golang"
+    HACKAGE = "hackage"
+    HEX = "hex"
+    HUGGINGFACE = "huggingface"
+    LUAROCKS = "luarocks"
+    MAVEN = "maven"
+    MLFLOW = "mlflow"
+    NPM = "npm"
+    NUGET = "nuget"
+    OCI = "oci"
+    PUB = "pub"
+    PYPI = "pypi"
+    RPM = "rpm"
+    SWIFT = "swift"
+
+    @classmethod
+    def _missing_(cls, value):
+        # The API can emit purl types this SDK does not know about yet. Fall
+        # back to UNKNOWN instead of raising so one artifact cannot fail an
+        # entire response parse (same forward-compat approach as
+        # SocketCategory, https://github.com/SocketDev/socket-sdk-python/issues/78).
+        log.warning(
+            "Unknown SocketPURL_Type %r; falling back to UNKNOWN. "
+            "Upgrade socketdev to pick up newer purl types.",
+            value,
+        )
+        return cls.UNKNOWN
 
 
 class SocketIssueSeverity(str, Enum):
@@ -726,13 +763,24 @@ class FullScanStreamResponse:
 
     @classmethod
     def from_dict(cls, data: dict) -> "FullScanStreamResponse":
+        artifacts = None
+        if data.get("artifacts"):
+            artifacts = {}
+            for artifact_id, raw in data["artifacts"].items():
+                try:
+                    artifacts[artifact_id] = SocketArtifact.from_dict(raw)
+                except Exception:
+                    # One malformed artifact should not fail the whole stream.
+                    log.warning(
+                        "Skipping artifact %s that could not be parsed",
+                        artifact_id,
+                        exc_info=True,
+                    )
         return cls(
             success=data["success"],
             status=data["status"],
             message=data.get("message"),
-            artifacts={k: SocketArtifact.from_dict(v) for k, v in data["artifacts"].items()}
-            if data.get("artifacts")
-            else None,
+            artifacts=artifacts,
         )
 
 
