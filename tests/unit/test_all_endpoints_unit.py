@@ -152,6 +152,20 @@ class TestAllEndpointsUnit(unittest.TestCase):
 
         self.assertEqual(result, {"status": "processing", "id": "diff-123"})
 
+    def test_diffscans_get_processing_sentinel_wins_unit(self):
+        """Test a 202 body cannot override the SDK's polling sentinel or requested ID."""
+        self._mock_response(
+            {"status": "pending", "id": "wrong-id", "retry_after": 5},
+            202,
+        )
+
+        result = self.sdk.diffscans.get("test-org", "diff-123", params={"cached": "true"})
+
+        self.assertEqual(
+            result,
+            {"status": "processing", "id": "diff-123", "retry_after": 5},
+        )
+
     def test_diffscans_create_from_ids_unit(self):
         """Test diffscans creation from scan IDs."""
         expected_data = {"id": "new-diff-scan", "status": "queued"}

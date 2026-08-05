@@ -48,13 +48,17 @@ class DiffScans:
         if response.status_code == 200:
             return response.json()
         if response.status_code == 202:
-            result = {"status": "processing", "id": diff_scan_id}
+            result = {}
             try:
                 body = response.json()
                 if isinstance(body, dict):
                     result.update(body)
             except ValueError:
                 pass
+            # HTTP 202 always means the requested diff is still processing.
+            # Keep any additional response fields, but make the polling
+            # sentinel and requested resource ID authoritative for callers.
+            result.update({"status": "processing", "id": diff_scan_id})
             return result
         log.error(f"Error fetching diff scan: {response.status_code}, message: {response.text}")
         return {}
