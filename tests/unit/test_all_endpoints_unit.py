@@ -477,6 +477,169 @@ class TestAllEndpointsUnit(unittest.TestCase):
         self.assertIn("/purl", call_args[0][1])
         self.assertNotIn("/orgs/", call_args[0][1])
 
+    def _mock_purl_ndjson(self, ndjson):
+        """Mock a 200 NDJSON purl response and return the mock."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.headers = {'content-type': 'application/x-ndjson'}
+        mock_response.text = ndjson
+        self.mock_requests.request.return_value = mock_response
+        return mock_response
+
+    def test_purl_post_first_class_params_query_string(self):
+        """poll/timeout_sec/alerts/purl_errors map to the expected query params."""
+        self._mock_purl_ndjson(
+            '{"inputPurl": "pkg:npm/lodash@4.18.1", "purl": "pkg:npm/lodash@4.18.1", '
+            '"type": "npm", "name": "lodash", "version": "4.18.1", "valid": true, "alerts": []}'
+        )
+
+        self.sdk.purl.post(
+            license="false",
+            components=[{"purl": "pkg:npm/lodash@4.18.1"}],
+            org_slug="test-org",
+            poll=True,
+            timeout_sec=120,
+            alerts=True,
+            purl_errors=False,
+        )
+
+        url = self.mock_requests.request.call_args[0][1]
+        self.assertIn("poll=true", url)
+        self.assertIn("timeoutSec=120", url)
+        self.assertIn("alerts=true", url)
+        self.assertIn("purlErrors=false", url)
+
+    def test_purl_post_omits_unset_params(self):
+        """None-valued typed params are omitted so the API's fail-open default is preserved."""
+        self._mock_purl_ndjson(
+            '{"inputPurl": "pkg:npm/lodash@4.18.1", "purl": "pkg:npm/lodash@4.18.1", '
+            '"type": "npm", "name": "lodash", "version": "4.18.1", "valid": true, "alerts": []}'
+        )
+
+        self.sdk.purl.post(components=[{"purl": "pkg:npm/lodash@4.18.1"}], org_slug="test-org")
+
+        url = self.mock_requests.request.call_args[0][1]
+        self.assertNotIn("poll=", url)
+        self.assertNotIn("timeoutSec=", url)
+        self.assertNotIn("alerts=", url)
+        self.assertNotIn("purlErrors=", url)
+
+    def test_purl_post_preserves_legacy_string_boolean_params(self):
+        """Promoted params retain the pre-existing stringly kwargs behavior."""
+        self._mock_purl_ndjson(
+            '{"inputPurl": "pkg:npm/lodash@4.18.1", '
+            '"purl": "pkg:npm/lodash@4.18.1", "type": "npm", '
+            '"name": "lodash", "version": "4.18.1", "valid": true, "alerts": []}'
+        )
+
+        self.sdk.purl.post(
+            components=[{"purl": "pkg:npm/lodash@4.18.1"}],
+            org_slug="test-org",
+            poll="false",
+            alerts="false",
+            purl_errors="false",
+        )
+
+        url = self.mock_requests.request.call_args[0][1]
+        self.assertIn("poll=false", url)
+        self.assertIn("alerts=false", url)
+        self.assertIn("purlErrors=false", url)
+
+    def test_purl_post_synthetic_pending_scan_row(self):
+        """A synthetic pendingScan row (no severity/action) parses without raising KeyError."""
+        # Synthetic status alerts are built server-side from a minimal {type, key} base.
+        self._mock_purl_ndjson(
+            '{"inputPurl": "pkg:npm/newpkg@0.0.1", "purl": "pkg:npm/newpkg@0.0.1", '
+            '"type": "npm", "name": "newpkg", "version": "0.0.1", '
+            '"alerts": [{"type": "pendingScan", "key": "abc123"}]}'
+        )
+
+        result = self.sdk.purl.post(
+            components=[{"purl": "pkg:npm/newpkg@0.0.1"}],
+            org_slug="test-org",
+            alerts=True,
+        )
+
+        self.assertEqual(len(result), 1)
+        alert = result[0]["alerts"][0]
+        self.assertEqual(alert["type"], "pendingScan")
+        self.assertEqual(alert["key"], "abc123")
+        # Missing fields are surfaced as None rather than raising.
+        self.assertIsNone(alert["severity"])
+        self.assertIsNone(alert["action"])
+
+    def test_purl_post_preserves_purl_error_record(self):
+        """purlError stream records bypass artifact deduplication."""
+        error_row = {
+            "_type": "purlError",
+            "value": {
+                "error": "package_not_found",
+                "inputPurl": "pkg:npm/missing@1.0.0",
+            },
+        }
+        self._mock_purl_ndjson(json.dumps(error_row))
+
+        result = self.sdk.purl.post(
+            components=[{"purl": "pkg:npm/missing@1.0.0"}],
+            org_slug="test-org",
+            purl_errors=True,
+            strict=True,
+        )
+
+        self.assertEqual(result, [error_row])
+        url = self.mock_requests.request.call_args[0][1]
+        self.assertIn("purlErrors=true", url)
+
+    def test_purl_post_strict_raises_on_missing(self):
+        """strict=True raises APIPartialResponse listing purls dropped from the response."""
+        from socketdev.exceptions import APIPartialResponse
+
+        # Requested two purls; the fail-open API only returned one.
+        self._mock_purl_ndjson(
+            '{"inputPurl": "pkg:npm/lodash@4.18.1", "purl": "pkg:npm/lodash@4.18.1", '
+            '"type": "npm", "name": "lodash", "version": "4.18.1", "valid": true, "alerts": []}'
+        )
+
+        with self.assertRaises(APIPartialResponse) as ctx:
+            self.sdk.purl.post(
+                components=[
+                    {"purl": "pkg:npm/lodash@4.18.1"},
+                    {"purl": "pkg:npm/dropped@0.0.1"},
+                ],
+                org_slug="test-org",
+                strict=True,
+            )
+        self.assertEqual(ctx.exception.missing, ["pkg:npm/dropped@0.0.1"])
+
+    def test_purl_post_strict_passes_when_complete(self):
+        """strict=True returns normally when every requested purl is present."""
+        self._mock_purl_ndjson(
+            '{"inputPurl": "pkg:npm/lodash@4.18.1", "purl": "pkg:npm/lodash@4.18.1", '
+            '"type": "npm", "name": "lodash", "version": "4.18.1", "valid": true, "alerts": []}'
+        )
+
+        result = self.sdk.purl.post(
+            components=[{"purl": "pkg:npm/lodash@4.18.1"}],
+            org_slug="test-org",
+            strict=True,
+        )
+        self.assertEqual(len(result), 1)
+
+    def test_purl_post_strict_matches_original_input_before_normalization(self):
+        """strict=True matches exact inputPurl even when the canonical purl differs."""
+        requested_purl = "pkg:npm/%40scope/pkg@1.0.0"
+        server_rows = [
+            {
+                "inputPurl": requested_purl,
+                "purl": "pkg:npm/@scope/pkg@1.0.0",
+            }
+        ]
+
+        self.sdk.purl._raise_on_missing(
+            [{"purl": requested_purl}],
+            server_rows,
+        )
+
     # Quota endpoints
     def test_quota_get_unit(self):
         """Test quota retrieval."""

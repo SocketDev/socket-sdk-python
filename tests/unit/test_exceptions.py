@@ -25,6 +25,7 @@ from socketdev.exceptions import (
     APIInsufficientPermissions,
     APIInsufficientQuota,
     APIOrganizationNotAllowed,
+    APIPartialResponse,
     APIResourceNotFound,
     APITimeout,
 )
@@ -50,6 +51,11 @@ class TestIsTransientError(unittest.TestCase):
         self.assertTrue(APITimeout().is_transient_error())
         self.assertTrue(APIConnectionError().is_transient_error())
         self.assertTrue(APIBadGateway().is_transient_error())
+
+    def test_partial_response_is_not_transient(self):
+        error = APIPartialResponse("incomplete", missing=["pkg:npm/missing@1.0.0"])
+        self.assertFalse(error.is_transient_error())
+        self.assertEqual(error.missing, ["pkg:npm/missing@1.0.0"])
 
     def test_bad_gateway_carries_502_by_default(self):
         self.assertEqual(APIBadGateway().status_code, 502)
