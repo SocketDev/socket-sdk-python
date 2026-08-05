@@ -17,10 +17,12 @@ These tests pin two behaviors:
    parse instead of discarding the entire response.
 """
 
+import json
 import logging
 import unittest
 
 from socketdev.fullscans import (
+    FullScans,
     FullScanStreamResponse,
     SocketArtifact,
     SocketPURL,
@@ -103,6 +105,34 @@ class TestFullScanStreamResponseResilience(unittest.TestCase):
         self.assertEqual(list(response.artifacts), ["good"])
         self.assertTrue(
             any("Skipping artifact bad" in message for message in captured.output),
+            f"expected a warning about the skipped artifact, got: {captured.output}",
+        )
+
+    def test_full_scans_stream_skips_artifact_without_id(self):
+        class Response:
+            status_code = 200
+            text = "\n".join(
+                json.dumps(artifact)
+                for artifact in (
+                    _artifact_payload("good", "npm"),
+                    {"type": "npm", "name": "bad", "alerts": []},
+                )
+            )
+
+        class API:
+            def do_request(self, **kwargs):
+                return Response()
+
+        with self.assertLogs("socketdev", level=logging.WARNING) as captured:
+            response = FullScans(API()).stream("org", "scan", use_types=True)
+
+        self.assertTrue(response.success)
+        self.assertEqual(list(response.artifacts), ["good"])
+        self.assertTrue(
+            any(
+                "Skipping artifact without a usable id" in message
+                for message in captured.output
+            ),
             f"expected a warning about the skipped artifact, got: {captured.output}",
         )
 

@@ -955,7 +955,18 @@ class FullScans:
                         stream_str.append(item)
                 stream_deduped = Dedupe.dedupe(stream_str, batched=False)
                 for batch in stream_deduped:
-                    artifacts[batch["id"]] = batch
+                    try:
+                        artifact_id = batch["id"]
+                        if not isinstance(artifact_id, str) or not artifact_id:
+                            raise TypeError("artifact id must be a non-empty string")
+                        artifacts[artifact_id] = batch
+                    except (KeyError, TypeError):
+                        # A malformed artifact should not discard valid stream results
+                        # before FullScanStreamResponse can parse them individually.
+                        log.warning(
+                            "Skipping artifact without a usable id",
+                            exc_info=True,
+                        )
                 if use_types:
                     return FullScanStreamResponse.from_dict({"success": True, "status": 200, "artifacts": artifacts})
                 return artifacts
