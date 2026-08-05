@@ -27,7 +27,7 @@ jobs:
           REF_NAME: ${{ github.ref_name }}
         run: |
           RAW_VERSION=$(hatch version)
-          echo "VERSION=$RAW_VERSION" >> $GITHUB_ENV
+          echo "VERSION=$RAW_VERSION" >> "$GITHUB_ENV"
           if [ "v$RAW_VERSION" != "$REF_NAME" ]; then
             echo "Error: Git tag ($REF_NAME) does not match hatch version (v$RAW_VERSION)"
             exit 1
@@ -38,12 +38,12 @@ jobs:
         env:
           VERSION: ${{ env.VERSION }}
         run: |
-          if curl -s -f https://pypi.org/pypi/socketdev/$VERSION/json > /dev/null; then
+          if curl -s -f "https://pypi.org/pypi/socketdev/$VERSION/json" > /dev/null; then
             echo "Version ${VERSION} already exists on PyPI"
-            echo "pypi_exists=true" >> $GITHUB_OUTPUT
+            echo "pypi_exists=true" >> "$GITHUB_OUTPUT"
           else
             echo "Version ${VERSION} not found on PyPI - proceeding with PyPI deployment"
-            echo "pypi_exists=false" >> $GITHUB_OUTPUT
+            echo "pypi_exists=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Build package
@@ -60,15 +60,24 @@ jobs:
         env:
           VERSION: ${{ env.VERSION }}
         run: |
-          for i in {1..30}; do
-            if pip install socketdev==${VERSION}; then
+          # The first lookup can race PyPI's Simple-index propagation. pip caches HTTP
+          # responses by default, so without --no-cache-dir every retry can reuse that
+          # initial stale response instead of checking whether the release has appeared.
+          MAX_ATTEMPTS=40
+          for i in $(seq 1 "$MAX_ATTEMPTS"); do
+            if python -m pip install \
+              --no-cache-dir \
+              --index-url https://pypi.org/simple/ \
+              "socketdev==${VERSION}"; then
               echo "Package ${VERSION} is now available and installable on PyPI"
-              pip uninstall -y socketdev
-              echo "success=true" >> $GITHUB_OUTPUT
+              python -m pip uninstall -y socketdev
+              echo "success=true" >> "$GITHUB_OUTPUT"
               exit 0
             fi
-            echo "Attempt $i: Package not yet installable, waiting 20s... (${i}/30)"
-            sleep 20
+            if [ "$i" -lt "$MAX_ATTEMPTS" ]; then
+              echo "Attempt $i: Package not yet installable, waiting 20s... (${i}/${MAX_ATTEMPTS})"
+              sleep 20
+            fi
           done
-          echo "success=false" >> $GITHUB_OUTPUT
+          echo "success=false" >> "$GITHUB_OUTPUT"
           exit 1
