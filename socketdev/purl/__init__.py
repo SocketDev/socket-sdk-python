@@ -96,17 +96,25 @@ class Purl:
         path += params
         response = self.api.do_request(path=path, payload=purls, method="POST")
         if response.status_code == 200:
-            purl = []
+            artifact_rows = []
+            stream_records = []
             result = response.text
             result = result.strip('"').strip()
             for line in result.split("\n"):
                 if line and line != '"':
                     try:
                         item = json.loads(line)
-                        purl.append(item)
+                        if isinstance(item, dict) and item.get("_type") in {
+                            "purlError",
+                            "summary",
+                        }:
+                            stream_records.append(item)
+                        else:
+                            artifact_rows.append(item)
                     except json.JSONDecodeError:
                         continue
-            purl_deduped = Dedupe.dedupe(purl, batched=True)
+            purl_deduped = Dedupe.dedupe(artifact_rows, batched=True)
+            purl_deduped.extend(stream_records)
             if strict:
                 self._raise_on_missing(components, purl_deduped)
             return purl_deduped
@@ -120,8 +128,8 @@ class Purl:
         """Raise APIPartialResponse if any requested component purl is absent from results.
 
         Only components exposing a ``purl`` string are checked; the batch API echoes the
-        request identifier back as ``inputPurl`` (falling back to ``purl``), so we compare
-        against both.
+        request identifier back as ``inputPurl`` (falling back to ``purl``), including
+        under ``value`` for typed ``purlError`` stream records.
         """
         requested = [
             c["purl"]
@@ -138,6 +146,11 @@ class Purl:
                 value = row.get(field)
                 if isinstance(value, str):
                     returned.add(value)
+            record_value = row.get("value")
+            if isinstance(record_value, dict):
+                input_purl = record_value.get("inputPurl")
+                if isinstance(input_purl, str):
+                    returned.add(input_purl)
         missing = [purl for purl in requested if purl not in returned]
         if missing:
             raise APIPartialResponse(

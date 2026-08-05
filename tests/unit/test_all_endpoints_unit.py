@@ -471,6 +471,28 @@ class TestAllEndpointsUnit(unittest.TestCase):
         self.assertIsNone(alert["severity"])
         self.assertIsNone(alert["action"])
 
+    def test_purl_post_preserves_purl_error_record(self):
+        """purlError stream records bypass artifact deduplication."""
+        error_row = {
+            "_type": "purlError",
+            "value": {
+                "error": "package_not_found",
+                "inputPurl": "pkg:npm/missing@1.0.0",
+            },
+        }
+        self._mock_purl_ndjson(json.dumps(error_row))
+
+        result = self.sdk.purl.post(
+            components=[{"purl": "pkg:npm/missing@1.0.0"}],
+            org_slug="test-org",
+            purl_errors=True,
+            strict=True,
+        )
+
+        self.assertEqual(result, [error_row])
+        url = self.mock_requests.request.call_args[0][1]
+        self.assertIn("purlErrors=true", url)
+
     def test_purl_post_strict_raises_on_missing(self):
         """strict=True raises APIPartialResponse listing purls dropped from the response."""
         from socketdev.exceptions import APIPartialResponse
