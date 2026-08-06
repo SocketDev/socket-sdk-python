@@ -1353,7 +1353,6 @@ wheels = [
 
 [[package]]
 name = "socketdev"
-version = "3.5.0"
 source = { editable = "." }
 dependencies = [
     { name = "requests" },
