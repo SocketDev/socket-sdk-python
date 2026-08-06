@@ -60,10 +60,13 @@ jobs:
         env:
           VERSION: ${{ env.VERSION }}
         run: |
-          # The first lookup can race PyPI's Simple-index propagation. pip caches HTTP
-          # responses by default, so without --no-cache-dir every retry can reuse that
-          # initial stale response instead of checking whether the release has appeared.
-          MAX_ATTEMPTS=40
+          # The first lookup can race PyPI's Simple-index propagation, and a delayed
+          # CDN purge can leave the index stale for 10+ minutes after a successful
+          # upload (socketdev 3.4.2 and socketsecurity 2.5.9 both hit this on
+          # 2026-08-05). pip caches HTTP responses by default, so without
+          # --no-cache-dir every retry can reuse that initial stale response instead
+          # of checking whether the release has appeared. Budget: 30 minutes.
+          MAX_ATTEMPTS=60
           for i in $(seq 1 "$MAX_ATTEMPTS"); do
             if python -m pip install \
               --no-cache-dir \
@@ -74,9 +77,12 @@ jobs:
               echo "success=true" >> "$GITHUB_OUTPUT"
               exit 0
             fi
+            if curl -s -f "https://pypi.org/pypi/socketdev/${VERSION}/json" > /dev/null; then
+              echo "Release ${VERSION} exists on PyPI (JSON API) but is not in the Simple index yet - CDN propagation delay"
+            fi
             if [ "$i" -lt "$MAX_ATTEMPTS" ]; then
-              echo "Attempt $i: Package not yet installable, waiting 20s... (${i}/${MAX_ATTEMPTS})"
-              sleep 20
+              echo "Attempt $i: Package not yet installable, waiting 30s... (${i}/${MAX_ATTEMPTS})"
+              sleep 30
             fi
           done
           echo "success=false" >> "$GITHUB_OUTPUT"
