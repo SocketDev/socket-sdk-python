@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.4.3
+## 3.5.0
 
 ### Changed: bound runtime dependency ranges and pin build backend
 
