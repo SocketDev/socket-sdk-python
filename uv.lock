@@ -1353,7 +1353,6 @@ wheels = [
 
 [[package]]
 name = "socketdev"
-version = "3.4.2"
 source = { editable = "." }
 dependencies = [
     { name = "requests" },
@@ -1381,10 +1380,10 @@ requires-dist = [
     { name = "hatchling", marker = "extra == 'dev'", specifier = ">=1.27.0" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=7.0.0" },
     { name = "pytest-cov", marker = "extra == 'test'", specifier = ">=4.0.0" },
-    { name = "requests" },
+    { name = "requests", specifier = ">=2.32.5,<3" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.3.0" },
     { name = "twine", marker = "extra == 'dev'", specifier = ">=4.0.0" },
-    { name = "typing-extensions", specifier = ">=4.12.2" },
+    { name = "typing-extensions", specifier = ">=4.12.2,<5" },
 ]
 provides-extras = ["dev", "test"]
 
