@@ -1,7 +1,7 @@
 [build-system]
 # 1.27.0 is the newest hatchling that supports Python 3.9, which this
 # package's requires-python still includes.
-requires = ["hatchling==1.27.0"]
+requires = ["hatchling==1.31.0"]
 build-backend = "hatchling.build"
 
 [project]
