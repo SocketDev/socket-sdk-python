@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional, Union
 from dataclasses import dataclass, asdict, field
 import urllib.parse
 from ..core.dedupe import Dedupe
+from ..core.enums import unknown_enum_value
 from ..utils import IntegrationType, Utils
 
 log = logging.getLogger("socketdev")
@@ -12,9 +13,12 @@ log = logging.getLogger("socketdev")
 
 class SocketPURL_Type(str, Enum):
     UNKNOWN = "unknown"
+    ALPM = "alpm"
     APK = "apk"
     BITBUCKET = "bitbucket"
     CARGO = "cargo"
+    CHROME = "chrome"
+    CLAWHUB = "clawhub"
     COCOAPODS = "cocoapods"
     COMPOSER = "composer"
     CONAN = "conan"
@@ -22,6 +26,8 @@ class SocketPURL_Type(str, Enum):
     CRAN = "cran"
     DEB = "deb"
     DOCKER = "docker"
+    EDGE_EXTENSION = "edge-extension"
+    FIREFOX_EXTENSION = "firefox-extension"
     GEM = "gem"
     GENERIC = "generic"
     GITHUB = "github"
@@ -37,21 +43,17 @@ class SocketPURL_Type(str, Enum):
     OCI = "oci"
     PUB = "pub"
     PYPI = "pypi"
+    QPKG = "qpkg"
     RPM = "rpm"
+    SOCKET = "socket"
+    SWID = "swid"
     SWIFT = "swift"
+    VSCODE = "vscode"
+    VSCODE_EXTENSION = "vscode-extension"
 
     @classmethod
     def _missing_(cls, value):
-        # The API can emit purl types this SDK does not know about yet. Fall
-        # back to UNKNOWN instead of raising so one artifact cannot fail an
-        # entire response parse (same forward-compat approach as
-        # SocketCategory, https://github.com/SocketDev/socket-sdk-python/issues/78).
-        log.warning(
-            "Unknown SocketPURL_Type %r; falling back to UNKNOWN. "
-            "Upgrade socketdev to pick up newer purl types.",
-            value,
-        )
-        return cls.UNKNOWN
+        return unknown_enum_value(cls.__name__, value, cls.UNKNOWN)
 
 
 class SocketIssueSeverity(str, Enum):
@@ -59,6 +61,15 @@ class SocketIssueSeverity(str, Enum):
     MIDDLE = "middle"
     HIGH = "high"
     CRITICAL = "critical"
+    # Sentinel for severities the API adds later. Deliberately not an existing
+    # level: falling back to LOW would hide a serious finding and CRITICAL
+    # would manufacture one, so consumers get an explicit "not understood"
+    # value to branch on instead of a guess.
+    UNKNOWN = "unknown"
+
+    @classmethod
+    def _missing_(cls, value):
+        return unknown_enum_value(cls.__name__, value, cls.UNKNOWN)
 
 
 class SocketCategory(str, Enum):
@@ -70,6 +81,10 @@ class SocketCategory(str, Enum):
     MISCELLANEOUS = "miscellaneous"
     OTHER = "other"  # Added to match backend API responses
 
+    @classmethod
+    def _missing_(cls, value):
+        return unknown_enum_value(cls.__name__, value, cls.MISCELLANEOUS)
+
 
 class DiffType(str, Enum):
     ADDED = "added"
@@ -77,12 +92,24 @@ class DiffType(str, Enum):
     UNCHANGED = "unchanged"
     REPLACED = "replaced"
     UPDATED = "updated"
+    # Not UNCHANGED: treating an unrecognized change as "nothing happened"
+    # would drop a real diff entry out of a comparison silently.
+    UNKNOWN = "unknown"
+
+    @classmethod
+    def _missing_(cls, value):
+        return unknown_enum_value(cls.__name__, value, cls.UNKNOWN)
 
 
 class ScanType(str, Enum):
     SOCKET = "socket"
     SOCKET_TIER1 = "socket_tier1"
     SOCKET_BASICS = "socket_basics"
+    UNKNOWN = "unknown"
+
+    @classmethod
+    def _missing_(cls, value):
+        return unknown_enum_value(cls.__name__, value, cls.UNKNOWN)
 
 
 @dataclass(kw_only=True)
@@ -481,15 +508,9 @@ class SocketAlert:
 
     @classmethod
     def from_dict(cls, data: dict) -> "SocketAlert":
-        try:
-            category = SocketCategory(data["category"])
-        except ValueError:
-            log.warning(
-                "Unknown SocketCategory %r; falling back to MISCELLANEOUS. "
-                "Upgrade socketdev to pick up newer categories.",
-                data["category"],
-            )
-            category = SocketCategory.MISCELLANEOUS
+        # SocketCategory._missing_ handles unrecognized values; see
+        # socketdev/core/enums.py.
+        category = SocketCategory(data["category"])
         return cls(
             key=data["key"],
             type=data["type"],

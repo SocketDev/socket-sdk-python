@@ -1,5 +1,40 @@
 # Changelog
 
+## 3.6.0
+
+### Changed: every API-sourced enum now tolerates unknown values
+
+- `SocketIssueSeverity`, `SocketCategory`, `DiffType`, `ScanType` and
+  `SecurityAction` now fall back to a documented member instead of raising
+  `ValueError` when the API sends a value this release does not know about.
+  `SocketPURL_Type` already behaved this way; the other five did not, so each
+  was one backend addition away from emptying a response the same way issue #78
+  and the unknown `generic` purl type did.
+- Fallbacks are deliberate rather than convenient. `SocketIssueSeverity` and
+  `DiffType` gained an explicit `UNKNOWN` member because guessing an existing
+  level would either hide a real finding or invent one, and `SecurityAction`
+  falls back to `DEFER` because that already means "use the configured
+  default". Every fallback logs a warning naming the unrecognized value.
+- Added the 10 purl types the API defines that this SDK was missing: `alpm`,
+  `chrome`, `clawhub`, `edge-extension`, `firefox-extension`, `qpkg`, `socket`,
+  `swid`, `vscode` and `vscode-extension`. Artifacts with those types were
+  being flattened to `unknown`.
+
+### Added: enum forward-compatibility is now an enforced invariant
+
+- `tests/unit/test_enum_forward_compat.py` discovers every enum in the package,
+  including ones added later, and fails if any raises on an unrecognized value.
+  The two prior incidents were each fixed with a bespoke test on the single
+  enum that happened to fire; this replaces that pattern.
+
+### Added: scheduled check for enum drift against the live API
+
+- `scripts/check_api_enum_drift.py` compares the SDK's enums against
+  `https://api.socket.dev/v0/openapi`. The spec is public, so the check needs no
+  token, org or fixture data. Run by `.github/workflows/api-drift-check.yml`,
+  which is manual-dispatch only for now and is not a pull request check --- it
+  tests the API rather than the diff.
+
 ## 3.5.0
 
 ### Changed: bound runtime dependency ranges and pin build backend
