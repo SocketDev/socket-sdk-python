@@ -1,0 +1,37 @@
+name: API Drift Check
+
+# Compares this SDK's hand-maintained enums against the live Socket OpenAPI
+# spec. The spec is public and unauthenticated, so this job needs no secrets,
+# no org and no fixture data.
+#
+# Deliberately NOT a pull_request trigger: it tests the API, not the diff, and a
+# backend change must never block an unrelated SDK pull request.
+#
+# TODO: once this has run green manually a few times, uncomment the schedule
+# below to turn it into an early-warning signal instead of a manual check.
+on:
+  workflow_dispatch:
+  # schedule:
+  #   - cron: '0 14 * * 1'  # Mondays, 14:00 UTC
+
+permissions:
+  contents: read
+
+jobs:
+  enum-drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Install the SDK
+        run: python -m pip install .
+
+      - name: Compare SDK enums against the live OpenAPI spec
+        run: python scripts/check_api_enum_drift.py

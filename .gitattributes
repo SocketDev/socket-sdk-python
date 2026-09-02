@@ -1,0 +1,29 @@
+# Normalize line endings to LF in the repository.
+#
+# Eleven Python files were committed with CRLF, socketdev/__init__.py among
+# them. Any tooling that reads and rewrites one of those files converts it to
+# LF on the way out, which turns a two-line change into a whole-file diff and
+# buries the actual edit. Normalizing once and pinning the setting here stops
+# that from recurring.
+* text=auto
+
+*.py text eol=lf
+*.pyi text eol=lf
+*.md text eol=lf
+*.rst text eol=lf
+*.toml text eol=lf
+*.cfg text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.sh text eol=lf
+*.lock text eol=lf
+
+# Byte-exact, never line-ending-normalized.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.whl binary
+*.gz binary

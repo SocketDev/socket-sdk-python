@@ -34,7 +34,7 @@ class TestSocketAlertCategoryParsing(unittest.TestCase):
         self.assertEqual(alert.severity, SocketIssueSeverity.LOW)
 
     def test_other_category_is_recognized(self):
-        # "other" is a known backend category as of CE-225; it should resolve to
+        # "other" is a known backend category; it should resolve to
         # SocketCategory.OTHER rather than falling back to MISCELLANEOUS.
         alert = SocketAlert.from_dict(self._base_payload("other"))
         self.assertEqual(alert.category, SocketCategory.OTHER)

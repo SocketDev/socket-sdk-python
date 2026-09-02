@@ -3,6 +3,8 @@ from enum import Enum
 from typing import Dict, Optional, Union
 from dataclasses import dataclass, asdict
 
+from ..core.enums import unknown_enum_value
+
 log = logging.getLogger("socketdev")
 
 
@@ -12,6 +14,14 @@ class SecurityAction(str, Enum):
     WARN = "warn"
     MONITOR = "monitor"
     IGNORE = "ignore"
+
+    @classmethod
+    def _missing_(cls, value):
+        # DEFER, not a new UNKNOWN sentinel: an unrecognized action is a policy
+        # decision this SDK cannot make, and "defer" already means "use the
+        # configured default". IGNORE would silently disable a rule and ERROR
+        # would fail builds on a value the API considers routine.
+        return unknown_enum_value(cls.__name__, value, cls.DEFER)
 
 
 @dataclass
