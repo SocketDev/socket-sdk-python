@@ -1,5 +1,5 @@
 """
-Unit tests for lenient SocketPURL_Type parsing (CE-362).
+Unit tests for lenient SocketPURL_Type parsing.
 
 The Socket API can emit purl types the SDK does not yet know about (e.g.
 ``"generic"``, which was missing from the enum entirely). Strict enum parsing
