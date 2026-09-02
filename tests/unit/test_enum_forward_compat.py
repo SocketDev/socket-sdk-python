@@ -25,7 +25,15 @@ import socketdev
 # Strictness is correct there: a bad value is the caller's typo and should raise
 # rather than be silently coerced. Add an entry only with a comment justifying
 # that the enum never sees API-supplied values.
-REQUEST_ONLY_ENUMS = frozenset()
+REQUEST_ONLY_ENUMS = frozenset(
+    {
+        # Only ever travels outbound: FullScanParams.to_dict() is urlencoded
+        # onto the create-scan query string. It never parses an API response, so
+        # an unrecognized value is a caller typo that should surface at
+        # construction rather than reach the API as scan_type=unknown.
+        "ScanType",
+    }
+)
 
 # A value the API will never legitimately send.
 SENTINEL = "__value_the_api_would_never_send__"
@@ -97,6 +105,24 @@ class TestEnumForwardCompatibility(unittest.TestCase):
                     f"{qualname} fell back without naming itself in the warning; "
                     f"got: {captured.output}",
                 )
+
+    def test_request_only_enums_stay_strict(self):
+        # The opt-out is not a "skip this one" marker: these enums must actively
+        # keep raising. Coercing a caller's typo to a fallback would send the
+        # fallback to the API instead of failing at construction, which is how
+        # the forward-compat change first got ScanType wrong.
+        by_name = {cls.__name__: cls for cls in _all_enums().values()}
+        for name in sorted(REQUEST_ONLY_ENUMS):
+            with self.subTest(enum=name):
+                enum_cls = by_name.get(name)
+                self.assertIsNotNone(
+                    enum_cls, f"{name} is exempted but no longer exists"
+                )
+                with self.assertRaises(
+                    ValueError,
+                    msg=f"{name} is request-only and must reject unknown values",
+                ):
+                    enum_cls(SENTINEL)
 
     def test_known_values_still_round_trip(self):
         # Forward-compat must not swallow legitimate values.

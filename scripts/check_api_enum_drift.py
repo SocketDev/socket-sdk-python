@@ -43,9 +43,13 @@ ENUM_TO_SCHEMA = {
     SocketIssueSeverity: "SocketIssueSeverity",
     SocketCategory: "SocketCategory",
     DiffType: "SocketDiffArtifactType",
-    ScanType: None,
     SecurityAction: None,
 }
+
+# Enums the SDK only ever sends, never parses. Drift in the API's copy cannot
+# break parsing here, and these are intentionally strict so a caller typo fails
+# at construction, so they are out of scope for this check rather than a gap.
+REQUEST_ONLY = (ScanType,)
 
 # Members this SDK adds deliberately, which the API will never send. They are
 # the documented _missing_ fallbacks (see socketdev/core/enums.py), so their
@@ -121,6 +125,11 @@ def main():
             f"::warning::not covered by this check, because the API exposes no "
             f"named schema for them: {', '.join(sorted(unmapped))}"
         )
+
+    print(
+        f"not applicable (request-only, intentionally strict): "
+        f"{', '.join(sorted(e.__name__ for e in REQUEST_ONLY))}"
+    )
 
     if drifted:
         print(

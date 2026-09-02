@@ -102,14 +102,14 @@ class DiffType(str, Enum):
 
 
 class ScanType(str, Enum):
+    # Deliberately strict, unlike the response-parsed enums in this module.
+    # ScanType only ever travels outbound: FullScanParams.to_dict() is
+    # urlencoded onto the create-scan query string, so an unrecognized value is
+    # the caller's typo, not API drift. Coercing it to a fallback would send
+    # scan_type=unknown to the API instead of failing at construction.
     SOCKET = "socket"
     SOCKET_TIER1 = "socket_tier1"
     SOCKET_BASICS = "socket_basics"
-    UNKNOWN = "unknown"
-
-    @classmethod
-    def _missing_(cls, value):
-        return unknown_enum_value(cls.__name__, value, cls.UNKNOWN)
 
 
 @dataclass(kw_only=True)

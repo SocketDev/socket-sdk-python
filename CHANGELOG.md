@@ -4,12 +4,14 @@
 
 ### Changed: every API-sourced enum now tolerates unknown values
 
-- `SocketIssueSeverity`, `SocketCategory`, `DiffType`, `ScanType` and
-  `SecurityAction` now fall back to a documented member instead of raising
+- `SocketIssueSeverity`, `SocketCategory`, `DiffType` and `SecurityAction`
+  now fall back to a documented member instead of raising
   `ValueError` when the API sends a value this release does not know about.
-  `SocketPURL_Type` already behaved this way; the other five did not, so each
-  was one backend addition away from emptying a response the same way issue #78
-  and the unknown `generic` purl type did.
+  `SocketPURL_Type` already behaved this way; the others did not, so each was
+  one backend addition away from emptying a response the same way issue #78 and
+  the unknown `generic` purl type did. `ScanType` is deliberately left strict:
+  it is only ever urlencoded onto the create-scan request, so an unrecognized
+  value is a caller typo rather than API drift.
 - Fallbacks are deliberate rather than convenient. `SocketIssueSeverity` and
   `DiffType` gained an explicit `UNKNOWN` member because guessing an existing
   level would either hide a real finding or invent one, and `SecurityAction`
