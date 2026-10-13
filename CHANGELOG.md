@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.6.1
+
+### Fixed: reject retired API credentials before use
+
+- The SDK rejects the retired API credential before storing or encoding it.
+
 ## 3.6.0
 
 ### Changed: every API-sourced enum now tolerates unknown values

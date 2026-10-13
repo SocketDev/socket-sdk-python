@@ -1,5 +1,7 @@
 import os
 from socketdev.core.api import API
+from socketdev.core.retired_token import reject_retired_token
+from socketdev.core.token_selection import select_token
 from socketdev.dependencies import Dependencies
 from socketdev.diffscans import DiffScans
 from socketdev.export import Export
@@ -53,21 +55,15 @@ request_timeout = 1200
 
 class socketdev:
     def __init__(self, token: Optional[str] = None, timeout: int = 1200, allow_unverified: bool = False, user_agent: Optional[str] = None):
-        # Try to get token from environment variables if not provided
-        if token is None:
-            token = (
-                os.getenv("SOCKET_SECURITY_API_TOKEN") or
-                os.getenv("SOCKET_SECURITY_API_KEY") or
-                os.getenv("SOCKET_API_KEY") or
-                os.getenv("SOCKET_API_TOKEN")
-            )
-        
+        token = select_token(token, os.environ)
         if token is None:
             raise ValueError(
                 "API token is required. Provide it as a parameter or set one of these environment variables: "
                 "SOCKET_SECURITY_API_TOKEN, SOCKET_SECURITY_API_KEY, SOCKET_API_KEY, SOCKET_API_TOKEN"
             )
         
+        reject_retired_token(token)
+
         self.api = API()
         self.token = token + ":"
         self.api.encode_key(self.token)
