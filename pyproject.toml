@@ -35,6 +35,10 @@ path = "socketdev/version.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["socketdev"]
+core-metadata-version = "2.4"
+
+[tool.hatch.build.targets.sdist]
+core-metadata-version = "2.4"
 
 # modern, faster linter and language server. install with `pip install -e ".[dev]"`
 [project.optional-dependencies]
