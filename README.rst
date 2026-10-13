@@ -2,6 +2,11 @@
 socketdev
 #########
 
+Supported Python versions
+-------------------------
+
+This SDK supports Python 3.10 and newer.
+
 Purpose
 -------
 
