@@ -8,7 +8,10 @@ dynamic = ["version"]
 requires-python = ">= 3.10"
 dependencies = [
     'requests>=2.33.0,<3',
-    'typing-extensions>=4.12.2,<5'
+    'typing-extensions>=4.12.2,<5',
+    # requests' CA bundle. 2026.10.19 drops the roots behind the compromised
+    # eMudhra intermediates; a floor, so later trust-store fixes still apply.
+    'certifi>=2026.10.19'
 ]
 readme = "README.rst"
 license = {file = "LICENSE"}

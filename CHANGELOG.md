@@ -7,9 +7,10 @@
 - Updated the locked versions of `certifi` (2025.11.12 → 2026.10.19), `uv`
   (0.11.17 → 0.13.4) and `virtualenv` (20.36.1 → 21.14.7) to pick up fixes for
   critical vulnerabilities. These versions are pinned in `uv.lock`, which
-  controls the development and CI environment. socketdev does not pin
-  `certifi` for consumers because it comes in through `requests`, so upgrade
-  it in your own environment.
+  controls the development and CI environment.
+- socketdev now requires `certifi>=2026.10.19`, so installing it also upgrades
+  the CA bundle `requests` uses. Older bundles trust the compromised eMudhra
+  intermediate CAs.
 - The release build toolchain (`.github/actions/setup-hatch`) now installs
   `virtualenv==21.14.7` and `hatchling==1.32.4`, matching `uv.lock` and the
   `[build-system]` pin. Published artifacts are built with the patched versions.
