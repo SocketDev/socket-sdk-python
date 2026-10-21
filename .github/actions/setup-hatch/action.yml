@@ -9,4 +9,4 @@ runs:
     - shell: bash
       run: |
         python -m pip install --upgrade pip
-        python -m pip install "hatch==1.18.1" "hatchling==1.32.0" "virtualenv==21.7.13"
+        python -m pip install "hatch==1.18.1" "hatchling==1.32.4" "virtualenv==21.14.7"
