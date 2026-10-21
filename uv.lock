@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version >= '3.12' and sys_platform == 'emscripten'",
@@ -1032,6 +1032,7 @@ wheels = [
 name = "socketdev"
 source = { editable = "." }
 dependencies = [
+    { name = "certifi" },
     { name = "requests" },
     { name = "typing-extensions" },
 ]
@@ -1050,6 +1051,7 @@ test = [
 
 [package.metadata]
 requires-dist = [
+    { name = "certifi", specifier = ">=2026.10.19" },
     { name = "hatch", marker = "extra == 'dev'", specifier = ">=1.18.1" },
     { name = "hatchling", marker = "extra == 'dev'", specifier = ">=1.27.0" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=9.0.3" },

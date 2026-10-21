@@ -1,5 +1,34 @@
 # Changelog
 
+## 3.6.1
+
+### Security: patched releases of certifi, uv and virtualenv
+
+- Updated the locked versions of `certifi` (2025.11.12 → 2026.10.19), `uv`
+  (0.11.17 → 0.13.4) and `virtualenv` (20.36.1 → 21.14.7) to pick up fixes for
+  critical vulnerabilities. These versions are pinned in `uv.lock`, which
+  controls the development and CI environment.
+- socketdev now requires `certifi>=2026.10.19`, so installing it also upgrades
+  the CA bundle `requests` uses. Older bundles trust the compromised eMudhra
+  intermediate CAs.
+- The release build toolchain (`.github/actions/setup-hatch`) now installs
+  `virtualenv==21.14.7` and `hatchling==1.32.4`, matching `uv.lock` and the
+  `[build-system]` pin. Published artifacts are built with the patched versions.
+- Raised the `requests` floor to `>=2.33.0`.
+
+### Changed: Python 3.10 or newer is required
+
+- `requires-python` is now `>=3.10` (previously `>=3.9`). The patched
+  dependency releases no longer support Python 3.9, which reached end of life
+  in October 2025. On Python 3.9, pip continues to resolve socketdev 3.6.0.
+
+### Maintenance
+
+- Pinned the `hatchling` build backend to 1.32.4 and capped built
+  distributions at core metadata 2.4 so the locked Twine can validate them.
+- Raised the dev and test extras floors to `hatch>=1.18.1` and
+  `pytest>=9.0.3`.
+
 ## 3.6.0
 
 ### Changed: every API-sourced enum now tolerates unknown values
