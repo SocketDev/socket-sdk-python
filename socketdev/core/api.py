@@ -16,7 +16,7 @@ from socketdev.exceptions import (
     APIInsufficientPermissions,
     APIOrganizationNotAllowed,
 )
-from socketdev.version import __version__
+from socketdev.user_agent import USER_AGENT
 from requests.exceptions import Timeout, ConnectionError
 import time
 
@@ -54,7 +54,7 @@ class API:
             raise APIKeyMissing
 
         if headers is None:
-            user_agent_string = self.user_agent if self.user_agent is not None else f"SocketSDKPython/{__version__}"
+            user_agent_string = self.user_agent if self.user_agent is not None else USER_AGENT
             headers = {
                 "Authorization": f"Basic {self.encoded_key}",
                 "User-Agent": user_agent_string,

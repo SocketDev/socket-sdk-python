@@ -27,7 +27,7 @@ Initializing the module
 - **token (str)** - The Socket API Key for your Organization
 - **timeout (int)** - The number of seconds to wait before failing the connection
 - **allow_unverified (bool)** - Whether to skip SSL certificate verification (default: False). Set to True for testing with self-signed certificates.
-- **user_agent (str, optional)** - Custom User-Agent string to use in API requests. If not provided, defaults to "SocketSDKPython/{version}"
+- **user_agent (str, optional)** - Custom User-Agent string to use in API requests. If not provided, defaults to "socket-sdk-python/{version}". Applications such as the Socket CLI can override this with their own product name and version.
 
 Supported Functions
 -------------------
