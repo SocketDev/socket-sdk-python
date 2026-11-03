@@ -1,4 +1,5 @@
 import json
+import time
 
 import pytest
 
@@ -153,3 +154,29 @@ def test_invalid_configured_request_timeout_fails_before_request(api_fixture, va
     with pytest.raises(ValueError):
         sdk.fullscans.stream("org", "scan", poll_timeout_seconds=0.1)
     assert not api_fixture.requests
+
+
+def test_gives_up_without_sleeping_when_next_poll_cannot_start(api_fixture):
+    api_fixture.route("GET", "orgs/org/full-scans/scan", SocketResponse(202, {}))
+    start = time.monotonic()
+    with pytest.raises(APITimeout, match="full scan results"):
+        sdk_for(api_fixture).fullscans.stream(
+            "org", "scan", poll_timeout_seconds=0.5, poll_initial_interval_seconds=5,
+        )
+    assert time.monotonic() - start < 0.4
+    assert len(api_fixture.requests) == 1
+
+
+def test_first_request_uses_full_configured_timeout(api_fixture):
+    api_fixture.route("GET", "orgs/org/full-scans/scan", ndjson())
+    sdk = sdk_for(api_fixture, timeout=120)
+    do_request = sdk.api.do_request
+    timeouts = []
+
+    def spy(**kwargs):
+        timeouts.append(kwargs["request_timeout"])
+        return do_request(**kwargs)
+
+    sdk.api.do_request = spy
+    sdk.fullscans.stream("org", "scan")
+    assert timeouts and timeouts[0] > 100

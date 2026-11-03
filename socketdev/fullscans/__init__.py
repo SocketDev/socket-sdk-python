@@ -994,33 +994,27 @@ class FullScans:
         deadline = time.monotonic() + timeout
         interval = poll_initial_interval_seconds
         while True:
-            remaining = deadline - time.monotonic()
-            if remaining <= 0:
-                raise APITimeout("Timed out waiting for full scan results")
+            retry_error = None
             try:
                 response = self.api.do_request(
                     path=path,
                     method="GET",
-                    request_timeout=min(30.0, float(request_timeout), remaining),
+                    request_timeout=min(float(request_timeout), max(deadline - time.monotonic(), 0.001)),
                 )
             except APIFailure as error:
                 if not error.is_transient_error():
                     raise
-                remaining = deadline - time.monotonic()
-                if remaining <= 0:
-                    raise APITimeout("Timed out waiting for full scan results") from error
-                time.sleep(min(interval, remaining))
-                interval = min(poll_max_interval_seconds, interval * 1.5)
-                continue
-            if response.status_code == 202:
+                retry_error = error
+            else:
+                if response.status_code != 202:
+                    break
                 response.close()
-                remaining = deadline - time.monotonic()
-                if remaining <= 0:
-                    raise APITimeout("Timed out waiting for full scan results")
-                time.sleep(min(interval, remaining))
-                interval = min(poll_max_interval_seconds, interval * 1.5)
-                continue
-            break
+            # Give up now if the next attempt could not start before the deadline,
+            # rather than sleeping out the rest of the budget and never polling again.
+            if deadline - time.monotonic() <= interval:
+                raise APITimeout("Timed out waiting for full scan results") from retry_error
+            time.sleep(interval)
+            interval = min(poll_max_interval_seconds, interval * 1.5)
 
         if response.status_code == 200:
             try:

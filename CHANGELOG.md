@@ -15,8 +15,9 @@
 - The polling budget defaults to the SDK's configured `timeout`. Callers can
   tune it with the new keyword-only arguments `poll_timeout_seconds`,
   `poll_initial_interval_seconds` and `poll_max_interval_seconds`. Each
-  individual request is capped at 30 seconds or the remaining budget,
-  whichever is shorter.
+  request is bounded by the configured `timeout` or the remaining budget,
+  whichever is shorter, and polling stops early once the next attempt could
+  not start before the budget runs out.
 - Transient failures (HTTP 408/502/503/504, timeouts, dropped connections) are
   retried within the budget. Authorization, not-found and quota errors still
   raise immediately.
