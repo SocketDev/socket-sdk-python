@@ -1,16 +1,17 @@
 [build-system]
-# 1.27.0 is the newest hatchling that supports Python 3.9, which this
-# package's requires-python still includes.
-requires = ["hatchling==1.32.0"]
+requires = ["hatchling==1.32.4"]
 build-backend = "hatchling.build"
 
 [project]
 name = "socketdev"
 dynamic = ["version"]
-requires-python = ">= 3.9"
+requires-python = ">= 3.10"
 dependencies = [
-    'requests>=2.32.5,<3',
-    'typing-extensions>=4.12.2,<5'
+    'requests>=2.33.0,<3',
+    'typing-extensions>=4.12.2,<5',
+    # requests' CA bundle. 2026.10.19 drops the roots behind the compromised
+    # eMudhra intermediates; a floor, so later trust-store fixes still apply.
+    'certifi>=2026.10.19'
 ]
 readme = "README.rst"
 license = {file = "LICENSE"}
@@ -37,17 +38,21 @@ path = "socketdev/version.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["socketdev"]
+core-metadata-version = "2.4"
+
+[tool.hatch.build.targets.sdist]
+core-metadata-version = "2.4"
 
 # modern, faster linter and language server. install with `pip install -e ".[dev]"`
 [project.optional-dependencies]
 dev = [
     "ruff>=0.3.0",
-    "hatch>=1.14.0",
+    "hatch>=1.18.1",
     "hatchling>=1.27.0",
     "twine>=4.0.0"
 ]
 test = [
-    "pytest>=7.0.0",
+    "pytest>=9.0.3",
     "pytest-cov>=4.0.0"
 ]
 

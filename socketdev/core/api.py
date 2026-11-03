@@ -1,6 +1,7 @@
 import base64
 from typing import Optional
 from socketdev.log import log
+from socketdev.core.retired_token import reject_retired_basic_auth_token
 
 import requests
 from socketdev.core.classes import Response
@@ -30,6 +31,7 @@ class API:
         self.user_agent = None
 
     def encode_key(self, token: str):
+        reject_retired_basic_auth_token(token)
         self.encoded_key = base64.b64encode(token.encode()).decode("ascii")
 
     def set_timeout(self, timeout: int):
