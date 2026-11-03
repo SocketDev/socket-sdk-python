@@ -1,4 +1,5 @@
 import base64
+from typing import Optional
 from socketdev.log import log
 from socketdev.core.retired_token import reject_retired_basic_auth_token
 
@@ -49,6 +50,8 @@ class API:
         payload: [dict, str] = None,
         files: list = None,
         method: str = "GET",
+        *,
+        request_timeout: Optional[float] = None,
     ) -> Response:
         if self.encoded_key is None or self.encoded_key == "":
             raise APIKeyMissing
@@ -70,7 +73,8 @@ class API:
             
             response = requests.request(
                 method.upper(), url, headers=headers, data=payload, files=files, 
-                timeout=self.request_timeout, verify=not self.allow_unverified
+                timeout=self.request_timeout if request_timeout is None else request_timeout,
+                verify=not self.allow_unverified
             )
             request_duration = time.time() - start_time
 

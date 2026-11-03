@@ -291,7 +291,11 @@ Stream a diff between two full scans. Returns a scan diff.
 
 fullscans.stream(org_slug, full_scan_id, use_types=False)
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""
-Stream all SBOM artifacts for a full scan.
+Stream all SBOM artifacts for a full scan. If the scan is still being analyzed, the SDK polls
+cached results until they are ready, backing off from 5 to 10 seconds between attempts, and
+raises ``APITimeout`` if they are not ready within the polling budget. Transient failures
+(HTTP 408/502/503/504, timeouts, dropped connections) are retried within the budget; other
+errors raise immediately.
 
 **Usage:**
 
@@ -304,11 +308,17 @@ Stream all SBOM artifacts for a full scan.
     # With typed response
     print(socket.fullscans.stream("org_slug", "full_scan_id", use_types=True))
 
+    # Wait up to 10 minutes for analysis to finish
+    print(socket.fullscans.stream("org_slug", "full_scan_id", poll_timeout_seconds=600))
+
 **PARAMETERS:**
 
 - **org_slug (str)** - The organization name
 - **full_scan_id (str)** - The ID of the full scan
 - **use_types (bool)** - Whether to return typed response objects (default: False)
+- **poll_timeout_seconds (float)** - Keyword-only. Total time to wait for results (default: the SDK's configured ``timeout``)
+- **poll_initial_interval_seconds (float)** - Keyword-only. Wait before the first retry (default: 5.0)
+- **poll_max_interval_seconds (float)** - Keyword-only. Longest wait between retries (default: 10.0)
 
 fullscans.metadata(org_slug, full_scan_id, use_types=False)
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""

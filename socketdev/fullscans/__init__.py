@@ -4,9 +4,12 @@ from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 from dataclasses import dataclass, asdict, field
 import urllib.parse
+import math
+import time
 from ..core.dedupe import Dedupe
 from ..core.enums import unknown_enum_value
 from ..utils import IntegrationType, Utils
+from ..exceptions import APIFailure, APITimeout
 
 log = logging.getLogger("socketdev")
 
@@ -960,15 +963,65 @@ class FullScans:
             )
         return {}
 
-    def stream(self, org_slug: str, full_scan_id: str, use_types: bool = False) -> Union[dict, FullScanStreamResponse]:
-        path = "orgs/" + org_slug + "/full-scans/" + full_scan_id
-        response = self.api.do_request(path=path, method="GET")
+    def stream(
+        self,
+        org_slug: str,
+        full_scan_id: str,
+        use_types: bool = False,
+        *,
+        poll_timeout_seconds: Optional[float] = None,
+        poll_initial_interval_seconds: float = 5.0,
+        poll_max_interval_seconds: float = 10.0,
+    ) -> Union[dict, FullScanStreamResponse]:
+        request_timeout = self.api.request_timeout
+        timeout = request_timeout if poll_timeout_seconds is None else poll_timeout_seconds
+        values = (timeout, poll_initial_interval_seconds, poll_max_interval_seconds, request_timeout)
+        if any(
+            isinstance(value, bool)
+            or not isinstance(value, (int, float))
+            or not math.isfinite(value)
+            or value <= 0
+            for value in values
+        ):
+            raise ValueError("Full scan polling timeout and intervals must be positive finite numbers")
+        if poll_initial_interval_seconds > poll_max_interval_seconds:
+            raise ValueError("Initial polling interval must not exceed maximum polling interval")
+
+        path = (
+            "orgs/" + urllib.parse.quote(org_slug, safe="") + "/full-scans/"
+            + urllib.parse.quote(full_scan_id, safe="") + "?cached=true"
+        )
+        deadline = time.monotonic() + timeout
+        interval = poll_initial_interval_seconds
+        while True:
+            retry_error = None
+            try:
+                response = self.api.do_request(
+                    path=path,
+                    method="GET",
+                    request_timeout=min(float(request_timeout), max(deadline - time.monotonic(), 0.001)),
+                )
+            except APIFailure as error:
+                if not error.is_transient_error():
+                    raise
+                retry_error = error
+            else:
+                if response.status_code != 202:
+                    break
+                response.close()
+            # Give up now if the next attempt could not start before the deadline,
+            # rather than sleeping out the rest of the budget and never polling again.
+            if deadline - time.monotonic() <= interval:
+                raise APITimeout("Timed out waiting for full scan results") from retry_error
+            time.sleep(interval)
+            interval = min(poll_max_interval_seconds, interval * 1.5)
 
         if response.status_code == 200:
             try:
                 stream_str = []
                 artifacts = {}
                 result = response.text
+                response.close()
                 result = result.strip('"').strip()
                 for line in result.split("\n"):
                     if line != '"' and line != "" and line is not None:
@@ -993,6 +1046,7 @@ class FullScans:
                 return artifacts
 
             except Exception as e:
+                response.close()
                 error_message = f"Error parsing stream response: {str(e)}"
                 log.error(error_message)
                 if use_types:
@@ -1001,7 +1055,10 @@ class FullScans:
                     )
                 return {}
 
-        error_message = response.json().get("error", {}).get("message", "Unknown error")
+        try:
+            error_message = response.json().get("error", {}).get("message", "Unknown error")
+        finally:
+            response.close()
         log.error(f"Error streaming full scan: {response.status_code}, message: {error_message}")
         if use_types:
             return FullScanStreamResponse.from_dict(
