@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.6.3
+
+### Changed
+
+- Use `socket-sdk-python/<version>` as the default User-Agent. Explicit caller
+  overrides continue to identify the calling application.
+
 ## 3.6.2
 
 ### Fixed: reject retired API credentials before use
