@@ -13,6 +13,29 @@
 
 - The SDK rejects the retired API credential before storing or encoding it.
 
+### Fixed: full-scan reads wait for analysis to finish
+
+- `fullscans.stream()` now requests cached results (`?cached=true`) and polls
+  while the API answers `202 Processing`, instead of treating the first `202`
+  as a failed result. Polling backs off from 5s to 10s between attempts and
+  stops when the budget runs out, raising `APITimeout`.
+- The polling budget defaults to the SDK's configured `timeout`. Callers can
+  tune it with the new keyword-only arguments `poll_timeout_seconds`,
+  `poll_initial_interval_seconds` and `poll_max_interval_seconds`. Each
+  request is bounded by the configured `timeout` or the remaining budget,
+  whichever is shorter, and polling stops early once the next attempt could
+  not start before the budget runs out.
+- Transient failures (HTTP 408/502/503/504, timeouts, dropped connections) are
+  retried within the budget. Authorization, not-found and quota errors still
+  raise immediately.
+- Invalid polling settings (zero, negative, non-finite, booleans, or an
+  initial interval above the maximum) raise `ValueError` before any request is
+  sent.
+- The organization slug and full scan ID are now URL-encoded in the request
+  path.
+- `API.do_request()` accepts an optional keyword-only `request_timeout` that
+  overrides the configured timeout for a single call.
+
 ## 3.6.1
 
 ### Security: patched releases of certifi, uv and virtualenv

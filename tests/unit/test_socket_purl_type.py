@@ -21,13 +21,14 @@ import json
 import logging
 import unittest
 
+from socketdev import socketdev
 from socketdev.fullscans import (
-    FullScans,
     FullScanStreamResponse,
     SocketArtifact,
     SocketPURL,
     SocketPURL_Type,
 )
+from tests.support.socket_api_fixture import SocketApiFixture, SocketResponse
 
 
 def _artifact_payload(artifact_id: str, purl_type: str) -> dict:
@@ -109,32 +110,39 @@ class TestFullScanStreamResponseResilience(unittest.TestCase):
         )
 
     def test_full_scans_stream_skips_artifact_without_id(self):
-        class Response:
-            status_code = 200
-            text = "\n".join(
+        fixture = SocketApiFixture()
+        fixture.start()
+        try:
+            body = "\n".join(
                 json.dumps(artifact)
                 for artifact in (
                     _artifact_payload("good", "npm"),
                     {"type": "npm", "name": "bad", "alerts": []},
                 )
+            ).encode("utf-8")
+            fixture.route(
+                "GET",
+                "orgs/org/full-scans/scan",
+                SocketResponse(200, None, raw_body=body),
             )
+            sdk = socketdev(token="synthetic-token", timeout=1)
+            sdk.api.api_url = fixture.base_url
 
-        class API:
-            def do_request(self, **kwargs):
-                return Response()
+            with self.assertLogs("socketdev", level=logging.WARNING) as captured:
+                response = sdk.fullscans.stream("org", "scan", use_types=True)
 
-        with self.assertLogs("socketdev", level=logging.WARNING) as captured:
-            response = FullScans(API()).stream("org", "scan", use_types=True)
-
-        self.assertTrue(response.success)
-        self.assertEqual(list(response.artifacts), ["good"])
-        self.assertTrue(
-            any(
-                "Skipping artifact without a usable id" in message
-                for message in captured.output
-            ),
-            f"expected a warning about the skipped artifact, got: {captured.output}",
-        )
+            self.assertTrue(response.success)
+            self.assertEqual(list(response.artifacts), ["good"])
+            self.assertTrue(
+                any(
+                    "Skipping artifact without a usable id" in message
+                    for message in captured.output
+                ),
+                f"expected a warning about the skipped artifact, got: {captured.output}",
+            )
+            self.assertEqual(fixture.requests[0].query, {"cached": ["true"]})
+        finally:
+            fixture.close()
 
 
 if __name__ == "__main__":
