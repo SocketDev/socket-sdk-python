@@ -24,7 +24,7 @@ Initializing the module
 
 **PARAMETERS:**
 
-- **token (str)** - The Socket API Key for your Organization
+- **token (str)** - The Socket API Key for your Organization. Each method needs the token to carry particular scopes; see `API token scopes`_
 - **timeout (int)** - The number of seconds to wait before failing the connection
 - **allow_unverified (bool)** - Whether to skip SSL certificate verification (default: False). Set to True for testing with self-signed certificates.
 - **user_agent (str, optional)** - Custom User-Agent string to use in API requests. If not provided, defaults to "SocketSDKPython/{version}"
@@ -1498,3 +1498,351 @@ List historical snapshots for an organization.
 
 - **org_slug (str)** - The organization slug
 - **query_params (dict, optional)** - Optional query parameters for filtering
+
+
+API token scopes
+----------------
+
+The SDK authenticates every call with one organization API token, and each Socket API
+endpoint checks that the token carries particular scopes. The table below lists, for each
+SDK method, the endpoint it calls and the scopes that endpoint checks. Where an endpoint
+lists more than one scope, the token needs all of them. "none" means any valid token for
+the organization works. Paths are relative to ``https://api.socket.dev/v0/``; query strings
+are omitted.
+
+The scopes each endpoint checks are also listed in the
+`API reference <https://docs.socket.dev/reference>`_. For a least-privilege token, grant
+only the scopes of the methods your integration calls.
+
+Missing scopes and other 403 responses
+""""""""""""""""""""""""""""""""""""""
+
+Methods do not return an empty result on a 401 or 403. ``API.do_request()`` raises
+before the method sees the response, so the exception reaches the caller, including when
+``use_types=True``.
+
+A missing scope raises ``APIAccessDenied`` with ``status_code`` 403. Its message starts
+with the server's ``Insufficient permissions``, followed by the request URL and the
+response headers. A 401, from a bad or revoked token, also raises ``APIAccessDenied``,
+with ``Unauthorized`` in the message.
+
+Recent API responses name the required scopes in the 403 body under
+``error.details.requiredScopes``, but the SDK does not include them in the exception
+message; to see them, look up the endpoint in the table below or the API reference.
+
+A 403 whose ``error.message`` contains one of these texts raises a more specific class
+instead, and logs the server's message at ``ERROR`` on the ``socketdev`` logger:
+
+- ``Insufficient permissions for API method``: ``APIInsufficientPermissions``
+- ``Organization not allowed``: ``APIOrganizationNotAllowed``
+- ``Insufficient max quota``: ``APIInsufficientQuota`` (a 429 also raises this class)
+
+All of these classes live in ``socketdev.exceptions``, carry the HTTP status in
+``status_code`` and subclass ``APIFailure``, so catching ``APIFailure`` covers every
+case.
+
+.. code-block:: python
+
+    from socketdev import socketdev
+    from socketdev.exceptions import APIAccessDenied
+
+    socket = socketdev(token="REPLACE_ME")
+    try:
+        socket.diffscans.list("org_slug")
+    except APIAccessDenied as error:
+        if error.status_code == 403:
+            print("Access denied; check the token's scopes for this method:", error)
+        raise
+
+Scopes by method
+""""""""""""""""
+
+A few rows need a note:
+
+- ``fullscans.finalize_tier1()`` and ``uploadmanifests.upload_manifest_files()`` call
+  endpoints the API reference does not list. Both check ``full-scans:create``.
+- Rows marked "not in the API reference" call an endpoint the current reference does not
+  list, so no scope is documented for it. ``repositories.list()`` and ``sbom.view()``
+  belong to the deprecated report-era API. ``settings.integration_events()`` calls
+  ``settings/integrations/{integration_id}``; the reference lists the integration events
+  endpoint as ``settings/integrations/{integration_id}/events``, which checks
+  ``integration:list``.
+- Some scopes differ from what the method name suggests: ``analytics.get_org()`` and
+  ``analytics.get_repo()`` check ``report:write``; ``apitokens.update()`` checks
+  ``api-tokens:create``; ``labels.setting.delete()`` checks ``repo-label:update``; and
+  the ``export`` methods check ``report:read`` rather than a full-scans scope.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 45 25
+
+   * - Method
+     - Endpoint
+     - Scopes
+   * - ``alertfullscansearch.search()``
+     - ``GET orgs/{org_slug}/alert-full-scan-search``
+     - ``alerts:list``
+   * - ``alerts.get()``
+     - ``GET orgs/{org_slug}/alerts``
+     - ``alerts:list``
+   * - ``alerttypes.get()``
+     - ``POST alert-types``
+     - none
+   * - ``analytics.get_org()``
+     - ``GET analytics/org/{filter}``
+     - ``report:write``
+   * - ``analytics.get_repo()``
+     - ``GET analytics/repo/{name}/{filter}``
+     - ``report:write``
+   * - ``apitokens.create()``
+     - ``POST orgs/{org_slug}/api-tokens``
+     - ``api-tokens:create``
+   * - ``apitokens.list()``
+     - ``GET orgs/{org_slug}/api-tokens``
+     - ``api-tokens:list``
+   * - ``apitokens.update()``
+     - ``POST orgs/{org_slug}/api-tokens/update``
+     - ``api-tokens:create``
+   * - ``apitokens.update(token_id=...)``
+     - ``PUT orgs/{org_slug}/api-tokens/{token_id}``
+     - not in the API reference
+   * - ``apitokens.rotate()``
+     - ``POST orgs/{org_slug}/api-tokens/rotate``
+     - ``api-tokens:rotate``
+   * - ``apitokens.revoke()``
+     - ``POST orgs/{org_slug}/api-tokens/revoke``
+     - ``api-tokens:revoke``
+   * - ``auditlog.get()``
+     - ``GET orgs/{org_slug}/audit-log``
+     - ``audit-log:list``
+   * - ``basics.get_config()``
+     - ``GET orgs/{org_slug}/settings/socket-basics``
+     - ``socket-basics:read``
+   * - ``dependencies.post()``
+     - ``POST dependencies/upload``
+     - ``report:write``
+   * - ``dependencies.get()``
+     - ``POST dependencies/search``
+     - none
+   * - ``dependencies.get(org_slug, ecosystem, package, version)``
+     - ``GET orgs/{org_slug}/dependencies/{ecosystem}/{package}/{version}``
+     - not in the API reference
+   * - ``diffscans.list()``
+     - ``GET orgs/{org_slug}/diff-scans``
+     - ``diff-scans:list``
+   * - ``diffscans.get()``
+     - ``GET orgs/{org_slug}/diff-scans/{diff_scan_id}``
+     - ``diff-scans:list``
+   * - ``diffscans.create_from_repo()``
+     - ``POST orgs/{org_slug}/diff-scans/from-repo/{repo_slug}``
+     - ``diff-scans:create``, ``full-scans:create`` and ``repo:list``
+   * - ``diffscans.create_from_ids()``
+     - ``POST orgs/{org_slug}/diff-scans/from-ids``
+     - ``diff-scans:create`` and ``full-scans:list``
+   * - ``diffscans.gfm()``
+     - ``GET orgs/{org_slug}/diff-scans/{diff_scan_id}/gfm``
+     - ``diff-scans:list``
+   * - ``diffscans.delete()``
+     - ``DELETE orgs/{org_slug}/diff-scans/{diff_scan_id}``
+     - ``diff-scans:delete``
+   * - ``export.cdx_bom()``
+     - ``GET orgs/{org_slug}/export/cdx/{id}``
+     - ``report:read``
+   * - ``export.spdx_bom()``
+     - ``GET orgs/{org_slug}/export/spdx/{id}``
+     - ``report:read``
+   * - ``export.openvex_bom()``
+     - ``GET orgs/{org_slug}/export/openvex/{id}``
+     - ``report:read``
+   * - ``fixes.get()``
+     - ``GET orgs/{org_slug}/fixes``
+     - ``fixes:list``
+   * - ``fullscans.get()``
+     - ``GET orgs/{org_slug}/full-scans``, or ``GET orgs/{org_slug}/full-scans/{full_scan_id}`` when ``params`` holds only ``id``
+     - ``full-scans:list``
+   * - ``fullscans.post()``
+     - ``POST orgs/{org_slug}/full-scans``
+     - ``full-scans:create``
+   * - ``fullscans.delete()``
+     - ``DELETE orgs/{org_slug}/full-scans/{full_scan_id}``
+     - ``full-scans:delete``
+   * - ``fullscans.stream_diff()``
+     - ``GET orgs/{org_slug}/full-scans/diff``
+     - ``full-scans:list``
+   * - ``fullscans.stream()``
+     - ``GET orgs/{org_slug}/full-scans/{full_scan_id}``
+     - ``full-scans:list``
+   * - ``fullscans.metadata()``
+     - ``GET orgs/{org_slug}/full-scans/{full_scan_id}/metadata``
+     - ``full-scans:list``
+   * - ``fullscans.gfm()``
+     - ``GET orgs/{org_slug}/full-scans/diff/gfm``
+     - ``full-scans:list``
+   * - ``fullscans.finalize_tier1()``
+     - ``POST tier1-reachability-scan/finalize``
+     - ``full-scans:create`` (not in the API reference)
+   * - ``fullscans.archive()``
+     - ``POST orgs/{org_slug}/full-scans/archive``
+     - ``full-scans:create``
+   * - ``fullscans.rescan()``
+     - ``POST orgs/{org_slug}/full-scans/{full_scan_id}/rescan``
+     - ``full-scans:create``
+   * - ``fullscans.get_tar_files()``
+     - ``GET orgs/{org_slug}/full-scans/{full_scan_id}/files/tar``
+     - ``full-scans:list``
+   * - ``historical.list()``
+     - ``GET orgs/{org_slug}/historical/alerts``
+     - ``historical:alerts-list``
+   * - ``historical.trend()``
+     - ``GET orgs/{org_slug}/historical/alerts/trend``
+     - ``historical:alerts-trend``
+   * - ``historical.dependencies_trend()``
+     - ``GET orgs/{org_slug}/historical/dependencies/trend``
+     - ``historical:dependencies-trend``
+   * - ``historical.snapshots.create()``
+     - ``POST orgs/{org_slug}/historical/snapshots``
+     - ``historical:snapshots-start``
+   * - ``historical.snapshots.list()``
+     - ``GET orgs/{org_slug}/historical/snapshots``
+     - ``historical:snapshots-list``
+   * - ``labels.list()``
+     - ``GET orgs/{org_slug}/repos/labels``
+     - ``repo-label:list``
+   * - ``labels.post()``
+     - ``POST orgs/{org_slug}/repos/labels``
+     - ``repo-label:create``
+   * - ``labels.get()``
+     - ``GET orgs/{org_slug}/repos/labels/{label_id}``
+     - ``repo-label:list``
+   * - ``labels.delete()``
+     - ``DELETE orgs/{org_slug}/repos/labels/{label_id}``
+     - ``repo-label:delete``
+   * - ``labels.associate()``
+     - ``POST orgs/{org_slug}/repos/labels/{label_id}/associate``
+     - ``repo-label:update``
+   * - ``labels.disassociate()``
+     - ``POST orgs/{org_slug}/repos/labels/{label_id}/disassociate``
+     - ``repo-label:update``
+   * - ``labels.setting.get()``
+     - ``GET orgs/{org_slug}/repos/labels/{label_id}/label-setting``
+     - ``repo-label:list``
+   * - ``labels.setting.put()``
+     - ``PUT orgs/{org_slug}/repos/labels/{label_id}/label-setting``
+     - ``repo-label:update``
+   * - ``labels.setting.delete()``
+     - ``DELETE orgs/{org_slug}/repos/labels/{label_id}/label-setting``
+     - ``repo-label:update``
+   * - ``licensemetadata.post()``
+     - ``POST license-metadata``
+     - none
+   * - ``npm.issues()``
+     - ``GET npm/{package}/{version}/issues``
+     - none
+   * - ``npm.score()``
+     - ``GET npm/{package}/{version}/score``
+     - none
+   * - ``openapi.get()``
+     - ``GET openapi``
+     - none
+   * - ``org.get()``
+     - ``GET organizations``
+     - none
+   * - ``purl.post(org_slug=...)``
+     - ``POST orgs/{org_slug}/purl``
+     - ``packages:list``
+   * - ``purl.post()``
+     - ``POST purl``
+     - ``packages:list``
+   * - ``quota.get()``
+     - ``GET quota``
+     - none
+   * - ``report.list()``
+     - ``GET report/list``
+     - ``report:list``
+   * - ``report.delete()``
+     - ``DELETE report/delete/{id}``
+     - ``report:write``
+   * - ``report.view()``
+     - ``GET report/view/{id}``
+     - ``report:read``
+   * - ``report.supported()``
+     - ``GET report/supported``
+     - none
+   * - ``report.create()``
+     - ``PUT report/upload``
+     - ``report:write``
+   * - ``repos.get()``
+     - ``GET orgs/{org_slug}/repos``
+     - ``repo:list``
+   * - ``repos.repo()``
+     - ``GET orgs/{org_slug}/repos/{repo_slug}``
+     - ``repo:list``
+   * - ``repos.post()``
+     - ``POST orgs/{org_slug}/repos``
+     - ``repo:create``
+   * - ``repos.update()``
+     - ``POST orgs/{org_slug}/repos/{repo_slug}``
+     - ``repo:update``
+   * - ``repos.delete()``
+     - ``DELETE orgs/{org_slug}/repos/{repo_slug}``
+     - ``repo:delete``
+   * - ``repositories.list()``
+     - ``GET repos``
+     - not in the API reference
+   * - ``sbom.view()``
+     - ``GET sbom/view/{id}``
+     - not in the API reference
+   * - ``settings.get()``
+     - ``GET orgs/{org_slug}/settings/security-policy``
+     - ``security-policy:read``
+   * - ``settings.update_security_policy()``
+     - ``POST orgs/{org_slug}/settings/security-policy``
+     - ``security-policy:update``
+   * - ``settings.get_license_policy()``
+     - ``GET orgs/{org_slug}/settings/license-policy``
+     - ``license-policy:read``
+   * - ``settings.update_license_policy()``
+     - ``POST orgs/{org_slug}/settings/license-policy``
+     - ``license-policy:update``
+   * - ``settings.integration_events()``
+     - ``GET orgs/{org_slug}/settings/integrations/{integration_id}``
+     - not in the API reference
+   * - ``supportedfiles.get()``
+     - ``GET orgs/{org_slug}/supported-files``
+     - none
+   * - ``telemetry.get_config()``
+     - ``GET orgs/{org_slug}/telemetry/config``
+     - none
+   * - ``telemetry.update_config()``
+     - ``PUT orgs/{org_slug}/telemetry/config``
+     - ``telemetry-policy:update``
+   * - ``threatfeed.get(org_slug)``
+     - ``GET orgs/{org_slug}/threat-feed``
+     - ``threat-feed:list``
+   * - ``threatfeed.get()``
+     - ``GET threat-feed``
+     - ``threat-feed:list``
+   * - ``triage.list_alert_triage()``
+     - ``GET orgs/{org_slug}/triage/alerts``
+     - ``triage:alerts-list``
+   * - ``triage.update_alert_triage()``
+     - ``POST orgs/{org_slug}/triage/alerts``
+     - ``triage:alerts-update``
+   * - ``uploadmanifests.upload_manifest_files()``
+     - ``POST orgs/{org_slug}/upload-manifest-files``
+     - ``full-scans:create`` (not in the API reference)
+   * - ``webhooks.list()``
+     - ``GET orgs/{org_slug}/webhooks``
+     - ``webhooks:list``
+   * - ``webhooks.create()``
+     - ``POST orgs/{org_slug}/webhooks``
+     - ``webhooks:create``
+   * - ``webhooks.get()``
+     - ``GET orgs/{org_slug}/webhooks/{webhook_id}``
+     - ``webhooks:list``
+   * - ``webhooks.update()``
+     - ``PUT orgs/{org_slug}/webhooks/{webhook_id}``
+     - ``webhooks:update``
+   * - ``webhooks.delete()``
+     - ``DELETE orgs/{org_slug}/webhooks/{webhook_id}``
+     - ``webhooks:delete``
