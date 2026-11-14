@@ -1,4 +1,5 @@
 from typing import Literal, List, Tuple, Optional, Union
+from urllib3.fields import RequestField
 import logging
 import os
 import weakref
@@ -239,6 +240,105 @@ class Utils:
         return integration_type  # type: ignore
     
     @staticmethod
+    def calculate_upload_key(file_path: str, workspace: Optional[str] = None, base_path: Optional[str] = None, base_paths: Optional[List[str]] = None) -> str:
+        """Calculate the repo-relative multipart field name for a manifest."""
+        workspace, base_path, base_paths = Utils._normalize_upload_options(workspace, base_path, base_paths)
+        return Utils._calculate_normalized_upload_key(file_path.replace("\\", "/"), workspace, base_path, base_paths)
+
+    @staticmethod
+    def _normalize_upload_options(workspace, base_path, base_paths):
+        return (
+            workspace.replace("\\", "/") if workspace else workspace,
+            base_path.replace("\\", "/") if base_path else base_path,
+            [path.replace("\\", "/") for path in base_paths] if base_paths else base_paths,
+        )
+
+    @staticmethod
+    def _calculate_normalized_upload_key(file_path, workspace, base_path, base_paths):
+        # Calculate the key name for the form data
+        key = file_path
+        path_stripped = False
+
+        # If base_paths is provided, try to strip one of the paths from the file path
+        if base_paths:
+            for bp in base_paths:
+                normalized_base_path = bp.rstrip("/") + "/" if not bp.endswith("/") else bp
+                if key.startswith(normalized_base_path):
+                    key = key[len(normalized_base_path):]
+                    path_stripped = True
+                    break
+                elif key.startswith(bp.rstrip("/")):
+                    stripped_base = bp.rstrip("/")
+                    if key.startswith(stripped_base + "/") or key == stripped_base:
+                        key = key[len(stripped_base):]
+                        key = key.lstrip("/")
+                        path_stripped = True
+                        break
+        elif base_path:
+            normalized_base_path = base_path.rstrip("/") + "/" if not base_path.endswith("/") else base_path
+            if key.startswith(normalized_base_path):
+                key = key[len(normalized_base_path):]
+                path_stripped = True
+            elif key.startswith(base_path.rstrip("/")):
+                stripped_base = base_path.rstrip("/")
+                if key.startswith(stripped_base + "/") or key == stripped_base:
+                    key = key[len(stripped_base):]
+                    key = key.lstrip("/")
+                    path_stripped = True
+
+        # If workspace is provided and no base paths matched, fall back to workspace logic
+        if not path_stripped and workspace and file_path.startswith(workspace):
+            key = file_path[len(workspace):]
+            # Remove all leading slashes (for absolute paths)
+            while key.startswith("/"):
+                key = key[1:]
+            path_stripped = True
+
+        # Clean up relative path prefixes, but preserve filename dots
+        while key.startswith("./"):
+            key = key[2:]
+        while key.startswith("../"):
+            key = key[3:]
+        # Remove any remaining leading slashes (for absolute paths)
+        while key.startswith("/"):
+            key = key[1:]
+
+        # Remove Windows drive letter if present (C:/...)
+        if len(key) > 2 and key[1] == ':' and (key[2] == '/' or key[2] == '\\'):
+            key = key[2:]
+            while key.startswith("/"):
+                key = key[1:]
+
+        return key
+
+    @staticmethod
+    def validate_upload_keys(key_sources: List[Tuple[str, str]]) -> None:
+        """Reject colliding multipart keys, preserving source paths for diagnostics."""
+        seen = {}
+        formatter = RequestField(name="", data=None).header_formatter
+        for key, source in key_sources:
+            if key is None:
+                continue
+            # Use the installed encoder's escaping rules; the result is name="<key>".
+            wire_key = formatter("name", key)[6:-1]
+            if wire_key in seen:
+                raise ValueError(
+                    f"Duplicate upload key '{wire_key}' from '{seen[wire_key]}' and '{source}'"
+                )
+            seen[wire_key] = source
+
+    @staticmethod
+    def prepare_upload_keys(files: List[str], workspace: Optional[str] = None, base_path: Optional[str] = None, base_paths: Optional[List[str]] = None) -> List[Tuple[str, str]]:
+        """Compute and validate all keys before reading any file contents."""
+        workspace, base_path, base_paths = Utils._normalize_upload_options(workspace, base_path, base_paths)
+        key_sources = [
+            (Utils._calculate_normalized_upload_key(path.replace("\\", "/"), workspace, base_path, base_paths), path)
+            for path in files
+        ]
+        Utils.validate_upload_keys(key_sources)
+        return key_sources
+
+    @staticmethod
     def load_files_for_sending_lazy(files: List[str], workspace: Optional[str] = None, max_open_files: int = 100, base_path: Optional[str] = None, base_paths: Optional[List[str]] = None) -> List[Tuple[str, Tuple[str, LazyFileLoader]]]:
         """
         Prepares files for sending to the Socket API using lazy loading.
@@ -258,86 +358,19 @@ class Utils:
         Returns:
             List of tuples formatted for requests multipart upload:
             [(field_name, (filename, lazy_file_object)), ...]
+
+        Raises:
+            ValueError: If two source paths produce the same upload key.
         """
         # Configure the file descriptor manager with the specified limit
         _fd_manager.set_max_open_files(max_open_files)
         
         send_files = []
-        if workspace and "\\" in workspace:
-            workspace = workspace.replace("\\", "/")
-        if base_path and "\\" in base_path:
-            base_path = base_path.replace("\\", "/")
-        if base_paths:
-            base_paths = [bp.replace("\\", "/") if "\\" in bp else bp for bp in base_paths]
-        
-        for file_path in files:
-            # Normalize file path
-            if "\\" in file_path:
-                file_path = file_path.replace("\\", "/")
-
-            # Skip directories
-            if os.path.isdir(file_path):
-                continue
-
-            # Handle file path splitting safely
-            if "/" in file_path:
-                _, name = file_path.rsplit("/", 1)
-            else:
-                name = file_path
-
-            # Calculate the key name for the form data
-            key = file_path
-            path_stripped = False
-
-            # If base_paths is provided, try to strip one of the paths from the file path
-            if base_paths:
-                for bp in base_paths:
-                    normalized_base_path = bp.rstrip("/") + "/" if not bp.endswith("/") else bp
-                    if key.startswith(normalized_base_path):
-                        key = key[len(normalized_base_path):]
-                        path_stripped = True
-                        break
-                    elif key.startswith(bp.rstrip("/")):
-                        stripped_base = bp.rstrip("/")
-                        if key.startswith(stripped_base + "/") or key == stripped_base:
-                            key = key[len(stripped_base):]
-                            key = key.lstrip("/")
-                            path_stripped = True
-                            break
-            elif base_path:
-                normalized_base_path = base_path.rstrip("/") + "/" if not base_path.endswith("/") else base_path
-                if key.startswith(normalized_base_path):
-                    key = key[len(normalized_base_path):]
-                    path_stripped = True
-                elif key.startswith(base_path.rstrip("/")):
-                    stripped_base = base_path.rstrip("/")
-                    if key.startswith(stripped_base + "/") or key == stripped_base:
-                        key = key[len(stripped_base):]
-                        key = key.lstrip("/")
-                        path_stripped = True
-
-            # If workspace is provided and no base paths matched, fall back to workspace logic
-            if not path_stripped and workspace and file_path.startswith(workspace):
-                key = file_path[len(workspace):]
-                # Remove all leading slashes (for absolute paths)
-                while key.startswith("/"):
-                    key = key[1:]
-                path_stripped = True
-
-            # Clean up relative path prefixes, but preserve filename dots
-            while key.startswith("./"):
-                key = key[2:]
-            while key.startswith("../"):
-                key = key[3:]
-            # Remove any remaining leading slashes (for absolute paths)
-            while key.startswith("/"):
-                key = key[1:]
-
-            # Remove Windows drive letter if present (C:/...)
-            if len(key) > 2 and key[1] == ':' and (key[2] == '/' or key[2] == '\\'):
-                key = key[2:]
-                while key.startswith("/"):
-                    key = key[1:]
+        # Directories do not produce multipart parts, so exclude them before validating keys.
+        upload_files = [path for path in files if not os.path.isdir(path.replace("\\", "/"))]
+        key_sources = Utils.prepare_upload_keys(upload_files, workspace, base_path, base_paths)
+        for key, source_path in key_sources:
+            file_path = source_path.replace("\\", "/")
 
             # Create lazy file loader instead of opening file immediately
             lazy_file = LazyFileLoader(file_path, key)
