@@ -115,7 +115,7 @@ class Settings:
             org_slug: Organization slug
             integration_id: Integration ID
         """
-        path = f"orgs/{org_slug}/settings/integrations/{integration_id}"
+        path = f"orgs/{org_slug}/settings/integrations/{integration_id}/events"
         response = self.api.do_request(path=path)
 
         if response.status_code == 200:

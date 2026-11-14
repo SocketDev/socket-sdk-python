@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.6.3
+
+### Fixed: `settings.integration_events()` requested the wrong path
+
+- `settings.integration_events()` now calls
+  `GET orgs/{org_slug}/settings/integrations/{integration_id}/events`. It
+  previously requested the integration's own path, which has no `GET` route,
+  so the method always failed. It needs the `integration:list` scope.
+
 ## 3.6.2
 
 ### Fixed: reject retired API credentials before use
