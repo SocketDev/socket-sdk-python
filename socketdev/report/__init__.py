@@ -1,4 +1,5 @@
 import logging
+from contextlib import ExitStack
 from datetime import datetime, timedelta, timezone
 
 log = logging.getLogger("socketdev")
@@ -10,7 +11,7 @@ class Report:
     def __init__(self, api):
         self.api = api
 
-    def list(self, from_time: int = None) -> dict:
+    def list(self, from_time: int | None = None) -> dict:
         """
         This function will return all reports from time specified.
         :param from_time: Unix epoch time in seconds. Will default self, to 30 days
@@ -58,30 +59,31 @@ class Report:
         return {}
 
     def create(self, files: list) -> dict:
-        # Handle both file path strings and file tuples
-        open_files = []
-        for file_entry in files:
-            if isinstance(file_entry, tuple) and len(file_entry) == 2:
-                name, file_data = file_entry
-                if isinstance(file_data, tuple) and len(file_data) == 2:
-                    # Format: [("field_name", ("filename", file_obj))]
-                    filename, file_obj = file_data
-                    file_info = (name, (filename, file_obj, "text/plain"))
-                    open_files.append(file_info)
+        with ExitStack() as stack:
+            # Handle both file path strings and file tuples
+            open_files = []
+            for file_entry in files:
+                if isinstance(file_entry, tuple) and len(file_entry) == 2:
+                    name, file_data = file_entry
+                    if isinstance(file_data, tuple) and len(file_data) == 2:
+                        # Format: [("field_name", ("filename", file_obj))]
+                        filename, file_obj = file_data
+                        file_info = (name, (filename, file_obj, "text/plain"))
+                        open_files.append(file_info)
+                    else:
+                        # Format: [("field_name", "file_path")]
+                        file_info = (name, (name, stack.enter_context(open(file_data, "rb")), "text/plain"))
+                        open_files.append(file_info)
                 else:
-                    # Format: [("field_name", "file_path")]
-                    file_info = (name, (name, open(file_data, "rb"), "text/plain"))
-                    open_files.append(file_info)
-            else:
-                # Handle other formats if needed
-                log.error(f"Unexpected file format: {file_entry}")
-                return {}
-                
-        path = "report/upload"
-        payload = {}
-        response = self.api.do_request(path=path, method="PUT", files=open_files, payload=payload)
-        if response.status_code in (200, 201):
-            return response.json()
-        log.error(f"Error creating report: {response.status_code}")
-        log.error(response.text)
-        return {}
+                    # Handle other formats if needed
+                    log.error(f"Unexpected file format: {file_entry}")
+                    return {}
+
+            path = "report/upload"
+            payload = {}
+            response = self.api.do_request(path=path, method="PUT", files=open_files, payload=payload)
+            if response.status_code in (200, 201):
+                return response.json()
+            log.error(f"Error creating report: {response.status_code}")
+            log.error(response.text)
+            return {}

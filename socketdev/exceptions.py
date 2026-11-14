@@ -1,5 +1,3 @@
-from typing import Optional
-
 # HTTP statuses classified as transient by APIFailure.is_transient_error(): gateway /
 # availability failures where the request was dropped before the application produced a
 # definitive response, so retrying the same request may succeed (408 Request Timeout,
@@ -10,7 +8,7 @@ TRANSIENT_HTTP_STATUS_CODES = frozenset({408, 502, 503, 504})
 class APIFailure(Exception):
     """Base exception for all Socket API errors"""
 
-    def __init__(self, *args, status_code: Optional[int] = None):
+    def __init__(self, *args, status_code: int | None = None):
         super().__init__(*args)
         self.status_code = status_code
 
@@ -34,27 +32,22 @@ class APIKeyMissing(APIFailure):
 
 class APIAccessDenied(APIFailure):
     """Raised when access is denied to the API"""
-    pass
 
 
 class APIInsufficientPermissions(APIFailure):
     """Raised when the API token doesn't have required permissions"""
-    pass
 
 
 class APIOrganizationNotAllowed(APIFailure):
     """Raised when organization doesn't have access to the feature"""
-    pass
 
 
 class APIInsufficientQuota(APIFailure):
     """Raised when access is denied to the API due to quota limits"""
-    pass
 
 
 class APIResourceNotFound(APIFailure):
     """Raised when the requested resource is not found"""
-    pass
 
 
 class APITimeout(APIFailure):

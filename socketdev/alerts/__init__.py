@@ -22,12 +22,12 @@ class Alerts:
         path = f"orgs/{org_slug}/alerts"
         if query_params:
             path += "?" + urlencode(query_params)
-        
+
         response = self.api.do_request(path=path)
-        
+
         if response.status_code == 200:
             return response.json()
-        
+
         log.error(f"Error getting alerts: {response.status_code}")
         log.error(response.text)
         return {}

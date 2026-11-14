@@ -2,23 +2,42 @@
 
 ## Development setup
 
-Use Python 3.9 or newer. Create and activate a virtual environment, then
-install the package with its development and test dependencies:
+Use Python 3.10 or newer and install [uv](https://docs.astral.sh/uv/). From the
+repository root, install the locked development and test dependencies:
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
-python -m pip install -e ".[dev,test]"
+uv sync --locked --extra dev --extra test
+make hooks
 ```
 
-Before opening a pull request, run the focused checks for your change. The
-complete local check is:
+Before opening a pull request, run:
 
 ```bash
-python -m pytest
-hatch build
-python -m twine check dist/*
+make lint
+make test
+uv run --locked hatch build
+uv run --locked python -m twine check dist/*
 ```
+
+## Linting and formatting
+
+Ruff checks Python source, tests, hooks, examples, and developer scripts. The
+rule set lives in `pyproject.toml`; CI, Make targets, and pre-commit use the same
+Ruff version from `uv.lock`.
+
+`make lint-fix` applies safe lint fixes. `make format` formats files with a line
+length of 120. Pre-commit applies both to staged Python files. Review and stage
+any edits before committing again. CI checks the full repository on every pull
+request and push to `main`.
+
+Functions are limited to cyclomatic complexity 12 and eight arguments. Existing
+over-limit functions carry explicit suppressions; split new functions that exceed
+the limits. `RUF100` rejects suppressions that become unnecessary. Avoid running
+`ruff check --fix` with a narrow `--select` that includes `RUF100`, because it
+can remove markers for rules outside that selection.
+
+Integration tests requiring live credentials are opt-in; see
+[tests/README.md](tests/README.md). The default `make test` runs unit tests and mocked endpoint tests.
 
 ## Pull request validation
 

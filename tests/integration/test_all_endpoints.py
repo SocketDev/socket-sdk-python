@@ -7,11 +7,12 @@ For real API calls, appropriate error handling is included when endpoints aren't
 Run with: python -m pytest tests/integration/test_all_endpoints.py -v
 """
 
-import unittest
+import json
 import os
 import tempfile
-import json
+import unittest
 from unittest.mock import Mock, patch
+
 from socketdev import socketdev
 from socketdev.fullscans import FullScanParams
 
@@ -21,7 +22,7 @@ class TestAllEndpointsMocked(unittest.TestCase):
 
     def setUp(self):
         """Set up test environment with mocked API."""
-        self.requests_patcher = patch('socketdev.core.api.requests')
+        self.requests_patcher = patch("socketdev.core.api.requests")
         self.mock_requests = self.requests_patcher.start()
         self.sdk = socketdev(token="test-token")
 
@@ -55,7 +56,7 @@ class TestAllEndpointsMocked(unittest.TestCase):
     def test_dependencies_post_mocked(self):
         """Test dependencies post endpoint."""
         self._mock_success_response({"packages": []})
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump({"name": "test", "version": "1.0.0"}, f)
             f.flush()
             try:
@@ -94,15 +95,14 @@ class TestAllEndpointsMocked(unittest.TestCase):
     def test_diffscans_create_from_repo_mocked(self):
         """Test diffscans create_from_repo endpoint."""
         self._mock_created_response({"id": "repo-diff-scan"})
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump({"name": "test", "version": "1.0.0"}, f)
             f.flush()
             try:
-                result = self.sdk.diffscans.create_from_repo(
-                    "test-org", "test-repo", 
-                    [("file", ("package.json", open(f.name, "rb")))], 
-                    {"description": "test"}
-                )
+                with open(f.name, "rb") as fixture_file:
+                    result = self.sdk.diffscans.create_from_repo(
+                        "test-org", "test-repo", [("file", ("package.json", fixture_file))], {"description": "test"}
+                    )
                 self.assertEqual(result["id"], "repo-diff-scan")
             finally:
                 os.unlink(f.name)
@@ -132,11 +132,11 @@ class TestAllEndpointsMocked(unittest.TestCase):
         result = self.sdk.export.spdx_bom("test-org", "scan-123")
         self.assertIn("spdxVersion", result)
 
-    def test_export_get_mocked(self):
-        """Test export get endpoint."""
-        self._mock_success_response({"exports": []})
-        result = self.sdk.export.get("test-org")
-        self.assertIn("exports", result)
+    def test_export_openvex_bom_mocked(self):
+        """Export OpenVEX documents through the supported export method."""
+        self._mock_success_response({"statements": []})
+        result = self.sdk.export.openvex_bom("test-org", "scan-123")
+        self.assertIn("statements", result)
 
     # FullScans endpoints
     def test_fullscans_get_mocked(self):
@@ -149,11 +149,12 @@ class TestAllEndpointsMocked(unittest.TestCase):
         """Test fullscans post endpoint."""
         self._mock_created_response({"id": "new-scan"})
         params = FullScanParams(repo="test-repo", org_slug="test-org")
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump({"name": "test", "version": "1.0.0"}, f)
             f.flush()
             try:
-                result = self.sdk.fullscans.post([("file", ("package.json", open(f.name, "rb")))], params)
+                with open(f.name, "rb") as fixture_file:
+                    result = self.sdk.fullscans.post([("file", ("package.json", fixture_file))], params)
                 self.assertEqual(result["id"], "new-scan")
             finally:
                 os.unlink(f.name)
@@ -209,7 +210,7 @@ class TestAllEndpointsMocked(unittest.TestCase):
         """Test org-scoped purl post endpoint."""
         mock_response = Mock()
         mock_response.status_code = 200
-        mock_response.headers = {'content-type': 'application/x-ndjson'}
+        mock_response.headers = {"content-type": "application/x-ndjson"}
         mock_response.text = '{"inputPurl": "pkg:npm/lodash@4.18.1", "purl": "pkg:npm/lodash@4.18.1", "type": "npm", "name": "lodash", "version": "4.18.1", "valid": true, "alerts": []}'
         self.mock_requests.request.return_value = mock_response
         result = self.sdk.purl.post("false", [{"purl": "pkg:npm/lodash@4.18.1"}], org_slug="test-org")
@@ -232,11 +233,12 @@ class TestAllEndpointsMocked(unittest.TestCase):
     def test_report_create_mocked(self):
         """Test report create endpoint."""
         self._mock_created_response({"id": "report-123"})
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump({"name": "test", "version": "1.0.0"}, f)
             f.flush()
             try:
-                result = self.sdk.report.create([("file", ("package.json", open(f.name, "rb")))])
+                with open(f.name, "rb") as fixture_file:
+                    result = self.sdk.report.create([("file", ("package.json", fixture_file))])
                 self.assertEqual(result["id"], "report-123")
             finally:
                 os.unlink(f.name)
@@ -313,7 +315,7 @@ class TestAllEndpointsMocked(unittest.TestCase):
     def test_apitokens_list_mocked(self):
         """Test apitokens list endpoint."""
         self._mock_success_response({"tokens": []})
-        result = self.sdk.apitokens.list()
+        result = self.sdk.apitokens.list("test-org")
         self.assertIn("tokens", result)
 
     def test_auditlog_get_mocked(self):
@@ -331,25 +333,25 @@ class TestAllEndpointsMocked(unittest.TestCase):
     def test_labels_get_mocked(self):
         """Test labels get endpoint."""
         self._mock_success_response({"label": "test-label"})
-        result = self.sdk.labels.get("test-org", 1, "test-key")
+        result = self.sdk.labels.get("test-org", "label-1")
         self.assertIn("label", result)
 
-    def test_labels_put_mocked(self):
-        """Test labels put endpoint."""
-        self._mock_success_response({"updated": True})
-        result = self.sdk.labels.put("test-org", 1, {"test": {"key": {"value": "data"}}})
+    def test_label_settings_put_mocked(self):
+        """Label settings use the settings endpoint and a created response."""
+        self._mock_created_response({"updated": True})
+        result = self.sdk.labels.setting.put("test-org", 1, {"test": {"key": {"value": "data"}}})
         self.assertIn("updated", result)
 
     def test_labels_delete_mocked(self):
         """Test labels delete endpoint."""
         self._mock_success_response({"deleted": True})
-        result = self.sdk.labels.delete("test-org", 1, "test-key")
+        result = self.sdk.labels.delete("test-org", "label-1")
         self.assertIn("deleted", result)
 
-    def test_licensemetadata_get_mocked(self):
-        """Test licensemetadata get endpoint."""
+    def test_licensemetadata_post_mocked(self):
+        """License metadata is requested through POST."""
         self._mock_success_response({"licenses": []})
-        result = self.sdk.licensemetadata.get()
+        result = self.sdk.licensemetadata.post(["MIT"])
         self.assertIn("licenses", result)
 
 
@@ -362,30 +364,25 @@ class TestAllEndpointsIntegration(unittest.TestCase):
         cls.api_key = os.getenv("SOCKET_SECURITY_API_KEY", "")
         cls.org_slug = os.getenv("SOCKET_ORG_SLUG", "")
         cls.repo_slug = os.getenv("SOCKET_REPO_SLUG", "")
-        
+
         if not cls.api_key or not cls.org_slug:
-            raise unittest.SkipTest(
-                "SOCKET_SECURITY_API_KEY and SOCKET_ORG_SLUG required for integration tests"
-            )
-        
+            raise unittest.SkipTest("SOCKET_SECURITY_API_KEY and SOCKET_ORG_SLUG required for integration tests")
+
         cls.sdk = socketdev(token=cls.api_key)
         cls.temp_dir = tempfile.mkdtemp()
         cls.package_json_path = os.path.join(cls.temp_dir, "package.json")
-        
+
         # Create test package.json
-        test_package = {
-            "name": "test-integration-package",
-            "version": "1.0.0",
-            "dependencies": {"lodash": "4.18.1"}
-        }
-        with open(cls.package_json_path, 'w') as f:
+        test_package = {"name": "test-integration-package", "version": "1.0.0", "dependencies": {"lodash": "4.18.1"}}
+        with open(cls.package_json_path, "w") as f:
             json.dump(test_package, f, indent=2)
 
     @classmethod
     def tearDownClass(cls):
         """Clean up test environment."""
         import shutil
-        if hasattr(cls, 'temp_dir'):
+
+        if hasattr(cls, "temp_dir"):
             shutil.rmtree(cls.temp_dir)
 
     def _try_endpoint(self, endpoint_func, *args, **kwargs):
@@ -517,10 +514,7 @@ class TestAllEndpointsIntegration(unittest.TestCase):
     # Dependencies endpoint
     def test_dependencies_get_integration(self):
         """Test dependencies get endpoint."""
-        result = self._try_endpoint(
-            self.sdk.dependencies.get, 
-            self.org_slug, "npm", "lodash", "4.18.1"
-        )
+        result = self._try_endpoint(self.sdk.dependencies.get, self.org_slug, "npm", "lodash", "4.18.1")
         if result:
             self.assertIsInstance(result, dict)
 
@@ -544,25 +538,21 @@ class TestAllEndpointsIntegration(unittest.TestCase):
             branch="test-branch",
             commit_message="Integration test scan",
             commit_hash="1234567890abcdef1234567890abcdef12345678",
-            integration_type="api"
+            integration_type="api",
         )
 
         with open(self.package_json_path, "rb") as f:
             files = [("file", ("package.json", f))]
             result = self._try_endpoint(self.sdk.fullscans.post, files, params)
-            
+
             if result and "id" in result:
                 scan_id = result["id"]
-                
+
                 # Try to get the scan
-                get_result = self._try_endpoint(
-                    self.sdk.fullscans.get, 
-                    self.org_slug, 
-                    {"id": scan_id}
-                )
+                get_result = self._try_endpoint(self.sdk.fullscans.get, self.org_slug, {"id": scan_id})
                 if get_result:
                     self.assertIsInstance(get_result, dict)
-                
+
                 # Clean up - try to delete the scan
                 self._try_endpoint(self.sdk.fullscans.delete, self.org_slug, scan_id)
 

@@ -1,9 +1,10 @@
 import json
 import urllib.parse
 import warnings
-from typing import Optional
-from socketdev.log import log
+
 from socketdev.exceptions import APIPartialResponse
+from socketdev.log import log
+
 from ..core.dedupe import Dedupe
 
 
@@ -18,15 +19,15 @@ class Purl:
     def __init__(self, api):
         self.api = api
 
-    def post(
+    def post(  # noqa: C901
         self,
         license: str = "false",
-        components: list = None,
-        org_slug: str = None,
-        poll: Optional[bool] = None,
-        timeout_sec: Optional[int] = None,
-        alerts: Optional[bool] = None,
-        purl_errors: Optional[bool] = None,
+        components: list | None = None,
+        org_slug: str | None = None,
+        poll: bool | None = None,
+        timeout_sec: int | None = None,
+        alerts: bool | None = None,
+        purl_errors: bool | None = None,
         strict: bool = False,
         **kwargs,
     ) -> list:
@@ -145,11 +146,7 @@ class Purl:
         the response's canonical ``purl`` differs. ``purl`` is retained as a fallback,
         and typed ``purlError`` stream records carry ``inputPurl`` under ``value``.
         """
-        requested = [
-            c["purl"]
-            for c in components
-            if isinstance(c, dict) and isinstance(c.get("purl"), str)
-        ]
+        requested = [c["purl"] for c in components if isinstance(c, dict) and isinstance(c.get("purl"), str)]
         if not requested:
             return
         returned = set()

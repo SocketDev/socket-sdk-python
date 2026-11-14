@@ -1,5 +1,5 @@
-import logging
 import json
+import logging
 from urllib.parse import urlencode
 
 log = logging.getLogger("socketdev")
@@ -23,12 +23,12 @@ class Webhooks:
         path = f"orgs/{org_slug}/webhooks"
         if query_params:
             path += "?" + urlencode(query_params)
-        
+
         response = self.api.do_request(path=path)
-        
+
         if response.status_code == 200:
             return response.json()
-        
+
         log.error(f"Error listing webhooks: {response.status_code}")
         log.error(response.text)
         return {}
@@ -46,12 +46,12 @@ class Webhooks:
         """
         path = f"orgs/{org_slug}/webhooks"
         payload = json.dumps(kwargs) if kwargs else "{}"
-        
+
         response = self.api.do_request(path=path, method="POST", payload=payload)
-        
+
         if response.status_code in (200, 201):
             return response.json()
-        
+
         log.error(f"Error creating webhook: {response.status_code}")
         log.error(response.text)
         return {}
@@ -68,12 +68,12 @@ class Webhooks:
             dict containing webhook details
         """
         path = f"orgs/{org_slug}/webhooks/{webhook_id}"
-        
+
         response = self.api.do_request(path=path)
-        
+
         if response.status_code == 200:
             return response.json()
-        
+
         log.error(f"Error getting webhook: {response.status_code}")
         log.error(response.text)
         return {}
@@ -92,12 +92,12 @@ class Webhooks:
         """
         path = f"orgs/{org_slug}/webhooks/{webhook_id}"
         payload = json.dumps(kwargs) if kwargs else "{}"
-        
+
         response = self.api.do_request(path=path, method="PUT", payload=payload)
-        
+
         if response.status_code == 200:
             return response.json()
-        
+
         log.error(f"Error updating webhook: {response.status_code}")
         log.error(response.text)
         return {}
@@ -114,12 +114,12 @@ class Webhooks:
             dict containing the deletion response
         """
         path = f"orgs/{org_slug}/webhooks/{webhook_id}"
-        
+
         response = self.api.do_request(path=path, method="DELETE")
-        
+
         if response.status_code == 200:
             return response.json()
-        
+
         log.error(f"Error deleting webhook: {response.status_code}")
         log.error(response.text)
         return {}

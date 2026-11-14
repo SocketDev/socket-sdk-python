@@ -9,7 +9,7 @@ class Historical:
         self.api = api
         self.snapshots = self.Snapshots(api)
 
-    def list(self, org_slug: str, query_params: dict = None) -> dict:
+    def list(self, org_slug: str, query_params: dict | None = None) -> dict:
         """Get historical alerts list for an organization.
 
         Args:
@@ -28,7 +28,7 @@ class Historical:
         log.error(response.text)
         return {}
 
-    def trend(self, org_slug: str, query_params: dict = None) -> dict:
+    def trend(self, org_slug: str, query_params: dict | None = None) -> dict:
         """Get historical alert trends data for an org.
 
         Args:
@@ -47,7 +47,7 @@ class Historical:
         log.error(response.text)
         return {}
 
-    def dependencies_trend(self, org_slug: str, query_params: dict = None) -> dict:
+    def dependencies_trend(self, org_slug: str, query_params: dict | None = None) -> dict:
         """Get historical dependency trends data for an org.
 
         Args:
@@ -88,7 +88,7 @@ class Historical:
             log.error(response.text)
             return {}
 
-        def list(self, org_slug: str, query_params: dict = None) -> dict:
+        def list(self, org_slug: str, query_params: dict | None = None) -> dict:
             """List historical snapshots for an organization."""
             path = f"orgs/{org_slug}/historical/snapshots"
             if query_params:

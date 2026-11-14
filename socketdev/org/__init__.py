@@ -1,5 +1,5 @@
-from typing import TypedDict, Dict
 import logging
+from typing import TypedDict
 
 log = logging.getLogger("socketdev")
 
@@ -13,7 +13,7 @@ class Organization(TypedDict):
 
 
 class OrganizationsResponse(TypedDict):
-    organizations: Dict[str, Organization]
+    organizations: dict[str, Organization]
     # Add other fields from the response if needed
 
 

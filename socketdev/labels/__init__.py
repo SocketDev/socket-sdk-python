@@ -1,10 +1,8 @@
 import json
 import logging
-from typing import Any
-from urllib.parse import urlencode
-
 
 log = logging.getLogger("socketdev")
+
 
 class Setting:
     def __init__(self, api):
@@ -21,7 +19,9 @@ class Setting:
             return response.json()
 
         error_message = response.json().get("error", {}).get("message", "Unknown error")
-        log.error(f"Error getting label setting {setting_key} for {label_id}: {response.status_code}, message: {error_message}")
+        log.error(
+            f"Error getting label setting {setting_key} for {label_id}: {response.status_code}, message: {error_message}"
+        )
         return {}
 
     def put(self, org_slug: str, label_id: int, settings: dict[str, dict[str, dict[str, str]]]):
@@ -54,7 +54,7 @@ class Labels:
         self.setting = Setting(api)
 
     def list(self, org_slug: str):
-        path = f"orgs/" + org_slug + f"/repos/labels"
+        path = "orgs/" + org_slug + "/repos/labels"
         response = self.api.do_request(path=path)
         if response.status_code == 200:
             return response.json()
@@ -69,8 +69,7 @@ class Labels:
         response = self.api.do_request(path=path, method="POST", payload=payload)
 
         if response.status_code == 201:
-            result = response.json()
-            return result
+            return response.json()
 
         error_message = response.json().get("error", {}).get("message", "Unknown error")
         log.error(f"Failed to create repository label: {response.status_code}, message: {error_message}")
@@ -80,8 +79,7 @@ class Labels:
         path = f"orgs/{org_slug}/repos/labels/{label_id}"
         response = self.api.do_request(path=path)
         if response.status_code == 200:
-            result = response.json()
-            return result
+            return response.json()
 
         error_message = response.json().get("error", {}).get("message", "Unknown error")
         log.error(f"Failed to get repository label: {response.status_code}, message: {error_message}")
@@ -96,7 +94,6 @@ class Labels:
         error_message = response.json().get("error", {}).get("message", "Unknown error")
         log.error(f"Error deleting repository label: {response.status_code}, message: {error_message}")
         return {}
-
 
     def associate(self, org_slug: str, label_id: int, repo_id: str) -> dict:
         path = f"orgs/{org_slug}/repos/labels/{label_id}/associate"

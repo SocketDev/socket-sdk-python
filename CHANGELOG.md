@@ -1,5 +1,25 @@
 # Changelog
 
+## 3.6.3
+
+### Changed
+
+- Enforce Ruff linting and formatting in CI and pre-commit, using the locked
+  development tool version. Add `make lint`, `make lint-fix`, `make format`,
+  and `make hooks` for contributors.
+- Bound function complexity at 12 independent paths and eight arguments, with
+  explicit exceptions for existing functions and checks for obsolete suppressions.
+- Full-scan parameter normalization uses debug logging instead of stdout.
+- Refresh mocked endpoint tests for the supported API methods and include them
+  in the default local and CI test runs.
+
+### Fixed
+
+- Repository updates correctly serialize keyword arguments into the request body.
+- Report uploads close files opened from paths after the request, including on
+  failure. Streams supplied by callers remain open.
+- Lazy-file validation remains active under `python -O`.
+
 ## 3.6.2
 
 ### Fixed: reject retired API credentials before use
