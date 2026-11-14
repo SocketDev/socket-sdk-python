@@ -4,8 +4,8 @@ import time
 import pytest
 
 from socketdev import socketdev
-from socketdev.fullscans import FullScanStreamResponse
 from socketdev.exceptions import APIAccessDenied, APIResourceNotFound, APITimeout
+from socketdev.fullscans import FullScanStreamResponse
 from tests.support.socket_api_fixture import SocketApiFixture, SocketResponse
 
 
@@ -61,9 +61,7 @@ def test_transient_error_retries_and_invalid_ndjson_preserves_unsuccessful_respo
     responses = iter([SocketResponse(503, {"error": {"message": "try again"}}), ndjson()])
     api_fixture.route("GET", path, lambda _request: next(responses))
     sdk = sdk_for(api_fixture)
-    assert sdk.fullscans.stream(
-        "org", "scan", poll_timeout_seconds=0.5, poll_initial_interval_seconds=0.01
-    ) == {}
+    assert sdk.fullscans.stream("org", "scan", poll_timeout_seconds=0.5, poll_initial_interval_seconds=0.01) == {}
     assert len(api_fixture.requests) == 2
 
     api_fixture.requests.clear()
@@ -77,8 +75,11 @@ def test_perpetual_processing_times_out(api_fixture):
     api_fixture.route("GET", "orgs/org/full-scans/scan", SocketResponse(202, {}))
     with pytest.raises(APITimeout, match="full scan results"):
         sdk_for(api_fixture).fullscans.stream(
-            "org", "scan", poll_timeout_seconds=0.06,
-            poll_initial_interval_seconds=0.02, poll_max_interval_seconds=0.02,
+            "org",
+            "scan",
+            poll_timeout_seconds=0.06,
+            poll_initial_interval_seconds=0.02,
+            poll_max_interval_seconds=0.02,
         )
 
 
@@ -86,8 +87,11 @@ def test_persistent_transient_error_expires_with_poll_budget(api_fixture):
     api_fixture.route("GET", "orgs/org/full-scans/scan", SocketResponse(503, {}))
     with pytest.raises(APITimeout, match="full scan results"):
         sdk_for(api_fixture).fullscans.stream(
-            "org", "scan", poll_timeout_seconds=0.06,
-            poll_initial_interval_seconds=0.02, poll_max_interval_seconds=0.02,
+            "org",
+            "scan",
+            poll_timeout_seconds=0.06,
+            poll_initial_interval_seconds=0.02,
+            poll_max_interval_seconds=0.02,
         )
     assert len(api_fixture.requests) >= 1
 
@@ -95,18 +99,44 @@ def test_persistent_transient_error_expires_with_poll_budget(api_fixture):
 def test_duplicate_artifacts_merge_alerts_and_preserve_score_event(api_fixture):
     path = "orgs/org/full-scans/scan"
     common = {
-        "id": "artifact-1", "type": "pypi", "name": "example", "version": "1.0",
-        "inputPurl": "pkg:pypi/example@1.0", "score": {
-            "supplyChain": 1, "quality": 2, "maintenance": 3,
-            "vulnerability": 4, "license": 5, "overall": 6,
+        "id": "artifact-1",
+        "type": "pypi",
+        "name": "example",
+        "version": "1.0",
+        "inputPurl": "pkg:pypi/example@1.0",
+        "score": {
+            "supplyChain": 1,
+            "quality": 2,
+            "maintenance": 3,
+            "vulnerability": 4,
+            "license": 5,
+            "overall": 6,
         },
     }
-    first = dict(common, release="wheel", alerts=[{
-        "key": "alert-1", "type": "test", "severity": "high", "category": "quality",
-    }])
-    second = dict(common, release="source", alerts=[{
-        "key": "alert-1", "type": "test", "severity": "high", "category": "quality",
-    }])
+    first = dict(
+        common,
+        release="wheel",
+        alerts=[
+            {
+                "key": "alert-1",
+                "type": "test",
+                "severity": "high",
+                "category": "quality",
+            }
+        ],
+    )
+    second = dict(
+        common,
+        release="source",
+        alerts=[
+            {
+                "key": "alert-1",
+                "type": "test",
+                "severity": "high",
+                "category": "quality",
+            }
+        ],
+    )
     api_fixture.route("GET", path, ndjson(first, second))
 
     result = sdk_for(api_fixture).fullscans.stream("org", "scan")
@@ -140,7 +170,9 @@ def test_invalid_settings_and_encoded_components(api_fixture):
 
 
 @pytest.mark.parametrize("value", [0, -1, float("nan"), float("inf"), True])
-@pytest.mark.parametrize("parameter", ["poll_timeout_seconds", "poll_initial_interval_seconds", "poll_max_interval_seconds"])
+@pytest.mark.parametrize(
+    "parameter", ["poll_timeout_seconds", "poll_initial_interval_seconds", "poll_max_interval_seconds"]
+)
 def test_invalid_polling_numbers_fail_before_request(api_fixture, parameter, value):
     with pytest.raises(ValueError):
         sdk_for(api_fixture).fullscans.stream("org", "scan", **{parameter: value})
@@ -161,7 +193,10 @@ def test_gives_up_without_sleeping_when_next_poll_cannot_start(api_fixture):
     start = time.monotonic()
     with pytest.raises(APITimeout, match="full scan results"):
         sdk_for(api_fixture).fullscans.stream(
-            "org", "scan", poll_timeout_seconds=0.5, poll_initial_interval_seconds=5,
+            "org",
+            "scan",
+            poll_timeout_seconds=0.5,
+            poll_initial_interval_seconds=5,
         )
     assert time.monotonic() - start < 0.4
     assert len(api_fixture.requests) == 1

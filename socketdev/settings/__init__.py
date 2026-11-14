@@ -1,7 +1,6 @@
 import logging
+from dataclasses import asdict, dataclass
 from enum import Enum
-from typing import Dict, Optional, Union
-from dataclasses import dataclass, asdict
 
 from ..core.enums import unknown_enum_value
 
@@ -43,8 +42,8 @@ class SecurityPolicyRule:
 class OrgSecurityPolicyResponse:
     success: bool
     status: int
-    securityPolicyRules: Optional[Dict[str, SecurityPolicyRule]] = None
-    message: Optional[str] = None
+    securityPolicyRules: dict[str, SecurityPolicyRule] | None = None
+    message: str | None = None
 
     def __getitem__(self, key):
         return getattr(self, key)
@@ -80,12 +79,11 @@ class Settings:
                 else:
                     param_str += f"&{name}={value}"
 
-        param_str = "?" + param_str.lstrip("&")
-        return param_str
+        return "?" + param_str.lstrip("&")
 
     def get(
         self, org_slug: str, custom_rules_only: bool = False, use_types: bool = False
-    ) -> Union[dict, OrgSecurityPolicyResponse]:
+    ) -> dict | OrgSecurityPolicyResponse:
         path = f"orgs/{org_slug}/settings/security-policy"
         params = {"custom_rules_only": custom_rules_only}
         params_args = self.create_params_string(params) if custom_rules_only else ""

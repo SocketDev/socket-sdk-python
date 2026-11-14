@@ -8,7 +8,7 @@ class Triage:
     def __init__(self, api):
         self.api = api
 
-    def list_alert_triage(self, org_slug: str, query_params: dict = None) -> dict:
+    def list_alert_triage(self, org_slug: str, query_params: dict | None = None) -> dict:
         """Get list of triaged alerts for an organization.
 
         Args:

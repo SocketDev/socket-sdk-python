@@ -1,7 +1,10 @@
 import json
-import os
 import logging
+import os
+import sys
+
 from socketdev import socketdev
+
 logging.basicConfig(level=logging.INFO)
 
 
@@ -11,13 +14,13 @@ orgs = sdk.org.get()
 if len(orgs) > 0:
     org_id = None
     org_slug = None
-    for org_key in orgs['organizations']:
-        org = orgs['organizations'][org_key]
+    for org_key in orgs["organizations"]:
+        org = orgs["organizations"][org_key]
         org_id = org_key
-        org_slug = org['slug']
+        org_slug = org["slug"]
 else:
     print("Something went wrong with getting org info")
-    exit(1)
+    sys.exit(1)
 per_page = 100
 response = sdk.repos.get(org_slug, per_page=per_page)
 next_page = response.get("nextPage")
@@ -47,7 +50,7 @@ for head_full_scan_id in head_full_scans_ids:
         "pull_request_url": full_scan_metadata.get("pull_request_url"),
         "committers": full_scan_metadata.get("committers"),
         "created_at": full_scan_metadata.get("created_at"),
-        "results": sdk.fullscans.stream(org_slug=org_slug, full_scan_id=head_full_scan_id) or None
+        "results": sdk.fullscans.stream(org_slug=org_slug, full_scan_id=head_full_scan_id) or None,
     }
     socket_results[head_full_scan_id] = full_scan_result
 

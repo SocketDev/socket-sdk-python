@@ -1,5 +1,5 @@
-from typing import TypedDict, Union
 import logging
+from typing import TypedDict
 
 log = logging.getLogger("socketdev")
 
@@ -17,7 +17,7 @@ class Repositories:
     def __init__(self, api):
         self.api = api
 
-    def list(self, use_types: bool = False) -> Union[dict, list[Repo]]:
+    def list(self, use_types: bool = False) -> dict | list[Repo]:
         path = "repos"
         response = self.api.do_request(path=path)
         if response.status_code == 200:

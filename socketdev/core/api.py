@@ -1,25 +1,25 @@
 import base64
-from typing import Optional
-from socketdev.log import log
-from socketdev.core.retired_token import reject_retired_basic_auth_token
+import time
 
 import requests
+from requests.exceptions import ConnectionError, Timeout
+
 from socketdev.core.classes import Response
+from socketdev.core.retired_token import reject_retired_basic_auth_token
 from socketdev.exceptions import (
-    APIKeyMissing,
-    APIFailure,
     APIAccessDenied,
+    APIBadGateway,
+    APIConnectionError,
+    APIFailure,
+    APIInsufficientPermissions,
     APIInsufficientQuota,
+    APIKeyMissing,
+    APIOrganizationNotAllowed,
     APIResourceNotFound,
     APITimeout,
-    APIConnectionError,
-    APIBadGateway,
-    APIInsufficientPermissions,
-    APIOrganizationNotAllowed,
 )
+from socketdev.log import log
 from socketdev.version import __version__
-from requests.exceptions import Timeout, ConnectionError
-import time
 
 
 class API:
@@ -43,15 +43,15 @@ class API:
     def set_user_agent(self, user_agent: str):
         self.user_agent = user_agent
 
-    def do_request(
+    def do_request(  # noqa: C901
         self,
         path: str,
         headers: dict | None = None,
         payload: [dict, str] = None,
-        files: list = None,
+        files: list | None = None,
         method: str = "GET",
         *,
-        request_timeout: Optional[float] = None,
+        request_timeout: float | None = None,
     ) -> Response:
         if self.encoded_key is None or self.encoded_key == "":
             raise APIKeyMissing
@@ -70,11 +70,14 @@ class API:
 
         start_time = time.time()
         try:
-            
             response = requests.request(
-                method.upper(), url, headers=headers, data=payload, files=files, 
+                method.upper(),
+                url,
+                headers=headers,
+                data=payload,
+                files=files,
                 timeout=self.request_timeout if request_timeout is None else request_timeout,
-                verify=not self.allow_unverified
+                verify=not self.allow_unverified,
             )
             request_duration = time.time() - start_time
 
@@ -89,16 +92,15 @@ class API:
                     if "Insufficient permissions for API method" in error_message:
                         log.error(f"{error_message}{path_str}{headers_str}")
                         raise APIInsufficientPermissions(status_code=403)
-                    elif "Organization not allowed" in error_message:
+                    if "Organization not allowed" in error_message:
                         log.error(f"{error_message}{path_str}{headers_str}")
                         raise APIOrganizationNotAllowed(status_code=403)
-                    elif "Insufficient max quota" in error_message:
+                    if "Insufficient max quota" in error_message:
                         log.error(f"{error_message}{path_str}{headers_str}")
                         raise APIInsufficientQuota(status_code=403)
-                    else:
-                        raise APIAccessDenied(f"{error_message or 'Access denied'}{path_str}{headers_str}", status_code=403)
-                except ValueError:
-                    raise APIAccessDenied(f"Access denied{path_str}{headers_str}", status_code=403)
+                    raise APIAccessDenied(f"{error_message or 'Access denied'}{path_str}{headers_str}", status_code=403)
+                except ValueError as error:
+                    raise APIAccessDenied(f"Access denied{path_str}{headers_str}", status_code=403) from error
             if response.status_code == 404:
                 log.error(f"Path not found {path}{path_str}{headers_str}")
                 raise APIResourceNotFound(status_code=404)
@@ -118,7 +120,7 @@ class API:
                 raise APIInsufficientQuota(status_code=429)
             if response.status_code == 502:
                 log.error(f"Upstream server error{path_str}{headers_str}")
-                raise APIBadGateway()
+                raise APIBadGateway
             if response.status_code >= 400:
                 try:
                     error_json = response.json()
@@ -133,14 +135,14 @@ class API:
                 raise APIFailure(error, status_code=response.status_code)
 
             return response
-        except Timeout:
+        except Timeout as error:
             request_duration = time.time() - start_time
             log.error(f"Request timed out after {request_duration:.2f} seconds")
-            raise APITimeout()
+            raise APITimeout from error
         except ConnectionError as error:
             request_duration = time.time() - start_time
             log.error(f"Connection error after {request_duration:.2f} seconds: {error}")
-            raise APIConnectionError()
+            raise APIConnectionError from error
         except (
             APIAccessDenied,
             APIInsufficientQuota,
@@ -157,4 +159,4 @@ class API:
         except Exception as error:
             # Only truly unexpected errors get wrapped in a generic APIFailure
             log.error(f"Unexpected error: {error}")
-            raise APIFailure()
+            raise APIFailure from error

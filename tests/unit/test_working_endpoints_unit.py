@@ -7,11 +7,12 @@ Tests are organized by working/verified endpoints vs. endpoints that need invest
 Run with: python -m pytest tests/unit/test_working_endpoints_unit.py -v
 """
 
-import unittest
-import tempfile
 import json
 import os
+import tempfile
+import unittest
 from unittest.mock import Mock, patch
+
 from socketdev import socketdev
 from socketdev.fullscans import FullScanParams
 
@@ -21,7 +22,7 @@ class TestWorkingEndpointsUnit(unittest.TestCase):
 
     def setUp(self):
         """Set up test environment with mocked API."""
-        self.requests_patcher = patch('socketdev.core.api.requests')
+        self.requests_patcher = patch("socketdev.core.api.requests")
         self.mock_requests = self.requests_patcher.start()
         self.sdk = socketdev(token="test-token")
 
@@ -35,7 +36,7 @@ class TestWorkingEndpointsUnit(unittest.TestCase):
             data = {"success": True}
         mock_response = Mock()
         mock_response.status_code = status_code
-        mock_response.headers = {'content-type': 'application/json'}
+        mock_response.headers = {"content-type": "application/json"}
         mock_response.json.return_value = data
         mock_response.text = json.dumps(data)
         self.mock_requests.request.return_value = mock_response
@@ -49,9 +50,9 @@ class TestWorkingEndpointsUnit(unittest.TestCase):
         """Test NPM issues endpoint - WORKING."""
         expected_data = [{"type": "security", "severity": "high"}]
         self._mock_response(expected_data)
-        
+
         result = self.sdk.npm.issues("lodash", "4.18.1")
-        
+
         self.assertEqual(result, expected_data)
         call_args = self.mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "GET")
@@ -61,9 +62,9 @@ class TestWorkingEndpointsUnit(unittest.TestCase):
         """Test NPM score endpoint - WORKING."""
         expected_data = [{"category": "security", "value": 85}]
         self._mock_response(expected_data)
-        
+
         result = self.sdk.npm.score("lodash", "4.18.1")
-        
+
         self.assertEqual(result, expected_data)
         call_args = self.mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "GET")
@@ -73,9 +74,9 @@ class TestWorkingEndpointsUnit(unittest.TestCase):
         """Test OpenAPI specification retrieval - WORKING."""
         expected_data = {"openapi": "3.0.0", "info": {"title": "Socket API"}}
         self._mock_response(expected_data)
-        
+
         result = self.sdk.openapi.get()
-        
+
         self.assertEqual(result, expected_data)
         call_args = self.mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "GET")
@@ -85,9 +86,9 @@ class TestWorkingEndpointsUnit(unittest.TestCase):
         """Test quota retrieval - WORKING."""
         expected_data = {"quota": 1000, "used": 100}
         self._mock_response(expected_data)
-        
+
         result = self.sdk.quota.get()
-        
+
         self.assertEqual(result, expected_data)
         call_args = self.mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "GET")
@@ -97,9 +98,9 @@ class TestWorkingEndpointsUnit(unittest.TestCase):
         """Test settings retrieval - WORKING."""
         expected_data = {"settings": {"notifications": True}}
         self._mock_response(expected_data)
-        
+
         result = self.sdk.settings.get("test-org")
-        
+
         self.assertEqual(result, expected_data)
         call_args = self.mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "GET")
@@ -109,9 +110,9 @@ class TestWorkingEndpointsUnit(unittest.TestCase):
         """Test diffscans list - WORKING."""
         expected_data = {"results": []}
         self._mock_response(expected_data)
-        
+
         result = self.sdk.diffscans.list("test-org")
-        
+
         self.assertEqual(result, expected_data)
         call_args = self.mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "GET")
@@ -121,9 +122,9 @@ class TestWorkingEndpointsUnit(unittest.TestCase):
         """Test diffscans get - WORKING."""
         expected_data = {"id": "diff-123", "status": "completed"}
         self._mock_response(expected_data)
-        
+
         result = self.sdk.diffscans.get("test-org", "diff-123")
-        
+
         self.assertEqual(result, expected_data)
         call_args = self.mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "GET")
@@ -133,9 +134,9 @@ class TestWorkingEndpointsUnit(unittest.TestCase):
         """Test diffscans GitHub Flavored Markdown - WORKING."""
         expected_data = {"markdown": "# Report"}
         self._mock_response(expected_data)
-        
+
         result = self.sdk.diffscans.gfm("test-org", "diff-123")
-        
+
         self.assertEqual(result, expected_data)
         call_args = self.mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "GET")
@@ -145,10 +146,10 @@ class TestWorkingEndpointsUnit(unittest.TestCase):
         """Test diffscans creation from IDs - WORKING."""
         expected_data = {"id": "new-diff"}
         self._mock_response(expected_data, 201)
-        
+
         params = {"before": "scan1", "after": "scan2"}
         result = self.sdk.diffscans.create_from_ids("test-org", params)
-        
+
         self.assertEqual(result, expected_data)
         call_args = self.mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "POST")
@@ -157,9 +158,9 @@ class TestWorkingEndpointsUnit(unittest.TestCase):
         """Test historical list - WORKING."""
         expected_data = {"results": []}
         self._mock_response(expected_data)
-        
+
         result = self.sdk.historical.list("test-org")
-        
+
         self.assertEqual(result, expected_data)
         call_args = self.mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "GET")
@@ -169,9 +170,9 @@ class TestWorkingEndpointsUnit(unittest.TestCase):
         """Test fullscans deletion - WORKING."""
         expected_data = {"status": "deleted"}
         self._mock_response(expected_data)
-        
+
         result = self.sdk.fullscans.delete("test-org", "scan-123")
-        
+
         self.assertEqual(result, expected_data)
         call_args = self.mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "DELETE")
@@ -180,26 +181,22 @@ class TestWorkingEndpointsUnit(unittest.TestCase):
         """Test fullscans creation - WORKING."""
         expected_data = {"id": "new-scan"}
         self._mock_response(expected_data, 201)
-        
-        params = FullScanParams(
-            repo="test-repo",
-            org_slug="test-org",
-            branch="main"
-        )
-        
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+
+        params = FullScanParams(repo="test-repo", org_slug="test-org", branch="main")
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump({"name": "test", "version": "1.0.0"}, f)
             f.flush()
-            
+
             try:
                 with open(f.name, "rb") as file_obj:
                     files = [("file", ("package.json", file_obj))]
                     result = self.sdk.fullscans.post(files, params)
-                
+
                 self.assertEqual(result, expected_data)
                 call_args = self.mock_requests.request.call_args
                 self.assertEqual(call_args[0][0], "POST")
-                
+
             finally:
                 os.unlink(f.name)
 
@@ -215,7 +212,7 @@ class TestWorkingEndpointsUnit(unittest.TestCase):
             workspace="test-workspace",
         )
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump({"name": "test", "version": "1.0.0"}, f)
             f.flush()
 
@@ -239,9 +236,9 @@ class TestWorkingEndpointsUnit(unittest.TestCase):
         """Test triage list alerts - WORKING."""
         expected_data = {"alerts": []}
         self._mock_response(expected_data)
-        
+
         result = self.sdk.triage.list_alert_triage("test-org")
-        
+
         self.assertEqual(result, expected_data)
         call_args = self.mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "GET")
@@ -250,9 +247,9 @@ class TestWorkingEndpointsUnit(unittest.TestCase):
         """Test analytics org endpoint - WORKING."""
         expected_data = [{"date": "2025-01-01", "count": 5}]
         self._mock_response(expected_data)
-        
+
         result = self.sdk.analytics.get_org("dependencies")
-        
+
         self.assertEqual(result, expected_data)
         call_args = self.mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "GET")
@@ -261,9 +258,9 @@ class TestWorkingEndpointsUnit(unittest.TestCase):
         """Test analytics repo endpoint - WORKING."""
         expected_data = [{"date": "2025-01-01", "count": 3}]
         self._mock_response(expected_data)
-        
+
         result = self.sdk.analytics.get_repo("test-repo", "alerts")
-        
+
         self.assertEqual(result, expected_data)
         call_args = self.mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "GET")
@@ -272,9 +269,9 @@ class TestWorkingEndpointsUnit(unittest.TestCase):
         """Test API token creation - WORKING."""
         expected_data = {"id": "token-123", "name": "test-token"}
         self._mock_response(expected_data, 201)
-        
+
         result = self.sdk.apitokens.create("test-org", name="test-token")
-        
+
         self.assertEqual(result, expected_data)
         call_args = self.mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "POST")
@@ -287,9 +284,9 @@ class TestWorkingEndpointsUnit(unittest.TestCase):
         """Test CDX BOM export - CORRECTED PATH."""
         expected_data = {"bomFormat": "CycloneDX"}
         self._mock_response(expected_data)
-        
+
         result = self.sdk.export.cdx_bom("test-org", "scan-123")
-        
+
         self.assertEqual(result, expected_data)
         call_args = self.mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "GET")
@@ -300,9 +297,9 @@ class TestWorkingEndpointsUnit(unittest.TestCase):
         """Test SPDX BOM export - CORRECTED PATH."""
         expected_data = {"spdxVersion": "SPDX-2.2"}
         self._mock_response(expected_data)
-        
+
         result = self.sdk.export.spdx_bom("test-org", "scan-123")
-        
+
         self.assertEqual(result, expected_data)
         call_args = self.mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "GET")
@@ -313,10 +310,10 @@ class TestWorkingEndpointsUnit(unittest.TestCase):
         """Test dependencies get - CORRECTED SIGNATURE."""
         expected_data = {"dependencies": []}
         self._mock_response(expected_data)
-        
+
         # Correct signature: limit and offset only
         result = self.sdk.dependencies.get(limit=50, offset=0)
-        
+
         self.assertEqual(result, expected_data)
         call_args = self.mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "POST")  # It's actually POST, not GET
@@ -326,9 +323,9 @@ class TestWorkingEndpointsUnit(unittest.TestCase):
         """Test threatfeed get - CORRECTED PATH."""
         expected_data = {"results": []}
         self._mock_response(expected_data)
-        
+
         result = self.sdk.threatfeed.get("test-org")
-        
+
         self.assertEqual(result, expected_data)
         call_args = self.mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "GET")
@@ -339,9 +336,9 @@ class TestWorkingEndpointsUnit(unittest.TestCase):
         """Test historical trend - CORRECTED PATH."""
         expected_data = {"trend": []}
         self._mock_response(expected_data)
-        
+
         result = self.sdk.historical.trend("test-org")
-        
+
         self.assertEqual(result, expected_data)
         call_args = self.mock_requests.request.call_args
         self.assertEqual(call_args[0][0], "GET")
@@ -356,21 +353,21 @@ class TestWorkingEndpointsUnit(unittest.TestCase):
         """Test dependencies post - CORRECTED FILE HANDLING."""
         expected_data = {"packages": []}
         self._mock_response(expected_data)
-        
+
         # Create a real file and pass just the filename, not tuple
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump({"name": "test", "version": "1.0.0"}, f)
             f.flush()
-            
+
             try:
                 # Pass just filename, not file object
                 result = self.sdk.dependencies.post([f.name], {})
-                
+
                 self.assertEqual(result, expected_data)
                 call_args = self.mock_requests.request.call_args
                 self.assertEqual(call_args[0][0], "POST")
                 self.assertIn("/dependencies/upload", call_args[0][1])
-                
+
             finally:
                 os.unlink(f.name)
 
@@ -392,23 +389,23 @@ class TestWorkingEndpointsUnit(unittest.TestCase):
         """Test diffscans creation from repo - CORRECTED PATH."""
         expected_data = {"id": "repo-diff"}
         self._mock_response(expected_data, 201)
-        
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump({"name": "test", "version": "1.0.0"}, f)
             f.flush()
-            
+
             try:
                 with open(f.name, "rb") as file_obj:
                     files = [("file", ("package.json", file_obj))]
                     params = {"description": "Test diff"}
                     result = self.sdk.diffscans.create_from_repo("test-org", "test-repo", files, params)
-                
+
                 self.assertEqual(result, expected_data)
                 call_args = self.mock_requests.request.call_args
                 self.assertEqual(call_args[0][0], "POST")
                 # Corrected path based on actual implementation
                 self.assertIn("/orgs/test-org/diff-scans/from-repo/test-repo", call_args[0][1])
-                
+
             finally:
                 os.unlink(f.name)
 
@@ -418,7 +415,7 @@ class TestEndpointSignatureDiscovery(unittest.TestCase):
 
     def setUp(self):
         """Set up test environment with mocked API."""
-        self.requests_patcher = patch('socketdev.core.api.requests')
+        self.requests_patcher = patch("socketdev.core.api.requests")
         self.mock_requests = self.requests_patcher.start()
         self.sdk = socketdev(token="test-token")
 
@@ -432,7 +429,7 @@ class TestEndpointSignatureDiscovery(unittest.TestCase):
             data = {"success": True}
         mock_response = Mock()
         mock_response.status_code = status_code
-        mock_response.headers = {'content-type': 'application/json'}
+        mock_response.headers = {"content-type": "application/json"}
         mock_response.json.return_value = data
         mock_response.text = json.dumps(data)
         self.mock_requests.request.return_value = mock_response
@@ -442,10 +439,10 @@ class TestEndpointSignatureDiscovery(unittest.TestCase):
         """Discover the correct org.get signature."""
         expected_data = {"name": "test-org"}
         self._mock_response(expected_data)
-        
+
         # Try the call and see what path it actually uses
         try:
-            result = self.sdk.org.get("test-org")
+            self.sdk.org.get("test-org")
             call_args = self.mock_requests.request.call_args
             print(f"org.get path: {call_args[0][1]}")
             print(f"org.get method: {call_args[0][0]}")
@@ -456,38 +453,40 @@ class TestEndpointSignatureDiscovery(unittest.TestCase):
         """Discover the correct labels signatures."""
         expected_data = {"label": "test"}
         self._mock_response(expected_data)
-        
+
         # Try to discover the actual method names available
         try:
-            methods = [attr for attr in dir(self.sdk.labels) if not attr.startswith('_')]
+            methods = [attr for attr in dir(self.sdk.labels) if not attr.startswith("_")]
             print(f"labels methods: {methods}")
-            
+
             # Try get with different signatures
-            if hasattr(self.sdk.labels, 'get'):
+            if hasattr(self.sdk.labels, "get"):
                 try:
-                    result = self.sdk.labels.get("test-org", 1)
+                    self.sdk.labels.get("test-org", 1)
                     call_args = self.mock_requests.request.call_args
                     print(f"labels.get(org, id) path: {call_args[0][1]}")
                 except Exception as e:
                     print(f"labels.get(org, id) error: {e}")
-                    
+
         except Exception as e:
             print(f"labels discovery error: {e}")
 
     def test_discover_missing_methods(self):
         """Test which methods don't exist on various endpoints."""
         endpoints_to_check = [
-            ('export', ['get']),
-            ('apitokens', ['list']),
-            ('licensemetadata', ['get']),
-            ('labels', ['put'])
+            ("export", ["get"]),
+            ("apitokens", ["list"]),
+            ("licensemetadata", ["get"]),
+            ("labels", ["put"]),
         ]
-        
+
         for endpoint_name, methods in endpoints_to_check:
             endpoint = getattr(self.sdk, endpoint_name)
             for method in methods:
                 has_method = hasattr(endpoint, method)
-                available_methods = [attr for attr in dir(endpoint) if not attr.startswith('_') and callable(getattr(endpoint, attr))]
+                available_methods = [
+                    attr for attr in dir(endpoint) if not attr.startswith("_") and callable(getattr(endpoint, attr))
+                ]
                 print(f"{endpoint_name}.{method} exists: {has_method}")
                 print(f"{endpoint_name} available methods: {available_methods}")
 

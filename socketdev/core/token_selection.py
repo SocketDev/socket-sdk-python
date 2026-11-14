@@ -1,4 +1,4 @@
-from typing import Mapping, Optional
+from collections.abc import Mapping
 
 TOKEN_ENVIRONMENT_VARIABLES = (
     "SOCKET_SECURITY_API_TOKEN",
@@ -8,9 +8,7 @@ TOKEN_ENVIRONMENT_VARIABLES = (
 )
 
 
-def select_token(
-    explicit_token: Optional[str], environment: Mapping[str, str]
-) -> Optional[str]:
+def select_token(explicit_token: str | None, environment: Mapping[str, str]) -> str | None:
     if explicit_token is not None:
         return explicit_token
     return next(

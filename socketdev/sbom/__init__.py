@@ -1,6 +1,7 @@
 import json
-from socketdev.core.classes import Package
 import logging
+
+from socketdev.core.classes import Package
 
 log = logging.getLogger("socketdev")
 
@@ -25,7 +26,7 @@ class Sbom:
             data.strip('"')
             data.strip()
             for line in data.split("\n"):
-                if line != '"' and line != "" and line is not None:
+                if line not in {'"', ""} and line is not None:
                     item = json.loads(line)
                     sbom.append(item)
             for val in sbom:
