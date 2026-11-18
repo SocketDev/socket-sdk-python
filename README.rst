@@ -1506,13 +1506,23 @@ API token scopes
 The SDK authenticates every call with one organization API token, and each Socket API
 endpoint checks that the token carries particular scopes. The table below lists, for each
 SDK method, the endpoint it calls and the scopes that endpoint checks. Where an endpoint
-lists more than one scope, the token needs all of them. "none" means any valid token for
-the organization works. Paths are relative to ``https://api.socket.dev/v0/``; query strings
-are omitted.
+lists more than one scope, the token needs all of them. "none" means the endpoint checks
+no scope, so any valid token for the organization works. Paths are relative to
+``https://api.socket.dev/v0/``; query strings are omitted.
 
 The scopes each endpoint checks are also listed in the
 `API reference <https://docs.socket.dev/reference>`_. For a least-privilege token, grant
 only the scopes of the methods your integration calls.
+
+Scopes are grouped by their prefix, and a token that holds a group holds every scope in
+it: ``full-scans`` covers ``full-scans:list``, ``full-scans:create`` and
+``full-scans:delete``. When a token is given every scope of a group, the API stores and
+reports the group name instead, so a token created with ``packages:list``, the only
+scope in its group, is listed with ``packages``.
+
+Scopes are not the only check. A token restricted to specific repositories is rejected
+by some endpoints whatever scopes it holds, and organizations that restrict repository
+access apply per-repository checks on top of the scopes listed here.
 
 Missing scopes and other 403 responses
 """"""""""""""""""""""""""""""""""""""
@@ -1530,16 +1540,22 @@ Recent API responses name the required scopes in the 403 body under
 ``error.details.requiredScopes``, but the SDK does not include them in the exception
 message; to see them, look up the endpoint in the table below or the API reference.
 
-A 403 whose ``error.message`` contains one of these texts raises a more specific class
-instead, and logs the server's message at ``ERROR`` on the ``socketdev`` logger:
+A token restricted to specific repositories gets the same exception from an endpoint
+that does not accept such tokens. Its message starts with ``This endpoint does not
+support repository-scoped tokens``.
 
-- ``Insufficient permissions for API method``: ``APIInsufficientPermissions``
-- ``Organization not allowed``: ``APIOrganizationNotAllowed``
-- ``Insufficient max quota``: ``APIInsufficientQuota`` (a 429 also raises this class)
+A 403 whose message contains ``Insufficient max quota`` raises ``APIInsufficientQuota``
+instead, as does a 429, and logs the server's message at ``ERROR`` on the ``socketdev``
+logger.
 
-All of these classes live in ``socketdev.exceptions``, carry the HTTP status in
-``status_code`` and subclass ``APIFailure``, so catching ``APIFailure`` covers every
-case.
+``socketdev.exceptions`` also defines ``APIInsufficientPermissions`` and
+``APIOrganizationNotAllowed``. The SDK raises them for 403 messages containing
+``Insufficient permissions for API method`` and ``Organization not allowed``, which the
+API does not currently send. Do not rely on either to detect a missing scope: catch
+``APIAccessDenied``.
+
+All of these classes carry the HTTP status in ``status_code`` and subclass
+``APIFailure``, so catching ``APIFailure`` covers every case.
 
 .. code-block:: python
 
@@ -1559,14 +1575,24 @@ Scopes by method
 
 A few rows need a note:
 
-- ``fullscans.finalize_tier1()`` and ``uploadmanifests.upload_manifest_files()`` call
-  endpoints the API reference does not list. Both check ``full-scans:create``.
-- Rows marked "not in the API reference" call an endpoint the current reference does not
-  list, so no scope is documented for it. ``repositories.list()`` and ``sbom.view()``
-  belong to the deprecated report-era API. ``settings.integration_events()`` calls
-  ``settings/integrations/{integration_id}``; the reference lists the integration events
-  endpoint as ``settings/integrations/{integration_id}/events``, which checks
-  ``integration:list``.
+- "Deprecated" marks an endpoint the API reference lists as deprecated. Prefer the
+  method the reference names as its successor. ``report.view()`` calls
+  ``GET report/view/{id}``, which the reference says will be removed on 2026-11-20;
+  use ``fullscans`` instead.
+- ``fullscans.finalize_tier1()``, ``uploadmanifests.upload_manifest_files()`` and
+  ``sbom.view()`` call endpoints the API reference does not list. Their scopes are
+  given in the table.
+- Three calls request a path the API has no route for, so they fail with a 404
+  (``APIResourceNotFound``) whatever the token: ``apitokens.update()`` when
+  ``token_id`` is passed, ``dependencies.get()`` when ``org_slug``, ``ecosystem``,
+  ``package`` and ``version`` are all passed, and ``repositories.list()``. Call
+  ``apitokens.update()`` without ``token_id``, and use ``repos.get()`` to list
+  repositories.
+- ``dependencies.get()`` otherwise calls ``POST dependencies/search``. That endpoint
+  accepts any valid token, but it returns only results from repositories the token can
+  read under ``dependencies:list``. Depending on how the organization restricts
+  repository access, a token without that scope gets an empty result instead of a 403,
+  so grant ``dependencies:list``.
 - Some scopes differ from what the method name suggests: ``analytics.get_org()`` and
   ``analytics.get_repo()`` check ``report:write``; ``apitokens.update()`` checks
   ``api-tokens:create``; ``labels.setting.delete()`` checks ``repo-label:update``; and
@@ -1589,10 +1615,10 @@ A few rows need a note:
      - ``POST alert-types``
      - none
    * - ``analytics.get_org()``
-     - ``GET analytics/org/{filter}``
+     - ``GET analytics/org/{filter}``. Deprecated
      - ``report:write``
    * - ``analytics.get_repo()``
-     - ``GET analytics/repo/{name}/{filter}``
+     - ``GET analytics/repo/{name}/{filter}``. Deprecated
      - ``report:write``
    * - ``apitokens.create()``
      - ``POST orgs/{org_slug}/api-tokens``
@@ -1605,7 +1631,7 @@ A few rows need a note:
      - ``api-tokens:create``
    * - ``apitokens.update(token_id=...)``
      - ``PUT orgs/{org_slug}/api-tokens/{token_id}``
-     - not in the API reference
+     - no such route; the call fails
    * - ``apitokens.rotate()``
      - ``POST orgs/{org_slug}/api-tokens/rotate``
      - ``api-tokens:rotate``
@@ -1619,14 +1645,14 @@ A few rows need a note:
      - ``GET orgs/{org_slug}/settings/socket-basics``
      - ``socket-basics:read``
    * - ``dependencies.post()``
-     - ``POST dependencies/upload``
+     - ``POST dependencies/upload``. Deprecated
      - ``report:write``
    * - ``dependencies.get()``
      - ``POST dependencies/search``
-     - none
+     - none; ``dependencies:list`` to get results (see the note above)
    * - ``dependencies.get(org_slug, ecosystem, package, version)``
      - ``GET orgs/{org_slug}/dependencies/{ecosystem}/{package}/{version}``
-     - not in the API reference
+     - no such route; the call fails
    * - ``diffscans.list()``
      - ``GET orgs/{org_slug}/diff-scans``
      - ``diff-scans:list``
@@ -1640,7 +1666,7 @@ A few rows need a note:
      - ``POST orgs/{org_slug}/diff-scans/from-ids``
      - ``diff-scans:create`` and ``full-scans:list``
    * - ``diffscans.gfm()``
-     - ``GET orgs/{org_slug}/diff-scans/{diff_scan_id}/gfm``
+     - ``GET orgs/{org_slug}/diff-scans/{diff_scan_id}/gfm``. Deprecated
      - ``diff-scans:list``
    * - ``diffscans.delete()``
      - ``DELETE orgs/{org_slug}/diff-scans/{diff_scan_id}``
@@ -1655,7 +1681,7 @@ A few rows need a note:
      - ``GET orgs/{org_slug}/export/openvex/{id}``
      - ``report:read``
    * - ``fixes.get()``
-     - ``GET orgs/{org_slug}/fixes``
+     - ``GET orgs/{org_slug}/fixes``. Deprecated
      - ``fixes:list``
    * - ``fullscans.get()``
      - ``GET orgs/{org_slug}/full-scans``, or ``GET orgs/{org_slug}/full-scans/{full_scan_id}`` when ``params`` holds only ``id``
@@ -1667,7 +1693,7 @@ A few rows need a note:
      - ``DELETE orgs/{org_slug}/full-scans/{full_scan_id}``
      - ``full-scans:delete``
    * - ``fullscans.stream_diff()``
-     - ``GET orgs/{org_slug}/full-scans/diff``
+     - ``GET orgs/{org_slug}/full-scans/diff``. Deprecated
      - ``full-scans:list``
    * - ``fullscans.stream()``
      - ``GET orgs/{org_slug}/full-scans/{full_scan_id}``
@@ -1676,7 +1702,7 @@ A few rows need a note:
      - ``GET orgs/{org_slug}/full-scans/{full_scan_id}/metadata``
      - ``full-scans:list``
    * - ``fullscans.gfm()``
-     - ``GET orgs/{org_slug}/full-scans/diff/gfm``
+     - ``GET orgs/{org_slug}/full-scans/diff/gfm``. Deprecated
      - ``full-scans:list``
    * - ``fullscans.finalize_tier1()``
      - ``POST tier1-reachability-scan/finalize``
@@ -1736,10 +1762,10 @@ A few rows need a note:
      - ``POST license-metadata``
      - none
    * - ``npm.issues()``
-     - ``GET npm/{package}/{version}/issues``
+     - ``GET npm/{package}/{version}/issues``. Deprecated
      - none
    * - ``npm.score()``
-     - ``GET npm/{package}/{version}/score``
+     - ``GET npm/{package}/{version}/score``. Deprecated
      - none
    * - ``openapi.get()``
      - ``GET openapi``
@@ -1751,25 +1777,25 @@ A few rows need a note:
      - ``POST orgs/{org_slug}/purl``
      - ``packages:list``
    * - ``purl.post()``
-     - ``POST purl``
+     - ``POST purl``. Deprecated
      - ``packages:list``
    * - ``quota.get()``
      - ``GET quota``
      - none
    * - ``report.list()``
-     - ``GET report/list``
+     - ``GET report/list``. Deprecated
      - ``report:list``
    * - ``report.delete()``
-     - ``DELETE report/delete/{id}``
+     - ``DELETE report/delete/{id}``. Deprecated
      - ``report:write``
    * - ``report.view()``
-     - ``GET report/view/{id}``
+     - ``GET report/view/{id}``. Deprecated
      - ``report:read``
    * - ``report.supported()``
-     - ``GET report/supported``
+     - ``GET report/supported``. Deprecated
      - none
    * - ``report.create()``
-     - ``PUT report/upload``
+     - ``PUT report/upload``. Deprecated
      - ``report:write``
    * - ``repos.get()``
      - ``GET orgs/{org_slug}/repos``
@@ -1788,10 +1814,10 @@ A few rows need a note:
      - ``repo:delete``
    * - ``repositories.list()``
      - ``GET repos``
-     - not in the API reference
+     - no such route; the call fails
    * - ``sbom.view()``
      - ``GET sbom/view/{id}``
-     - not in the API reference
+     - ``report:read`` (not in the API reference)
    * - ``settings.get()``
      - ``GET orgs/{org_slug}/settings/security-policy``
      - ``security-policy:read``
@@ -1799,14 +1825,14 @@ A few rows need a note:
      - ``POST orgs/{org_slug}/settings/security-policy``
      - ``security-policy:update``
    * - ``settings.get_license_policy()``
-     - ``GET orgs/{org_slug}/settings/license-policy``
+     - ``GET orgs/{org_slug}/settings/license-policy``. Deprecated
      - ``license-policy:read``
    * - ``settings.update_license_policy()``
      - ``POST orgs/{org_slug}/settings/license-policy``
      - ``license-policy:update``
    * - ``settings.integration_events()``
-     - ``GET orgs/{org_slug}/settings/integrations/{integration_id}``
-     - not in the API reference
+     - ``GET orgs/{org_slug}/settings/integrations/{integration_id}/events``
+     - ``integration:list``
    * - ``supportedfiles.get()``
      - ``GET orgs/{org_slug}/supported-files``
      - none
@@ -1820,7 +1846,7 @@ A few rows need a note:
      - ``GET orgs/{org_slug}/threat-feed``
      - ``threat-feed:list``
    * - ``threatfeed.get()``
-     - ``GET threat-feed``
+     - ``GET threat-feed``. Deprecated
      - ``threat-feed:list``
    * - ``triage.list_alert_triage()``
      - ``GET orgs/{org_slug}/triage/alerts``
