@@ -8,6 +8,8 @@
   `GET orgs/{org_slug}/settings/integrations/{integration_id}/events`. It
   previously requested the integration's own path, which has no `GET` route,
   so the method always failed. It needs the `integration:list` scope.
+- Its return annotation is now `list`, matching the JSON array the endpoint
+  returns.
 
 ## 3.6.2
 

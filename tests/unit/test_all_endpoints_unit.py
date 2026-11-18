@@ -738,7 +738,20 @@ class TestAllEndpointsUnit(unittest.TestCase):
 
     def test_settings_integration_events_unit(self):
         """Test integration events retrieval."""
-        expected_data = {"results": [{"id": "event-1"}]}
+        expected_data = [
+            {
+                "id": "event-1",
+                "integration_id": "integration-1",
+                "type": "alert",
+                "payload": {},
+                "status_code": 200,
+                "error": "",
+                "sent_at": "2026-01-01T00:00:00.000Z",
+                "retry_info": [],
+                "created_at": "2026-01-01T00:00:00.000Z",
+                "updated_at": "2026-01-01T00:00:00.000Z",
+            }
+        ]
         self._mock_response(expected_data)
 
         result = self.sdk.settings.integration_events("test-org", "integration-1")
