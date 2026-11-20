@@ -68,16 +68,23 @@ class TestAllEndpointsUnit(unittest.TestCase):
                 os.unlink(f.name)
 
     def test_dependencies_get_unit(self):
-        """Test dependencies get with all parameters."""
+        """Test dependencies get sends limit and offset to the search endpoint."""
         expected_data = {"dependencies": [{"name": "sub-dependency", "version": "1.0.0"}]}
         self._mock_response(expected_data)
-        
-        result = self.sdk.dependencies.get("test-org", "npm", "lodash", "4.18.1")
-        
+
+        result = self.sdk.dependencies.get(10, 20)
+
         self.assertEqual(result, expected_data)
         call_args = self.mock_requests.request.call_args
-        self.assertEqual(call_args[0][0], "GET")
-        self.assertIn("/orgs/test-org/dependencies/npm/lodash/4.18.1", call_args[0][1])
+        self.assertEqual(call_args[0][0], "POST")
+        self.assertTrue(call_args[0][1].endswith("/dependencies/search"))
+        self.assertEqual(json.loads(call_args[1]["data"]), {"limit": 10, "offset": 20})
+
+    def test_dependencies_get_rejects_package_arguments(self):
+        """The API has no per-package dependency route, so get() takes no package."""
+        with self.assertRaises(TypeError):
+            self.sdk.dependencies.get(org_slug="test-org", ecosystem="npm", package="lodash", version="4.18.1")
+        self.mock_requests.request.assert_not_called()
 
     # DiffScans endpoints
     def test_diffscans_list_unit(self):
@@ -843,12 +850,13 @@ class TestAllEndpointsUnit(unittest.TestCase):
         expected_data = {"id": "token-123", "name": "updated-token"}
         self._mock_response(expected_data)
         
-        result = self.sdk.apitokens.update("test-org", token_id="token-123", name="updated-token")
-        
+        result = self.sdk.apitokens.update("test-org", uuid="token-123", name="updated-token")
+
         self.assertEqual(result, expected_data)
         call_args = self.mock_requests.request.call_args
-        self.assertEqual(call_args[0][0], "PUT")
-        self.assertIn("/orgs/test-org/api-tokens/token-123", call_args[0][1])
+        self.assertEqual(call_args[0][0], "POST")
+        self.assertTrue(call_args[0][1].endswith("/orgs/test-org/api-tokens/update"))
+        self.assertEqual(json.loads(call_args[1]["data"]), {"uuid": "token-123", "name": "updated-token"})
 
     def test_apitokens_list_unit(self):
         """Test API token listing."""

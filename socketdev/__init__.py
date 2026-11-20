@@ -14,7 +14,6 @@ from socketdev.purl import Purl
 from socketdev.quota import Quota
 from socketdev.report import Report
 from socketdev.repos import Repos
-from socketdev.repositories import Repositories
 from socketdev.sbom import Sbom
 from socketdev.settings import Settings
 from socketdev.triage import Triage
@@ -83,7 +82,6 @@ class socketdev:
         self.quota = Quota(self.api)
         self.report = Report(self.api)
         self.repos = Repos(self.api)
-        self.repositories = Repositories(self.api)
         self.sbom = Sbom(self.api)
         self.settings = Settings(self.api)
         self.triage = Triage(self.api)
