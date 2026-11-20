@@ -45,17 +45,16 @@ class Package:
     license_text: str
     purl: str
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs):  # noqa: C901
         if kwargs:
             for key, value in kwargs.items():
                 setattr(self, key, value)
         if not hasattr(self, "direct"):
             self.direct = False
-        else:
-            if str(self.direct).lower() == "true":
-                self.direct = True
+        elif str(self.direct).lower() == "true":
+            self.direct = True
         self.url = f"https://socket.dev/{self.type}/package/{self.name}/overview/{self.version}"
-        if hasattr(self, 'score'):
+        if hasattr(self, "score"):
             self.scores = Score(**self.score)
         if not hasattr(self, "alerts"):
             self.alerts = []
@@ -69,12 +68,7 @@ class Package:
             self.author = []
         if not hasattr(self, "size"):
             self.size = 0
-        self.alert_counts = {
-            "critical": 0,
-            "high": 0,
-            "middle": 0,
-            "low": 0
-        }
+        self.alert_counts = {"critical": 0, "high": 0, "middle": 0, "low": 0}
         self.error_alerts = []
         if not hasattr(self, "license"):
             self.license = "NoLicenseFound"

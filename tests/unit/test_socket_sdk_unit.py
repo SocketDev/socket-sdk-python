@@ -1,20 +1,21 @@
 """
 Unit tests for the Socket SDK Python client.
 
-These tests don't require API keys and test the SDK structure, 
+These tests don't require API keys and test the SDK structure,
 initialization, and basic functionality without making actual API calls.
 
 Run with: python -m pytest tests/unit/ -v
 """
 
-import unittest
-import tempfile
 import json
 import os
-from unittest.mock import Mock, patch, MagicMock
+import tempfile
+import unittest
+from unittest.mock import Mock, patch
+
 from socketdev import socketdev
+from socketdev.exceptions import APIResourceNotFound
 from socketdev.fullscans import FullScanParams, SocketPURL, SocketPURL_Type
-from socketdev.utils import IntegrationType
 
 
 class TestSocketSDKUnit(unittest.TestCase):
@@ -23,16 +24,36 @@ class TestSocketSDKUnit(unittest.TestCase):
     def test_sdk_initialization(self):
         """Test that the SDK initializes correctly with all components."""
         sdk = socketdev(token="test-token")
-        
+
         # Test that all expected components are present
         expected_components = [
-            'api', 'dependencies', 'export', 'fullscans', 'historical',
-            'npm', 'openapi', 'org', 'purl', 'quota', 'report', 'repos',
-            'repositories', 'sbom', 'settings', 'triage', 'utils', 'labels',
-            'licensemetadata', 'diffscans', 'threatfeed', 'apitokens',
-            'auditlog', 'analytics', 'alerttypes'
+            "api",
+            "dependencies",
+            "export",
+            "fullscans",
+            "historical",
+            "npm",
+            "openapi",
+            "org",
+            "purl",
+            "quota",
+            "report",
+            "repos",
+            "repositories",
+            "sbom",
+            "settings",
+            "triage",
+            "utils",
+            "labels",
+            "licensemetadata",
+            "diffscans",
+            "threatfeed",
+            "apitokens",
+            "auditlog",
+            "analytics",
+            "alerttypes",
         ]
-        
+
         for component in expected_components:
             self.assertTrue(hasattr(sdk, component), f"SDK missing component: {component}")
 
@@ -41,11 +62,11 @@ class TestSocketSDKUnit(unittest.TestCase):
         # Test default behavior (allow_unverified=False)
         sdk_default = socketdev(token="test-token")
         self.assertFalse(sdk_default.api.allow_unverified)
-        
+
         # Test with allow_unverified=True
         sdk_unverified = socketdev(token="test-token", allow_unverified=True)
         self.assertTrue(sdk_unverified.api.allow_unverified)
-        
+
         # Test with explicit allow_unverified=False
         sdk_verified = socketdev(token="test-token", allow_unverified=False)
         self.assertFalse(sdk_verified.api.allow_unverified)
@@ -60,9 +81,9 @@ class TestSocketSDKUnit(unittest.TestCase):
             commit_hash="abcd1234",
             pull_request=123,
             committers=["test-user"],
-            integration_type="api"  # Use string instead of enum
+            integration_type="api",  # Use string instead of enum
         )
-        
+
         self.assertEqual(params.repo, "test-repo")
         self.assertEqual(params.org_slug, "test-org")
         self.assertEqual(params.branch, "main")
@@ -74,12 +95,8 @@ class TestSocketSDKUnit(unittest.TestCase):
 
     def test_fullscan_params_to_dict(self):
         """Test FullScanParams to_dict method."""
-        params = FullScanParams(
-            repo="test-repo",
-            org_slug="test-org",
-            branch="main"
-        )
-        
+        params = FullScanParams(repo="test-repo", org_slug="test-org", branch="main")
+
         params_dict = params.to_dict()
         self.assertIsInstance(params_dict, dict)
         self.assertEqual(params_dict["repo"], "test-repo")
@@ -90,14 +107,9 @@ class TestSocketSDKUnit(unittest.TestCase):
         """Test FullScanParams from_dict class method."""
         # Skip this test for now due to typing issues with integration_type
         self.skipTest("Integration type handling needs to be fixed in SDK")
-        
-        data = {
-            "repo": "test-repo",
-            "org_slug": "test-org", 
-            "branch": "main",
-            "integration_type": "api"
-        }
-        
+
+        data = {"repo": "test-repo", "org_slug": "test-org", "branch": "main", "integration_type": "api"}
+
         params = FullScanParams.from_dict(data)
         self.assertEqual(params.repo, "test-repo")
         self.assertEqual(params.org_slug, "test-org")
@@ -106,13 +118,8 @@ class TestSocketSDKUnit(unittest.TestCase):
 
     def test_socket_purl_creation(self):
         """Test SocketPURL dataclass creation."""
-        purl = SocketPURL(
-            type=SocketPURL_Type.NPM,
-            name="lodash",
-            namespace=None,
-            release="4.18.1"
-        )
-        
+        purl = SocketPURL(type=SocketPURL_Type.NPM, name="lodash", namespace=None, release="4.18.1")
+
         self.assertEqual(purl.type, SocketPURL_Type.NPM)
         self.assertEqual(purl.name, "lodash")
         self.assertIsNone(purl.namespace)
@@ -121,7 +128,7 @@ class TestSocketSDKUnit(unittest.TestCase):
     def test_integration_types(self):
         """Test that all integration types are available."""
         from socketdev.utils import INTEGRATION_TYPES
-        
+
         # INTEGRATION_TYPES is a tuple, not a list
         self.assertIsInstance(INTEGRATION_TYPES, tuple)
         self.assertIn("api", INTEGRATION_TYPES)
@@ -134,9 +141,9 @@ class TestSocketSDKMocked(unittest.TestCase):
     def setUp(self):
         """Set up test environment with mocked API."""
         # Patch requests to avoid real API calls
-        self.requests_patcher = patch('socketdev.core.api.requests')
+        self.requests_patcher = patch("socketdev.core.api.requests")
         self.mock_requests = self.requests_patcher.start()
-        
+
         self.sdk = socketdev(token="test-token")
 
     def tearDown(self):
@@ -150,9 +157,9 @@ class TestSocketSDKMocked(unittest.TestCase):
         mock_response.json.return_value = {"results": []}
         mock_response.headers = {}
         self.mock_requests.request.return_value = mock_response
-        
+
         result = self.sdk.diffscans.list("test-org")
-        
+
         self.assertEqual(result, {"results": []})
         self.mock_requests.request.assert_called_once()
 
@@ -163,9 +170,9 @@ class TestSocketSDKMocked(unittest.TestCase):
         mock_response.json.return_value = {"id": "test-id", "status": "completed"}
         mock_response.headers = {}
         self.mock_requests.request.return_value = mock_response
-        
+
         result = self.sdk.diffscans.get("test-org", "test-id")
-        
+
         self.assertEqual(result, {"id": "test-id", "status": "completed"})
         self.mock_requests.request.assert_called_once()
 
@@ -176,10 +183,10 @@ class TestSocketSDKMocked(unittest.TestCase):
         mock_response.json.return_value = {"id": "new-diff-scan-id"}
         mock_response.headers = {}
         self.mock_requests.request.return_value = mock_response
-        
+
         params = {"before": "scan1", "after": "scan2", "description": "test"}
         result = self.sdk.diffscans.create_from_ids("test-org", params)
-        
+
         self.assertEqual(result, {"id": "new-diff-scan-id"})
         self.mock_requests.request.assert_called_once()
 
@@ -190,9 +197,9 @@ class TestSocketSDKMocked(unittest.TestCase):
         mock_response.json.return_value = {"status": "ok"}
         mock_response.headers = {}
         self.mock_requests.request.return_value = mock_response
-        
+
         result = self.sdk.diffscans.delete("test-org", "test-id")
-        
+
         self.assertTrue(result)
         self.mock_requests.request.assert_called_once()
 
@@ -203,10 +210,10 @@ class TestSocketSDKMocked(unittest.TestCase):
         mock_response.json.return_value = {"quota": 1000, "used": 100}
         mock_response.headers = {}
         self.mock_requests.request.return_value = mock_response
-        
+
         # Check the actual method signature for quota
         result = self.sdk.quota.get()  # No org_slug parameter for quota
-        
+
         self.assertEqual(result, {"quota": 1000, "used": 100})
         self.mock_requests.request.assert_called_once()
 
@@ -218,21 +225,16 @@ class TestSocketSDKFileHandling(unittest.TestCase):
         """Set up test files."""
         self.temp_dir = tempfile.mkdtemp()
         self.package_json_path = os.path.join(self.temp_dir, "package.json")
-        
-        test_package = {
-            "name": "test-package",
-            "version": "1.0.0",
-            "dependencies": {
-                "lodash": "4.18.1"
-            }
-        }
-        
-        with open(self.package_json_path, 'w') as f:
+
+        test_package = {"name": "test-package", "version": "1.0.0", "dependencies": {"lodash": "4.18.1"}}
+
+        with open(self.package_json_path, "w") as f:
             json.dump(test_package, f, indent=2)
 
     def tearDown(self):
         """Clean up test files."""
         import shutil
+
         shutil.rmtree(self.temp_dir)
 
     def test_file_loading_for_upload(self):
@@ -255,9 +257,9 @@ class TestSocketSDKErrorHandling(unittest.TestCase):
     def setUp(self):
         """Set up test environment with mocked API."""
         # Patch requests to control responses
-        self.requests_patcher = patch('socketdev.core.api.requests')
+        self.requests_patcher = patch("socketdev.core.api.requests")
         self.mock_requests = self.requests_patcher.start()
-        
+
         self.sdk = socketdev(token="test-token")
 
     def tearDown(self):
@@ -273,9 +275,9 @@ class TestSocketSDKErrorHandling(unittest.TestCase):
         mock_response.headers = {}
         mock_response.json.return_value = {"error": {"message": "Not found"}}
         self.mock_requests.request.return_value = mock_response
-        
+
         # This will raise an exception from the SDK, which is expected behavior
-        with self.assertRaises(Exception):
+        with self.assertRaises(APIResourceNotFound):
             self.sdk.diffscans.list("test-org")
 
     def test_diffscans_successful_response(self):
@@ -285,7 +287,7 @@ class TestSocketSDKErrorHandling(unittest.TestCase):
         mock_response.headers = {}
         mock_response.json.return_value = {"results": []}
         self.mock_requests.request.return_value = mock_response
-        
+
         result = self.sdk.diffscans.list("test-org")
         self.assertEqual(result, {"results": []})
 

@@ -53,18 +53,18 @@ def test_api_rejects_retired_basic_username_with_password_suffix():
 
 
 def test_token_selection_preserves_explicit_and_environment_precedence():
-    environment = {
-        name: f"token-{index}"
-        for index, name in enumerate(TOKEN_ENVIRONMENT_VARIABLES)
-    }
+    environment = {name: f"token-{index}" for index, name in enumerate(TOKEN_ENVIRONMENT_VARIABLES)}
 
     assert select_token("", environment) == ""
     assert select_token("explicit", environment) == "explicit"
     assert select_token(None, environment) == "token-0"
-    assert select_token(
-        None,
-        {TOKEN_ENVIRONMENT_VARIABLES[0]: "", TOKEN_ENVIRONMENT_VARIABLES[1]: "next"},
-    ) == "next"
+    assert (
+        select_token(
+            None,
+            {TOKEN_ENVIRONMENT_VARIABLES[0]: "", TOKEN_ENVIRONMENT_VARIABLES[1]: "next"},
+        )
+        == "next"
+    )
     assert select_token(None, {}) is None
 
 

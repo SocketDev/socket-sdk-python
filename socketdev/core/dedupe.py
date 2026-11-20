@@ -1,6 +1,5 @@
 from collections import defaultdict
-from typing import Dict, List, Any
-from socketdev.log import log
+from typing import Any
 
 
 class Dedupe:
@@ -16,11 +15,11 @@ class Dedupe:
             alert.get("category"),
             Dedupe.normalize_file_path(alert.get("file")),
             alert.get("start"),
-            alert.get("end")
+            alert.get("end"),
         )
 
     @staticmethod
-    def consolidate_and_merge_alerts(package_group: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def consolidate_and_merge_alerts(package_group: list[dict[str, Any]]) -> dict[str, Any]:  # noqa: C901
         def alert_identity(alert: dict) -> tuple:
             return (
                 alert.get("type"),
@@ -28,10 +27,10 @@ class Dedupe:
                 alert.get("category"),
                 Dedupe.normalize_file_path(alert.get("file")),
                 alert.get("start"),
-                alert.get("end")
+                alert.get("end"),
             )
 
-        alert_map: Dict[tuple, dict] = {}
+        alert_map: dict[tuple, dict] = {}
         releases = set()
         for pkg in package_group:
             release = pkg.get("release") if pkg.get("release") is not None else pkg.get("type")
@@ -51,9 +50,9 @@ class Dedupe:
                         "severity": alert.get("severity"),
                         "releases": [release],
                         "props": alert.get("props", []),
-                        "action": alert.get("action")
+                        "action": alert.get("action"),
                     }
-                    
+
                     # Only include optional fields if they exist in the original alert
                     if "category" in alert:
                         consolidated_alert["category"] = alert["category"]
@@ -63,42 +62,40 @@ class Dedupe:
                         consolidated_alert["start"] = alert["start"]
                     if "end" in alert:
                         consolidated_alert["end"] = alert["end"]
-                    
+
                     alert_map[identity] = consolidated_alert
-                else:
-                    if release not in alert_map[identity]["releases"]:
-                        alert_map[identity]["releases"].append(release)
+                elif release not in alert_map[identity]["releases"]:
+                    alert_map[identity]["releases"].append(release)
 
         base = package_group[0]
         base["releases"] = sorted(releases)
         base["alerts"] = list(alert_map.values())
-        
+
         # Use inputPurl if available and complete, otherwise construct proper purl with namespace
         if "inputPurl" in base and "@" in base["inputPurl"]:
             # inputPurl has version, use it as-is
             base["purl"] = base["inputPurl"]
         else:
             # Construct purl properly with namespace and version
-            purl_type = base.get('type', 'unknown')
-            namespace = base.get('namespace')
-            name = base.get('name', 'unknown')
-            version = base.get('version', '0.0.0')
-            
+            purl_type = base.get("type", "unknown")
+            namespace = base.get("namespace")
+            name = base.get("name", "unknown")
+            version = base.get("version", "0.0.0")
+
             # Start with inputPurl if available (without version) or construct from scratch
-            if "inputPurl" in base and not "@" in base["inputPurl"]:
+            if "inputPurl" in base and "@" not in base["inputPurl"]:
                 # inputPurl exists but lacks version, append it
                 base["purl"] = f"{base['inputPurl']}@{version}"
+            # Construct complete purl from components
+            elif namespace:
+                base["purl"] = f"pkg:{purl_type}/{namespace}/{name}@{version}"
             else:
-                # Construct complete purl from components
-                if namespace:
-                    base["purl"] = f"pkg:{purl_type}/{namespace}/{name}@{version}"
-                else:
-                    base["purl"] = f"pkg:{purl_type}/{name}@{version}"
-        
+                base["purl"] = f"pkg:{purl_type}/{name}@{version}"
+
         return base
 
     @staticmethod
-    def dedupe(packages: List[Dict[str, Any]], batched: bool = True) -> List[Dict[str, Any]]:
+    def dedupe(packages: list[dict[str, Any]], batched: bool = True) -> list[dict[str, Any]]:
         # Always group by inputPurl now, but keep the batched parameter for backward compatibility
         grouped = Dedupe.consolidate_by_input_purl(packages)
         results = []
@@ -111,10 +108,10 @@ class Dedupe:
         return results
 
     @staticmethod
-    def consolidate_by_input_purl(packages: List[Dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
+    def consolidate_by_input_purl(packages: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
         """Group packages by their inputPurl field"""
-        grouped: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
-        
+        grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
+
         # Handle both list of packages and nested structure
         if packages and isinstance(packages[0], list):
             # If we get a nested list, flatten it
@@ -125,7 +122,7 @@ class Dedupe:
                 else:
                     flat_packages.append(sublist)
             packages = flat_packages
-        
+
         for pkg in packages:
             # inputPurl should always exist now, fallback to purl if not found
             group_key = pkg.get("inputPurl", pkg.get("purl", str(hash(str(pkg)))))

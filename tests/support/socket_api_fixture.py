@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import json
 import threading
+from collections.abc import Callable
 from dataclasses import dataclass
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from typing import Callable, Dict, List, Optional, Tuple
 from urllib.parse import parse_qs, urlsplit
 
 
@@ -14,8 +14,8 @@ from urllib.parse import parse_qs, urlsplit
 class SocketRequest:
     method: str
     path: str
-    query: Dict[str, List[str]]
-    headers: Dict[str, str]
+    query: dict[str, list[str]]
+    headers: dict[str, str]
     body: bytes
 
 
@@ -23,7 +23,7 @@ class SocketRequest:
 class SocketResponse:
     status: int
     payload: object
-    raw_body: Optional[bytes] = None
+    raw_body: bytes | None = None
 
 
 Route = Callable[[SocketRequest], SocketResponse]
@@ -31,10 +31,10 @@ Route = Callable[[SocketRequest], SocketResponse]
 
 class SocketApiFixture:
     def __init__(self) -> None:
-        self.requests: List[SocketRequest] = []
-        self._routes: Dict[Tuple[str, str], Route] = {}
-        self._server: Optional[ThreadingHTTPServer] = None
-        self._thread: Optional[threading.Thread] = None
+        self.requests: list[SocketRequest] = []
+        self._routes: dict[tuple[str, str], Route] = {}
+        self._server: ThreadingHTTPServer | None = None
+        self._thread: threading.Thread | None = None
 
     @property
     def base_url(self) -> str:

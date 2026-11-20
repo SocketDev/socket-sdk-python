@@ -76,9 +76,7 @@ class TestIsTransientError(unittest.TestCase):
         self.assertTrue(APIServiceUnavailable(status_code=503).is_transient_error())
 
     def test_message_text_does_not_affect_classification(self):
-        self.assertFalse(
-            APIFailure("original_status_code:503 lookalike").is_transient_error()
-        )
+        self.assertFalse(APIFailure("original_status_code:503 lookalike").is_transient_error())
 
     def test_single_message_arg_is_preserved(self):
         error = APIFailure("something broke", status_code=503)
@@ -158,9 +156,7 @@ class TestDoRequestStatusCodes(unittest.TestCase):
             self.assertFalse(error.is_transient_error())
 
     def test_timeout_is_transient(self):
-        error = self._do_request_raising(
-            APITimeout, side_effect=requests.exceptions.Timeout("timed out")
-        )
+        error = self._do_request_raising(APITimeout, side_effect=requests.exceptions.Timeout("timed out"))
         self.assertIsNone(error.status_code)
         self.assertTrue(error.is_transient_error())
 

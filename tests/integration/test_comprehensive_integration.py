@@ -9,11 +9,12 @@ These tests require the following environment variables:
 Run with: python -m pytest tests/integration/test_comprehensive_integration.py -v
 """
 
-import unittest
-import os
-import tempfile
-import shutil
 import json
+import os
+import shutil
+import tempfile
+import unittest
+
 from socketdev import socketdev
 from socketdev.fullscans import FullScanParams
 
@@ -27,51 +28,42 @@ class TestSocketSDKIntegration(unittest.TestCase):
         cls.api_key = os.getenv("SOCKET_SECURITY_API_KEY", "")
         cls.org_slug = os.getenv("SOCKET_ORG_SLUG", "")
         cls.repo_slug = os.getenv("SOCKET_REPO_SLUG", "")
-        
+
         # Only require API key and org_slug for most tests
         missing = []
         if not cls.api_key:
             missing.append("SOCKET_SECURITY_API_KEY")
         if not cls.org_slug:
             missing.append("SOCKET_ORG_SLUG")
-            
+
         if missing:
             raise RuntimeError(
                 f"Missing required environment variables: {', '.join(missing)}\n"
                 f"SOCKET_REPO_SLUG is optional for some tests."
             )
-        
+
         cls.sdk = socketdev(token=cls.api_key)
-        
+
         # Prepare temp directory for test files
         cls.temp_dir = tempfile.mkdtemp()
         cls.package_json_path = os.path.join(cls.temp_dir, "package.json")
         cls.package_empty_path = os.path.join(cls.temp_dir, "package-empty.json")
-        
+
         # Create test package.json files
-        test_package = {
-            "name": "test-integration-project",
-            "version": "1.0.0",
-            "dependencies": {
-                "lodash": "4.18.1"
-            }
-        }
-        
-        empty_package = {
-            "name": "test-empty-project",
-            "version": "1.0.0"
-        }
-        
-        with open(cls.package_json_path, 'w') as f:
+        test_package = {"name": "test-integration-project", "version": "1.0.0", "dependencies": {"lodash": "4.18.1"}}
+
+        empty_package = {"name": "test-empty-project", "version": "1.0.0"}
+
+        with open(cls.package_json_path, "w") as f:
             json.dump(test_package, f, indent=2)
-            
-        with open(cls.package_empty_path, 'w') as f:
+
+        with open(cls.package_empty_path, "w") as f:
             json.dump(empty_package, f, indent=2)
 
     @classmethod
     def tearDownClass(cls):
         """Clean up test environment."""
-        if hasattr(cls, 'temp_dir'):
+        if hasattr(cls, "temp_dir"):
             shutil.rmtree(cls.temp_dir)
 
     def setUp(self):
@@ -87,7 +79,7 @@ class TestSocketSDKIntegration(unittest.TestCase):
                 self.sdk.diffscans.delete(self.org_slug, diff_scan_id)
             except Exception:
                 pass  # Ignore cleanup errors
-                
+
         for scan_id in self.created_scan_ids:
             try:
                 self.sdk.fullscans.delete(self.org_slug, scan_id)
@@ -128,7 +120,7 @@ class TestSocketSDKIntegration(unittest.TestCase):
         """Test basic full scan workflow."""
         if not self.repo_slug:
             self.skipTest("SOCKET_REPO_SLUG not provided")
-            
+
         params = FullScanParams(
             org_slug=self.org_slug,
             repo=self.repo_slug,
@@ -137,24 +129,24 @@ class TestSocketSDKIntegration(unittest.TestCase):
             commit_hash="1234567890abcdef1234567890abcdef12345678",
             pull_request=999,
             committers=["integration-tester"],
-            integration_type="api"
+            integration_type="api",
         )
 
         # Create a full scan
         with open(self.package_json_path, "rb") as f:
             files = [("file", ("package.json", f))]
             result = self.sdk.fullscans.post(files=files, params=params)
-            
+
         self.assertIsInstance(result, dict)
         self.assertIn("id", result)
-        
+
         scan_id = result["id"]
         self.created_scan_ids.append(scan_id)
-        
+
         # Get the scan
         scan_info = self.sdk.fullscans.get(self.org_slug, {"id": scan_id})
         self.assertIsInstance(scan_info, dict)
-        
+
         # List scans
         scans_list = self.sdk.fullscans.list(self.org_slug)
         self.assertIsInstance(scans_list, dict)
@@ -163,7 +155,7 @@ class TestSocketSDKIntegration(unittest.TestCase):
         """Test complete diff scan workflow."""
         if not self.repo_slug:
             self.skipTest("SOCKET_REPO_SLUG not provided")
-            
+
         # Create 'before' scan with empty package.json
         params_before = FullScanParams(
             org_slug=self.org_slug,
@@ -173,17 +165,17 @@ class TestSocketSDKIntegration(unittest.TestCase):
             commit_hash="before000000000000000000000000000000000000",
             pull_request=998,
             committers=["integration-tester"],
-            integration_type="api"
+            integration_type="api",
         )
-        
+
         with open(self.package_empty_path, "rb") as f:
             files_before = [("file", ("package.json", f))]
             before_result = self.sdk.fullscans.post(files=files_before, params=params_before)
-            
+
         self.assertIn("id", before_result)
         before_id = before_result["id"]
         self.created_scan_ids.append(before_id)
-        
+
         # Create 'after' scan with dependencies
         params_after = FullScanParams(
             org_slug=self.org_slug,
@@ -193,41 +185,37 @@ class TestSocketSDKIntegration(unittest.TestCase):
             commit_hash="after0000000000000000000000000000000000000",
             pull_request=999,
             committers=["integration-tester"],
-            integration_type="api"
+            integration_type="api",
         )
-        
+
         with open(self.package_json_path, "rb") as f:
             files_after = [("file", ("package.json", f))]
             after_result = self.sdk.fullscans.post(files=files_after, params=params_after)
-            
+
         self.assertIn("id", after_result)
         after_id = after_result["id"]
         self.created_scan_ids.append(after_id)
-        
+
         # Create diff scan from IDs
-        diff_params = {
-            "before": before_id,
-            "after": after_id,
-            "description": "Integration test diff scan"
-        }
-        
+        diff_params = {"before": before_id, "after": after_id, "description": "Integration test diff scan"}
+
         diff_result = self.sdk.diffscans.create_from_ids(self.org_slug, diff_params)
         self.assertIsInstance(diff_result, dict)
-        
+
         # Extract diff scan ID
         diff_scan_id = (
-            diff_result.get("id") or
-            diff_result.get("diff_scan_id") or
-            (diff_result.get("diff_scan", {}).get("id") if "diff_scan" in diff_result else None)
+            diff_result.get("id")
+            or diff_result.get("diff_scan_id")
+            or (diff_result.get("diff_scan", {}).get("id") if "diff_scan" in diff_result else None)
         )
-        
+
         self.assertIsNotNone(diff_scan_id)
         self.created_diff_scan_ids.append(diff_scan_id)
-        
+
         # Get the diff scan
         get_result = self.sdk.diffscans.get(self.org_slug, diff_scan_id)
         self.assertIsInstance(get_result, dict)
-        
+
         # Get GFM output
         gfm_result = self.sdk.diffscans.gfm(self.org_slug, diff_scan_id)
         self.assertIsInstance(gfm_result, dict)
@@ -236,27 +224,22 @@ class TestSocketSDKIntegration(unittest.TestCase):
         """Test creating diff scans from repository."""
         if not self.repo_slug:
             self.skipTest("SOCKET_REPO_SLUG not provided")
-            
+
         with open(self.package_json_path, "rb") as f:
             files = [("file", ("package.json", f))]
             params = {"description": "Integration test diff scan from repo"}
-            
-            result = self.sdk.diffscans.create_from_repo(
-                self.org_slug, 
-                self.repo_slug, 
-                files, 
-                params
-            )
-            
+
+            result = self.sdk.diffscans.create_from_repo(self.org_slug, self.repo_slug, files, params)
+
         self.assertIsInstance(result, dict)
-        
+
         # Extract diff scan ID for cleanup
         diff_scan_id = (
-            result.get("id") or
-            result.get("diff_scan_id") or
-            (result.get("diff_scan", {}).get("id") if "diff_scan" in result else None)
+            result.get("id")
+            or result.get("diff_scan_id")
+            or (result.get("diff_scan", {}).get("id") if "diff_scan" in result else None)
         )
-        
+
         if diff_scan_id:
             self.created_diff_scan_ids.append(diff_scan_id)
 
@@ -295,7 +278,7 @@ class TestSocketSDKIntegration(unittest.TestCase):
         """Test report endpoints."""
         if not self.repo_slug:
             self.skipTest("SOCKET_REPO_SLUG not provided")
-            
+
         # List reports
         reports = self.sdk.report.list(self.org_slug)
         self.assertIsInstance(reports, dict)

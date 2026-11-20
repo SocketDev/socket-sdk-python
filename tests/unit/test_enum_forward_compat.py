@@ -42,9 +42,7 @@ SENTINEL = "__value_the_api_would_never_send__"
 def _all_enums():
     """Every Enum subclass defined under the socketdev package."""
     found = {}
-    for module_info in pkgutil.walk_packages(
-        socketdev.__path__, prefix="socketdev."
-    ):
+    for module_info in pkgutil.walk_packages(socketdev.__path__, prefix="socketdev."):
         try:
             module = importlib.import_module(module_info.name)
         except Exception:  # pragma: no cover - an unimportable module is its own bug
@@ -67,9 +65,7 @@ class TestEnumForwardCompatibility(unittest.TestCase):
     def test_enums_are_discovered(self):
         # Guards against the discovery walk silently finding nothing, which
         # would make every other test in this file vacuously pass.
-        self.assertGreaterEqual(
-            len(_all_enums()), 6, "enum discovery found suspiciously few enums"
-        )
+        self.assertGreaterEqual(len(_all_enums()), 6, "enum discovery found suspiciously few enums")
 
     def test_unknown_value_does_not_raise(self):
         for qualname, enum_cls in sorted(_all_enums().items()):
@@ -102,8 +98,7 @@ class TestEnumForwardCompatibility(unittest.TestCase):
                     enum_cls(SENTINEL)
                 self.assertTrue(
                     any(enum_cls.__name__ in line for line in captured.output),
-                    f"{qualname} fell back without naming itself in the warning; "
-                    f"got: {captured.output}",
+                    f"{qualname} fell back without naming itself in the warning; got: {captured.output}",
                 )
 
     def test_request_only_enums_stay_strict(self):
@@ -115,9 +110,7 @@ class TestEnumForwardCompatibility(unittest.TestCase):
         for name in sorted(REQUEST_ONLY_ENUMS):
             with self.subTest(enum=name):
                 enum_cls = by_name.get(name)
-                self.assertIsNotNone(
-                    enum_cls, f"{name} is exempted but no longer exists"
-                )
+                self.assertIsNotNone(enum_cls, f"{name} is exempted but no longer exists")
                 with self.assertRaises(
                     ValueError,
                     msg=f"{name} is request-only and must reject unknown values",

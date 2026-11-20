@@ -52,9 +52,7 @@ class TestSocketPURLTypeParsing(unittest.TestCase):
             self.assertEqual(SocketPURL_Type(value).value, value)
 
     def test_unknown_type_falls_back_to_unknown(self):
-        self.assertEqual(
-            SocketPURL_Type("someFutureEcosystem"), SocketPURL_Type.UNKNOWN
-        )
+        self.assertEqual(SocketPURL_Type("someFutureEcosystem"), SocketPURL_Type.UNKNOWN)
 
     def test_unknown_type_emits_warning(self):
         with self.assertLogs("socketdev", level=logging.WARNING) as captured:
@@ -134,10 +132,7 @@ class TestFullScanStreamResponseResilience(unittest.TestCase):
             self.assertTrue(response.success)
             self.assertEqual(list(response.artifacts), ["good"])
             self.assertTrue(
-                any(
-                    "Skipping artifact without a usable id" in message
-                    for message in captured.output
-                ),
+                any("Skipping artifact without a usable id" in message for message in captured.output),
                 f"expected a warning about the skipped artifact, got: {captured.output}",
             )
             self.assertEqual(fixture.requests[0].query, {"cached": ["true"]})

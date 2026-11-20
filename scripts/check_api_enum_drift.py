@@ -63,7 +63,7 @@ SDK_ONLY_VALUES = {
 
 
 def fetch_spec(url):
-    with urllib.request.urlopen(url, timeout=60) as response:
+    with urllib.request.urlopen(url, timeout=60) as response:  # noqa: S310  # explicit developer-supplied spec URL
         if response.status != 200:
             raise RuntimeError(f"{url} returned HTTP {response.status}")
         return json.load(response)
@@ -106,19 +106,16 @@ def main():
         if missing:
             drifted = True
             print(
-                f"::error::{enum_cls.__name__} is missing {len(missing)} value(s) "
-                f"the API defines: {', '.join(missing)}"
+                f"::error::{enum_cls.__name__} is missing {len(missing)} value(s) the API defines: {', '.join(missing)}"
             )
         if extra:
             # Not fatal: the spec omitting a value the SDK accepts is usually a
             # spec gap, and dropping a member would be a breaking change.
             print(
-                f"::warning::{enum_cls.__name__} defines {len(extra)} value(s) "
-                f"absent from the spec: {', '.join(extra)}"
+                f"::warning::{enum_cls.__name__} defines {len(extra)} value(s) absent from the spec: {', '.join(extra)}"
             )
         if not missing and not extra:
-            print(f"ok: {enum_cls.__name__} matches {schema_name} "
-                  f"({len(api_values)} values)")
+            print(f"ok: {enum_cls.__name__} matches {schema_name} ({len(api_values)} values)")
 
     if unmapped:
         print(
@@ -126,10 +123,7 @@ def main():
             f"named schema for them: {', '.join(sorted(unmapped))}"
         )
 
-    print(
-        f"not applicable (request-only, intentionally strict): "
-        f"{', '.join(sorted(e.__name__ for e in REQUEST_ONLY))}"
-    )
+    print(f"not applicable (request-only, intentionally strict): {', '.join(sorted(e.__name__ for e in REQUEST_ONLY))}")
 
     if drifted:
         print(

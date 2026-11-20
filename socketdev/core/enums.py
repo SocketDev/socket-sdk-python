@@ -26,8 +26,7 @@ def unknown_enum_value(enum_name: str, value: object, fallback):
     turns the would-be ``ValueError`` into a usable member.
     """
     log.warning(
-        "Unknown %s %r; falling back to %s. "
-        "Upgrade socketdev to pick up newer values.",
+        "Unknown %s %r; falling back to %s. Upgrade socketdev to pick up newer values.",
         enum_name,
         value,
         fallback.name,

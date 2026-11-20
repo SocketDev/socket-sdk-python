@@ -11,15 +11,15 @@ class Analytics:
     def get_org(self, filter: str, **kwargs) -> list:
         """
         Get organization analytics (deprecated).
-        
+
         **DEPRECATED**: Use the Historical module methods instead:
         - sdk.historical.alerts_trend() for alerts analytics
         - sdk.historical.dependencies_trend() for dependencies analytics
-        
+
         Args:
             filter: Analytics filter type
             **kwargs: Additional query parameters
-            
+
         Returns:
             list: API response containing analytics data
         """
@@ -27,7 +27,7 @@ class Analytics:
         path = f"analytics/org/{filter}"
         if kwargs:
             path += "?" + urlencode(kwargs)
-            
+
         response = self.api.do_request(path=path)
         if response.status_code == 200:
             return response.json()
@@ -38,16 +38,16 @@ class Analytics:
     def get_repo(self, name: str, filter: str, **kwargs) -> list:
         """
         Get repository analytics (deprecated).
-        
+
         **DEPRECATED**: Use the Historical module methods instead:
-        - sdk.historical.alerts_trend() for alerts analytics  
+        - sdk.historical.alerts_trend() for alerts analytics
         - sdk.historical.dependencies_trend() for dependencies analytics
-        
+
         Args:
             name: Repository name
             filter: Analytics filter type
             **kwargs: Additional query parameters
-            
+
         Returns:
             list: API response containing analytics data
         """
@@ -55,7 +55,7 @@ class Analytics:
         path = f"analytics/repo/{name}/{filter}"
         if kwargs:
             path += "?" + urlencode(kwargs)
-            
+
         response = self.api.do_request(path=path)
         if response.status_code == 200:
             return response.json()

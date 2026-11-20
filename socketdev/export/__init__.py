@@ -1,18 +1,17 @@
-from urllib.parse import urlencode
-from dataclasses import dataclass, asdict
-from typing import Optional
 import logging
+from dataclasses import asdict, dataclass
+from urllib.parse import urlencode
 
 log = logging.getLogger("socketdev")
 
 
 @dataclass
 class ExportQueryParams:
-    author: Optional[str] = None
-    project_group: Optional[str] = None
-    project_name: Optional[str] = None
-    project_version: Optional[str] = None
-    project_id: Optional[str] = None
+    author: str | None = None
+    project_group: str | None = None
+    project_name: str | None = None
+    project_version: str | None = None
+    project_id: str | None = None
 
     def to_query_params(self) -> str:
         # Filter out None values and convert to query string
@@ -27,7 +26,7 @@ class Export:
         self.api = api
 
     def cdx_bom(
-        self, org_slug: str, id: str, query_params: Optional[ExportQueryParams] = None, use_types: bool = False
+        self, org_slug: str, id: str, query_params: ExportQueryParams | None = None, use_types: bool = False
     ) -> dict:
         """
         Export a Socket SBOM as a CycloneDX SBOM
@@ -51,7 +50,7 @@ class Export:
         return {}
 
     def spdx_bom(
-        self, org_slug: str, id: str, query_params: Optional[ExportQueryParams] = None, use_types: bool = False
+        self, org_slug: str, id: str, query_params: ExportQueryParams | None = None, use_types: bool = False
     ) -> dict:
         """
         Export a Socket SBOM as an SPDX SBOM
@@ -75,7 +74,7 @@ class Export:
         return {}
 
     def openvex_bom(
-        self, org_slug: str, id: str, query_params: Optional[ExportQueryParams] = None, use_types: bool = False
+        self, org_slug: str, id: str, query_params: ExportQueryParams | None = None, use_types: bool = False
     ) -> dict:
         """
         Export a Socket SBOM as an OpenVEX SBOM
@@ -97,4 +96,3 @@ class Export:
         log.error(f"Error exporting OpenVEX BOM: {response.status_code}")
         log.error(response.text)
         return {}
-

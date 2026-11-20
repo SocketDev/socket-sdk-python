@@ -7,9 +7,10 @@ Some tests are integration tests (require API key) while others are unit tests (
 Run with: python -m pytest tests/integration/test_new_endpoints.py -v
 """
 
-import unittest
 import os
+import unittest
 from unittest.mock import Mock, patch
+
 from socketdev import socketdev
 
 
@@ -21,12 +22,10 @@ class TestNewEndpointsIntegration(unittest.TestCase):
         """Set up test environment."""
         cls.api_key = os.getenv("SOCKET_SECURITY_API_KEY", "")
         cls.org_slug = os.getenv("SOCKET_ORG_SLUG", "")
-        
+
         if not cls.api_key or not cls.org_slug:
-            raise unittest.SkipTest(
-                "SOCKET_SECURITY_API_KEY and SOCKET_ORG_SLUG required for integration tests"
-            )
-        
+            raise unittest.SkipTest("SOCKET_SECURITY_API_KEY and SOCKET_ORG_SLUG required for integration tests")
+
         cls.sdk = socketdev(token=cls.api_key)
 
     def test_threatfeed_org_endpoint(self):
@@ -52,11 +51,7 @@ class TestNewEndpointsIntegration(unittest.TestCase):
     def test_threatfeed_with_parameters(self):
         """Test threat feed with query parameters."""
         try:
-            result = self.sdk.threatfeed.get(
-                org_slug=self.org_slug,
-                per_page=10,
-                sort="created_at"
-            )
+            result = self.sdk.threatfeed.get(org_slug=self.org_slug, per_page=10, sort="created_at")
             self.assertIsInstance(result, dict)
             self.assertIn("results", result)
         except Exception as e:
@@ -64,7 +59,7 @@ class TestNewEndpointsIntegration(unittest.TestCase):
 
     def test_analytics_deprecated_warning(self):
         """Test that analytics methods issue deprecation warnings."""
-        with patch('socketdev.analytics.log') as mock_log:
+        with patch("socketdev.analytics.log") as mock_log:
             try:
                 self.sdk.analytics.get_org("dependencies")
                 # Should log a deprecation warning
@@ -131,37 +126,27 @@ class TestNewEndpointsUnit(unittest.TestCase):
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.json.return_value = {
-            "results": [
-                {"id": "threat1", "type": "malware"},
-                {"id": "threat2", "type": "typosquatting"}
-            ],
-            "nextPage": None
+            "results": [{"id": "threat1", "type": "malware"}, {"id": "threat2", "type": "typosquatting"}],
+            "nextPage": None,
         }
         self.mock_api.do_request.return_value = mock_response
-        
+
         result = self.sdk.threatfeed.get(org_slug="test-org")
-        
+
         self.assertEqual(len(result["results"]), 2)
-        self.mock_api.do_request.assert_called_once_with(
-            path="orgs/test-org/threat-feed"
-        )
+        self.mock_api.do_request.assert_called_once_with(path="orgs/test-org/threat-feed")
 
     def test_threatfeed_global_mocked(self):
         """Test global threat feed endpoint with mocked response."""
         mock_response = Mock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {
-            "results": [{"id": "global-threat", "type": "malware"}],
-            "nextPage": None
-        }
+        mock_response.json.return_value = {"results": [{"id": "global-threat", "type": "malware"}], "nextPage": None}
         self.mock_api.do_request.return_value = mock_response
-        
+
         result = self.sdk.threatfeed.get()
-        
+
         self.assertEqual(len(result["results"]), 1)
-        self.mock_api.do_request.assert_called_once_with(
-            path="threat-feed"
-        )
+        self.mock_api.do_request.assert_called_once_with(path="threat-feed")
 
     def test_threatfeed_with_params_mocked(self):
         """Test threat feed with parameters."""
@@ -169,16 +154,10 @@ class TestNewEndpointsUnit(unittest.TestCase):
         mock_response.status_code = 200
         mock_response.json.return_value = {"results": [], "nextPage": None}
         self.mock_api.do_request.return_value = mock_response
-        
-        result = self.sdk.threatfeed.get(
-            org_slug="test-org",
-            per_page=5,
-            sort="created_at"
-        )
-        
-        self.mock_api.do_request.assert_called_once_with(
-            path="orgs/test-org/threat-feed?per_page=5&sort=created_at"
-        )
+
+        self.sdk.threatfeed.get(org_slug="test-org", per_page=5, sort="created_at")
+
+        self.mock_api.do_request.assert_called_once_with(path="orgs/test-org/threat-feed?per_page=5&sort=created_at")
 
     def test_threatfeed_error_handling(self):
         """Test threat feed error handling."""
@@ -186,10 +165,10 @@ class TestNewEndpointsUnit(unittest.TestCase):
         mock_response.status_code = 404
         mock_response.text = "Not found"
         self.mock_api.do_request.return_value = mock_response
-        
-        with patch('socketdev.threatfeed.log') as mock_log:
+
+        with patch("socketdev.threatfeed.log") as mock_log:
             result = self.sdk.threatfeed.get(org_slug="test-org")
-            
+
             # Should return default structure on error
             self.assertEqual(result, {"results": [], "nextPage": None})
             mock_log.error.assert_called()
@@ -198,24 +177,16 @@ class TestNewEndpointsUnit(unittest.TestCase):
         """Test API token creation with mocked response."""
         mock_response = Mock()
         mock_response.status_code = 201
-        mock_response.json.return_value = {
-            "id": "token123",
-            "name": "test-token",
-            "created_at": "2025-01-01T00:00:00Z"
-        }
+        mock_response.json.return_value = {"id": "token123", "name": "test-token", "created_at": "2025-01-01T00:00:00Z"}
         self.mock_api.do_request.return_value = mock_response
-        
-        result = self.sdk.apitokens.create(
-            org_slug="test-org",
-            name="test-token",
-            description="Test token"
-        )
-        
+
+        result = self.sdk.apitokens.create(org_slug="test-org", name="test-token", description="Test token")
+
         self.assertEqual(result["id"], "token123")
         self.mock_api.do_request.assert_called_once_with(
             path="orgs/test-org/api-tokens",
             method="POST",
-            payload='{"name": "test-token", "description": "Test token"}'
+            payload='{"name": "test-token", "description": "Test token"}',
         )
 
     def test_apitokens_update_mocked(self):
@@ -224,18 +195,14 @@ class TestNewEndpointsUnit(unittest.TestCase):
         mock_response.status_code = 200
         mock_response.json.return_value = {"id": "token123", "name": "updated-token"}
         self.mock_api.do_request.return_value = mock_response
-        
-        result = self.sdk.apitokens.update(
-            org_slug="test-org",
-            token_id="token123",
-            name="updated-token"
-        )
-        
+
+        result = self.sdk.apitokens.update(org_slug="test-org", token_id="token123", name="updated-token")
+
         self.assertEqual(result["name"], "updated-token")
         self.mock_api.do_request.assert_called_once_with(
             path="orgs/test-org/api-tokens/update",
             method="POST",
-            payload='{"token_id": "token123", "name": "updated-token"}'
+            payload='{"token_id": "token123", "name": "updated-token"}',
         )
 
     def test_analytics_deprecation_warning(self):
@@ -244,10 +211,10 @@ class TestNewEndpointsUnit(unittest.TestCase):
         mock_response.status_code = 200
         mock_response.json.return_value = []
         self.mock_api.do_request.return_value = mock_response
-        
-        with patch('socketdev.analytics.log') as mock_log:
-            result = self.sdk.analytics.get_org("dependencies")
-            
+
+        with patch("socketdev.analytics.log") as mock_log:
+            self.sdk.analytics.get_org("dependencies")
+
             # Should log deprecation warning
             mock_log.warning.assert_called_once()
             warning_msg = mock_log.warning.call_args[0][0]
@@ -260,10 +227,10 @@ class TestNewEndpointsUnit(unittest.TestCase):
         mock_response.status_code = 200
         mock_response.json.return_value = []
         self.mock_api.do_request.return_value = mock_response
-        
-        with patch('socketdev.analytics.log') as mock_log:
-            result = self.sdk.analytics.get_repo("test-repo", "alerts")
-            
+
+        with patch("socketdev.analytics.log") as mock_log:
+            self.sdk.analytics.get_repo("test-repo", "alerts")
+
             # Should log deprecation warning
             mock_log.warning.assert_called_once()
             warning_msg = mock_log.warning.call_args[0][0]
@@ -280,16 +247,34 @@ class TestEndpointCompatibility(unittest.TestCase):
     def test_all_endpoints_have_api_reference(self):
         """Test that all endpoint modules have the api attribute."""
         endpoints = [
-            'dependencies', 'export', 'fullscans', 'historical',
-            'npm', 'openapi', 'org', 'purl', 'quota', 'report', 'repos',
-            'repositories', 'sbom', 'settings', 'triage', 'labels',
-            'licensemetadata', 'diffscans', 'threatfeed', 'apitokens',
-            'auditlog', 'analytics', 'alerttypes'
+            "dependencies",
+            "export",
+            "fullscans",
+            "historical",
+            "npm",
+            "openapi",
+            "org",
+            "purl",
+            "quota",
+            "report",
+            "repos",
+            "repositories",
+            "sbom",
+            "settings",
+            "triage",
+            "labels",
+            "licensemetadata",
+            "diffscans",
+            "threatfeed",
+            "apitokens",
+            "auditlog",
+            "analytics",
+            "alerttypes",
         ]
-        
+
         for endpoint_name in endpoints:
             endpoint = getattr(self.sdk, endpoint_name)
-            if hasattr(endpoint, 'api'):  # Skip utils which doesn't have api
+            if hasattr(endpoint, "api"):  # Skip utils which doesn't have api
                 self.assertIsNotNone(endpoint.api, f"{endpoint_name} should have api reference")
 
     def test_sdk_components_initialization(self):
@@ -297,20 +282,38 @@ class TestEndpointCompatibility(unittest.TestCase):
         # This tests that there are no import errors or initialization issues
         try:
             sdk = socketdev(token="test-token")
-            
+
             # Try to access each component
             components = [
-                sdk.dependencies, sdk.export, sdk.fullscans, sdk.historical,
-                sdk.npm, sdk.openapi, sdk.org, sdk.purl, sdk.quota, 
-                sdk.report, sdk.repos, sdk.repositories, sdk.sbom, 
-                sdk.settings, sdk.triage, sdk.utils, sdk.labels,
-                sdk.licensemetadata, sdk.diffscans, sdk.threatfeed, 
-                sdk.apitokens, sdk.auditlog, sdk.analytics, sdk.alerttypes
+                sdk.dependencies,
+                sdk.export,
+                sdk.fullscans,
+                sdk.historical,
+                sdk.npm,
+                sdk.openapi,
+                sdk.org,
+                sdk.purl,
+                sdk.quota,
+                sdk.report,
+                sdk.repos,
+                sdk.repositories,
+                sdk.sbom,
+                sdk.settings,
+                sdk.triage,
+                sdk.utils,
+                sdk.labels,
+                sdk.licensemetadata,
+                sdk.diffscans,
+                sdk.threatfeed,
+                sdk.apitokens,
+                sdk.auditlog,
+                sdk.analytics,
+                sdk.alerttypes,
             ]
-            
+
             for component in components:
                 self.assertIsNotNone(component)
-                
+
         except Exception as e:
             self.fail(f"SDK component initialization failed: {e}")
 

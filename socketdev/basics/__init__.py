@@ -1,6 +1,5 @@
 import logging
-from typing import Optional, Union
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 
 log = logging.getLogger("socketdev")
 
@@ -8,6 +7,7 @@ log = logging.getLogger("socketdev")
 @dataclass
 class SocketBasicsConfig:
     """Data class representing Socket Basics configuration settings."""
+
     pythonSastEnabled: bool = False
     golangSastEnabled: bool = False
     javascriptSastEnabled: bool = False
@@ -42,10 +42,11 @@ class SocketBasicsConfig:
 @dataclass
 class SocketBasicsResponse:
     """Data class representing the response from Socket Basics API calls."""
+
     success: bool
     status: int
-    config: Optional[SocketBasicsConfig] = None
-    message: Optional[str] = None
+    config: SocketBasicsConfig | None = None
+    message: str | None = None
 
     def __getitem__(self, key):
         return getattr(self, key)
@@ -65,7 +66,7 @@ class SocketBasicsResponse:
 class Basics:
     """
     Socket Basics API client for managing CI/CD security scanning configurations.
-    
+
     Socket Basics is a security scanning suite that includes:
     - SAST (Static Application Security Testing) for Python, Go, and JavaScript
     - Secret scanning for hardcoded credentials
@@ -76,9 +77,7 @@ class Basics:
     def __init__(self, api):
         self.api = api
 
-    def get_config(
-        self, org_slug: str, use_types: bool = False
-    ) -> Union[dict, SocketBasicsResponse]:
+    def get_config(self, org_slug: str, use_types: bool = False) -> dict | SocketBasicsResponse:
         """
         Get Socket Basics configuration for an organization.
 
@@ -93,7 +92,7 @@ class Basics:
             >>> basics = socketdev_client.basics
             >>> config = basics.get_config("my-org")
             >>> print(config["pythonSastEnabled"])
-            
+
             >>> # Using typed response
             >>> response = basics.get_config("my-org", use_types=True)
             >>> print(response.config.pythonSastEnabled)
@@ -109,12 +108,7 @@ class Basics:
 
         error_message = response.json().get("error", {}).get("message", "Unknown error")
         log.error(f"Failed to get Socket Basics configuration: {response.status_code}, message: {error_message}")
-        
+
         if use_types:
-            return SocketBasicsResponse(
-                success=False,
-                status=response.status_code,
-                config=None,
-                message=error_message
-            )
+            return SocketBasicsResponse(success=False, status=response.status_code, config=None, message=error_message)
         return {}

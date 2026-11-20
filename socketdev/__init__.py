@@ -1,12 +1,24 @@
 import os
+
+from socketdev.alertfullscansearch import AlertFullScanSearch
+from socketdev.alerts import Alerts
+from socketdev.alerttypes import AlertTypes
+from socketdev.analytics import Analytics
+from socketdev.apitokens import ApiTokens
+from socketdev.auditlog import AuditLog
+from socketdev.basics import Basics
 from socketdev.core.api import API
 from socketdev.core.retired_token import reject_retired_token
 from socketdev.core.token_selection import select_token
 from socketdev.dependencies import Dependencies
 from socketdev.diffscans import DiffScans
 from socketdev.export import Export
+from socketdev.fixes import Fixes
 from socketdev.fullscans import FullScans
 from socketdev.historical import Historical
+from socketdev.labels import Labels
+from socketdev.licensemetadata import LicenseMetadata
+from socketdev.log import log as log
 from socketdev.npm import NPM
 from socketdev.openapi import OpenAPI
 from socketdev.org import Orgs
@@ -17,33 +29,19 @@ from socketdev.repos import Repos
 from socketdev.repositories import Repositories
 from socketdev.sbom import Sbom
 from socketdev.settings import Settings
-from socketdev.triage import Triage
-from socketdev.utils import Utils, IntegrationType, INTEGRATION_TYPES
-from socketdev.version import __version__
-from socketdev.labels import Labels
-from socketdev.licensemetadata import LicenseMetadata
-from socketdev.threatfeed import ThreatFeed
-from socketdev.apitokens import ApiTokens
-from socketdev.auditlog import AuditLog
-from socketdev.analytics import Analytics
-from socketdev.alerttypes import AlertTypes
-from socketdev.basics import Basics
-from socketdev.uploadmanifests import UploadManifests
-from socketdev.alertfullscansearch import AlertFullScanSearch
-from socketdev.alerts import Alerts
-from socketdev.fixes import Fixes
 from socketdev.supportedfiles import SupportedFiles
-from socketdev.webhooks import Webhooks
 from socketdev.telemetry import Telemetry
-from socketdev.log import log
-from typing import Optional
+from socketdev.threatfeed import ThreatFeed
+from socketdev.triage import Triage
+from socketdev.uploadmanifests import UploadManifests
+from socketdev.utils import INTEGRATION_TYPES, IntegrationType, Utils
+from socketdev.version import __version__ as __version__
+from socketdev.webhooks import Webhooks
 
 __author__ = "socket.dev"
-__version__ = __version__
-__all__ = ["socketdev", "Utils", "IntegrationType", "INTEGRATION_TYPES"]
+__all__ = ["INTEGRATION_TYPES", "IntegrationType", "Utils", "socketdev"]
 
 
-global encoded_key
 encoded_key: str
 
 api_url = "https://api.socket.dev/v0"
@@ -54,14 +52,20 @@ request_timeout = 1200
 
 
 class socketdev:
-    def __init__(self, token: Optional[str] = None, timeout: int = 1200, allow_unverified: bool = False, user_agent: Optional[str] = None):
+    def __init__(
+        self,
+        token: str | None = None,
+        timeout: int = 1200,
+        allow_unverified: bool = False,
+        user_agent: str | None = None,
+    ):
         token = select_token(token, os.environ)
         if token is None:
             raise ValueError(
                 "API token is required. Provide it as a parameter or set one of these environment variables: "
                 "SOCKET_SECURITY_API_TOKEN, SOCKET_SECURITY_API_KEY, SOCKET_API_KEY, SOCKET_API_TOKEN"
             )
-        
+
         reject_retired_token(token)
 
         self.api = API()

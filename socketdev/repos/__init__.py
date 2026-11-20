@@ -1,7 +1,6 @@
 import json
 import logging
-from typing import Optional, Union
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 
 log = logging.getLogger("socketdev")
 
@@ -18,7 +17,7 @@ class RepositoryInfo:
     visibility: str
     archived: bool
     default_branch: str
-    slug: Optional[str] = None
+    slug: str | None = None
 
     def __getitem__(self, key):
         return getattr(self, key)
@@ -39,7 +38,7 @@ class RepositoryInfo:
             visibility=data.get("visibility", "private"),
             archived=data.get("archived", False),
             default_branch=data.get("default_branch", "main"),
-            slug=data["slug"]
+            slug=data["slug"],
         )
 
 
@@ -47,8 +46,8 @@ class RepositoryInfo:
 class GetRepoResponse:
     success: bool
     status: int
-    data: Optional[RepositoryInfo] = None
-    message: Optional[str] = None
+    data: RepositoryInfo | None = None
+    message: str | None = None
 
     def __getitem__(self, key):
         return getattr(self, key)
@@ -98,7 +97,7 @@ class Repos:
         log.error(f"Error getting repositories: {response.status_code}, message: {error_message}")
         return {}
 
-    def repo(self, org_slug: str, repo_name: str, use_types: bool = False) -> Union[dict, GetRepoResponse]:
+    def repo(self, org_slug: str, repo_name: str, use_types: bool = False) -> dict | GetRepoResponse:
         path = f"orgs/{org_slug}/repos/{repo_name}"
         response = self.api.do_request(path=path)
 
@@ -128,10 +127,7 @@ class Repos:
         return {}
 
     def post(self, org_slug: str, **kwargs) -> dict:
-        params = {}
-        if kwargs:
-            for key, val in kwargs.items():
-                params[key] = val
+        params = dict(kwargs)
         if len(params) == 0:
             return {}
 
@@ -147,10 +143,7 @@ class Repos:
         return {}
 
     def update(self, org_slug: str, repo_name: str, **kwargs) -> dict:
-        params = {}
-        if kwargs:
-            for key, val in kwargs.keys():
-                params[key] = val
+        params = dict(kwargs)
         if len(params) == 0:
             return {}
 
