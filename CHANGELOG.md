@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.6.3
+
+### Fixed: reject duplicate multipart upload keys
+
+- Manifest uploads and full scans now raise `ValueError` before sending a
+  request when multiple files map to the same multipart field name. The error
+  includes the colliding key and both source paths; files are never silently
+  dropped. Key calculation is shared by lazy and eager manifest uploads.
+
 ## 3.6.2
 
 ### Fixed: reject retired API credentials before use

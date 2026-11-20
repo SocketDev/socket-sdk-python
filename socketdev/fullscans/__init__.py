@@ -871,6 +871,9 @@ class FullScans:
         Returns:
             dict or CreateFullScanResponse: API response containing scan results
             
+        Raises:
+            ValueError: If two files have the same multipart upload key.
+
         Note:
             When use_lazy_loading=True, files are opened only when needed during upload,
             preventing file descriptor exhaustion. The max_open_files parameter controls how many
@@ -902,7 +905,25 @@ class FullScans:
         if use_lazy_loading:
             prepared_files = Utils.load_files_for_sending_lazy(files, workspace, max_open_files, base_path, base_paths)
         else:
-            prepared_files = files
+            # This mode accepts requests-style multipart entries already prepared by callers.
+            is_mapping = hasattr(files, "items")
+            entries = list(files.items()) if is_mapping else list(files or [])
+            key_sources = []
+            for key, value in entries:
+                if isinstance(value, (tuple, list)):
+                    filename, content = value[:2]
+                    source = getattr(content, "name", filename)
+                else:
+                    content = value
+                    source = getattr(content, "name", key)
+                # Requests omits parts with no content and decodes byte field names as UTF-8.
+                if content is None:
+                    continue
+                normalized_key = key.decode("utf-8") if isinstance(key, bytes) else key
+                key_sources.append((normalized_key, source))
+            Utils.validate_upload_keys(key_sources)
+            # Validation must not consume a one-shot iterable before Requests encodes it.
+            prepared_files = files if files is None or is_mapping or isinstance(files, (list, tuple)) else entries
 
         response = self.api.do_request(path=path, method="POST", files=prepared_files)
 
