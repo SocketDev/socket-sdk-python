@@ -227,7 +227,7 @@ class TestNewEndpointsUnit(unittest.TestCase):
         
         result = self.sdk.apitokens.update(
             org_slug="test-org",
-            token_id="token123",
+            uuid="token123",
             name="updated-token"
         )
         
@@ -235,7 +235,7 @@ class TestNewEndpointsUnit(unittest.TestCase):
         self.mock_api.do_request.assert_called_once_with(
             path="orgs/test-org/api-tokens/update",
             method="POST",
-            payload='{"token_id": "token123", "name": "updated-token"}'
+            payload='{"uuid": "token123", "name": "updated-token"}'
         )
 
     def test_analytics_deprecation_warning(self):
@@ -282,7 +282,7 @@ class TestEndpointCompatibility(unittest.TestCase):
         endpoints = [
             'dependencies', 'export', 'fullscans', 'historical',
             'npm', 'openapi', 'org', 'purl', 'quota', 'report', 'repos',
-            'repositories', 'sbom', 'settings', 'triage', 'labels',
+            'sbom', 'settings', 'triage', 'labels',
             'licensemetadata', 'diffscans', 'threatfeed', 'apitokens',
             'auditlog', 'analytics', 'alerttypes'
         ]
@@ -302,7 +302,7 @@ class TestEndpointCompatibility(unittest.TestCase):
             components = [
                 sdk.dependencies, sdk.export, sdk.fullscans, sdk.historical,
                 sdk.npm, sdk.openapi, sdk.org, sdk.purl, sdk.quota, 
-                sdk.report, sdk.repos, sdk.repositories, sdk.sbom, 
+                sdk.report, sdk.repos, sdk.sbom, 
                 sdk.settings, sdk.triage, sdk.utils, sdk.labels,
                 sdk.licensemetadata, sdk.diffscans, sdk.threatfeed, 
                 sdk.apitokens, sdk.auditlog, sdk.analytics, sdk.alerttypes
