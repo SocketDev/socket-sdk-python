@@ -187,7 +187,6 @@ class TestDedupe(unittest.TestCase):
         for pkg in result_batched_true + result_batched_false:
             self.assertNotIn("batchIndex", pkg)
 
-
     @staticmethod
     def _cve(ghsa, action, cve="", severity="critical", alert_type="criticalCVE", key=None):
         return {
@@ -270,6 +269,11 @@ class TestDedupe(unittest.TestCase):
             ([None, "ignore"], "ignore"),
             (["ignore", None], "ignore"),
             (["unknown-action", "monitor"], "monitor"),
+            # An unknown action yields to any known one, "ignore" included,
+            # and never replaces a known "error", in either order.
+            (["unknown-action", "ignore"], "ignore"),
+            (["error", "unknown-action"], "error"),
+            (["unknown-action", "error"], "error"),
         ]
         for actions, expected in cases:
             with self.subTest(actions=actions):
@@ -284,6 +288,40 @@ class TestDedupe(unittest.TestCase):
                 alerts = Dedupe.dedupe(packages)[0]["alerts"]
                 self.assertEqual(len(alerts), 1)
                 self.assertEqual(alerts[0]["action"], expected)
+
+    def test_merged_alert_keeps_first_key_when_action_comes_from_a_later_release(self):
+        """Only the action moves to the most severe sighting; key and props stay with the first"""
+        packages = [
+            {
+                "id": f"artifact-{release}", "type": "pypi", "name": "example", "version": "1.0",
+                "release": release, "inputPurl": "pkg:pypi/example@1.0",
+                "alerts": [self._cve("GHSA-eeee-eeee-eeee", action, key=f"key-{release}")],
+            }
+            for release, action in [("sdist", "monitor"), ("wheel", "error")]
+        ]
+
+        alerts = Dedupe.dedupe(packages)[0]["alerts"]
+
+        self.assertEqual(len(alerts), 1)
+        self.assertEqual(alerts[0]["key"], "key-sdist")
+        self.assertEqual(alerts[0]["action"], "error")
+
+    def test_non_advisory_alert_on_a_package_with_cves_keeps_its_own_entry(self):
+        packages = [{
+            "id": "artifact-1", "type": "npm", "name": "example", "version": "1.0.0",
+            "alerts": [
+                self._cve("GHSA-ffff-ffff-ffff", "monitor"),
+                {"key": "key-malware", "type": "malware", "severity": "critical",
+                 "category": "supplyChainRisk", "action": "error", "props": {}},
+            ],
+        }]
+
+        alerts = Dedupe.dedupe(packages, batched=False)[0]["alerts"]
+
+        self.assertEqual({a["type"]: a["action"] for a in alerts}, {"criticalCVE": "monitor", "malware": "error"})
+
+    def test_dedupe_of_no_packages_is_empty(self):
+        self.assertEqual(Dedupe.dedupe([]), [])
 
     def test_advisory_id_falls_back_to_cve_and_ignores_case(self):
         self.assertEqual(Dedupe.advisory_id({"props": {"ghsaId": "", "cveId": "cve-2021-1"}}), "CVE-2021-1")

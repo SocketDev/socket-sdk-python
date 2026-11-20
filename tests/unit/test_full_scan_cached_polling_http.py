@@ -118,7 +118,6 @@ def test_duplicate_artifacts_merge_alerts_and_preserve_score_event(api_fixture):
     assert artifact["alerts"][0]["releases"] == ["wheel", "source"]
 
 
-
 def test_stream_keeps_each_advisory_and_its_action(api_fixture):
     """Same-severity CVEs on one artifact reach the caller as separate alerts."""
     path = "orgs/org/full-scans/scan"
@@ -148,6 +147,7 @@ def test_stream_keeps_each_advisory_and_its_action(api_fixture):
         ("GHSA-765h-qjxv-5f44", "error"),
         ("GHSA-f2jv-r9rf-7988", "ignore"),
     ]
+
 
 @pytest.mark.parametrize("status", [403, 404])
 def test_deterministic_errors_stop_immediately(api_fixture, status):
