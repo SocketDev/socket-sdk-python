@@ -1,5 +1,20 @@
 # Changelog
 
+## 3.6.3
+
+### Fixed: every advisory on a package is kept
+
+- `fullscans.stream()` and `purl.post()` no longer merge different
+  vulnerabilities of the same severity on a package into one alert. Alerts are
+  now told apart by their advisory ID (`props.ghsaId`, falling back to
+  `props.cveId`) as well as type, severity, category and file location. Before,
+  a package with six Critical advisories came back with one `criticalCVE`
+  alert.
+- When the same alert does appear more than once (for example once per release
+  of a PyPI package), the merged alert carries the most severe `action`
+  (`error`, then `warn`, `monitor`, `ignore`) instead of the first one seen. A
+  blocking alert can no longer be hidden behind a triaged or ignored one.
+
 ## 3.6.2
 
 ### Fixed: reject retired API credentials before use
