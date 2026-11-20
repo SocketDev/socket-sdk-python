@@ -736,6 +736,33 @@ class TestAllEndpointsUnit(unittest.TestCase):
         self.assertEqual(call_args[0][0], "GET")
         self.assertIn("/orgs/test-org/settings", call_args[0][1])
 
+    def test_settings_integration_events_unit(self):
+        """Test integration events retrieval."""
+        expected_data = [
+            {
+                "id": "event-1",
+                "integration_id": "integration-1",
+                "type": "alert",
+                "payload": {},
+                "status_code": 200,
+                "error": "",
+                "sent_at": "2026-01-01T00:00:00.000Z",
+                "retry_info": [],
+                "created_at": "2026-01-01T00:00:00.000Z",
+                "updated_at": "2026-01-01T00:00:00.000Z",
+            }
+        ]
+        self._mock_response(expected_data)
+
+        result = self.sdk.settings.integration_events("test-org", "integration-1")
+
+        self.assertEqual(result, expected_data)
+        call_args = self.mock_requests.request.call_args
+        self.assertEqual(call_args[0][0], "GET")
+        self.assertTrue(
+            call_args[0][1].endswith("/orgs/test-org/settings/integrations/integration-1/events")
+        )
+
     # Triage endpoints
     def test_triage_list_alert_triage_unit(self):
         """Test alert triage listing."""

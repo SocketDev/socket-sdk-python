@@ -108,14 +108,17 @@ class Settings:
             )
         return {}
 
-    def integration_events(self, org_slug: str, integration_id: str) -> dict:
+    def integration_events(self, org_slug: str, integration_id: str) -> list:
         """Get integration events for a specific integration.
 
         Args:
             org_slug: Organization slug
             integration_id: Integration ID
+
+        Returns:
+            The integration's events, as the list the API returns.
         """
-        path = f"orgs/{org_slug}/settings/integrations/{integration_id}"
+        path = f"orgs/{org_slug}/settings/integrations/{integration_id}/events"
         response = self.api.do_request(path=path)
 
         if response.status_code == 200:
@@ -123,7 +126,7 @@ class Settings:
 
         error_message = response.json().get("error", {}).get("message", "Unknown error")
         log.error(f"Error getting integration events: {response.status_code}, message: {error_message}")
-        return {}
+        return []
 
     def get_license_policy(self, org_slug: str) -> dict:
         """Get license policy settings for an organization.

@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.6.3
+## 3.6.4
 
 ### Fixed: every advisory on a package is kept
 
@@ -18,6 +18,17 @@
   first sighting, so that `key` can come from a release whose own action was
   less severe. `fullscans.stream()` does not merge across releases: each
   release file is its own artifact there.
+
+## 3.6.3
+
+### Fixed: `settings.integration_events()` requested the wrong path
+
+- `settings.integration_events()` now calls
+  `GET orgs/{org_slug}/settings/integrations/{integration_id}/events`. It
+  previously requested the integration's own path, which has no `GET` route,
+  so the method always failed. It needs the `integration:list` scope.
+- Its return annotation is now `list`, matching the JSON array the endpoint
+  returns.
 
 ## 3.6.2
 
