@@ -342,7 +342,7 @@ class TestDedupe(unittest.TestCase):
         self.assertEqual(sorted(a["props"]["cveId"] for a in alerts), ["CVE-2021-0001", "CVE-2021-0002"])
 
     def test_alerts_without_advisory_still_merge_across_releases(self):
-        """Non-advisory alerts keep the existing identity, including normalized file paths"""
+        """Alerts without an advisory ID merge on type, severity and location, with file paths normalized"""
         def file_alert(path, action):
             return {
                 "key": f"key-{path}", "type": "networkAccess", "severity": "middle",

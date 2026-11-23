@@ -6,17 +6,15 @@ from socketdev.log import log
 # one severity on a package shares an alert type (``criticalCVE``, ``cve`` and
 # so on), so these are what tell two of them apart.
 #
-# Socket's CVE alerts carry ``ghsaId`` and ``cveId``. The other names are not
-# in any current alert schema; they are checked so this lookup matches
-# ``ADVISORY_ID_PROPS`` / ``Issue.advisory_id()`` in socket-python-cli
+# Socket's CVE alerts carry ``ghsaId`` and ``cveId``. The other names are in no
+# current alert schema; they mirror ``Issue.advisory_id()`` in socket-python-cli
 # (socketsecurity/core/classes.py), which reads alerts from this SDK. Keep the
 # two lists in step.
 ADVISORY_ID_PROPS = ("ghsaId", "ghsa_id", "cveId", "cve_id", "cve")
 
 # Policy actions from least to most severe. An unknown or missing action ranks
-# below "ignore": it yields to any known action, "ignore" included, and never
-# replaces one. So an unexpected value can't downgrade a known "error", and
-# the result doesn't depend on which release is listed first.
+# below "ignore", so it never replaces a known action and the merged result
+# doesn't depend on which release is listed first.
 ACTION_RANK = {"ignore": 0, "monitor": 1, "warn": 2, "error": 3}
 
 
@@ -95,12 +93,10 @@ class Dedupe:
                     merged = alert_map[identity]
                     if release not in merged["releases"]:
                         merged["releases"].append(release)
-                    # Keep the most severe action seen for this alert, so a
-                    # release that blocks is never hidden behind one that doesn't.
-                    # Only the action moves: key, props and the rest stay as the
-                    # first sighting had them, so in a purl.post() result the
-                    # merged key can belong to a release whose own action was
-                    # less severe than the one shown.
+                    # Keep the most severe action seen, so a release that blocks
+                    # is never hidden behind one that doesn't. Only the action
+                    # moves: key and props stay with the first sighting, so the
+                    # key can belong to a release with a less severe action.
                     if Dedupe.action_rank(alert.get("action")) > Dedupe.action_rank(merged.get("action")):
                         merged["action"] = alert.get("action")
 
