@@ -68,7 +68,7 @@ class TestAllEndpointsMocked(unittest.TestCase):
     def test_dependencies_get_mocked(self):
         """Test dependencies get endpoint."""
         self._mock_success_response({"dependencies": []})
-        result = self.sdk.dependencies.get("test-org", "npm", "test-package", "1.0.0")
+        result = self.sdk.dependencies.get(limit=10, offset=0)
         self.assertIn("dependencies", result)
 
     # DiffScans endpoints
@@ -307,7 +307,7 @@ class TestAllEndpointsMocked(unittest.TestCase):
     def test_apitokens_update_mocked(self):
         """Test apitokens update endpoint."""
         self._mock_success_response({"id": "token-123", "name": "updated-token"})
-        result = self.sdk.apitokens.update("test-org", token_id="token-123", name="updated-token")
+        result = self.sdk.apitokens.update("test-org", uuid="token-123", name="updated-token")
         self.assertEqual(result["name"], "updated-token")
 
     def test_apitokens_list_mocked(self):
@@ -517,10 +517,7 @@ class TestAllEndpointsIntegration(unittest.TestCase):
     # Dependencies endpoint
     def test_dependencies_get_integration(self):
         """Test dependencies get endpoint."""
-        result = self._try_endpoint(
-            self.sdk.dependencies.get, 
-            self.org_slug, "npm", "lodash", "4.18.1"
-        )
+        result = self._try_endpoint(self.sdk.dependencies.get)
         if result:
             self.assertIsInstance(result, dict)
 

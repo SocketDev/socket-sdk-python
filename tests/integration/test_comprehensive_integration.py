@@ -348,7 +348,7 @@ class TestSocketSDKIntegration(unittest.TestCase):
     def test_dependencies_endpoint(self):
         """Test dependencies endpoint."""
         try:
-            deps = self.sdk.dependencies.get(self.org_slug)
+            deps = self.sdk.dependencies.get()
             self.assertIsInstance(deps, dict)
         except Exception as e:
             print(f"Dependencies endpoint not available: {e}")

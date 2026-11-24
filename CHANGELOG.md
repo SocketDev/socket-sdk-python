@@ -1,5 +1,27 @@
 # Changelog
 
+## 3.7.0
+
+### Removed: SDK calls that requested paths the API does not route
+
+These calls failed with a 404 on every request, whatever the token. This is a
+minor release rather than a patch because the signatures change: passing the
+removed arguments to `dependencies.get()` raises `TypeError`, code that uses
+`repositories` can no longer find it, and positional arguments to
+`dependencies.get()` now set `limit` and `offset`.
+
+- `apitokens.update()` no longer takes `token_id`. It always calls
+  `POST orgs/{org_slug}/api-tokens/update`, which reads the token to update from
+  the request body. Pass exactly one of `uuid`, `id`, `token` or `hash` in the
+  keyword arguments.
+- `dependencies.get()` no longer takes `org_slug`, `ecosystem`, `package` and
+  `version`. Its signature is `get(limit=50, offset=0)`, as the README documents,
+  and it always searches. Positional arguments now set `limit` and `offset`;
+  they used to be bound to the removed parameters and ignored.
+- The `repositories` module and `socketdev(...).repositories` are removed. Its
+  only method, `list()`, requested `GET repos`. Use `repos.get(org_slug)` to list
+  repositories.
+
 ## 3.6.4
 
 ### Fixed: every advisory on a package is kept

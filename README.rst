@@ -681,18 +681,6 @@ Create a new project health report with the provided files
 
 - **files (list)** - List of file paths of manifest files
 
-Deprecated: repositories.get()
-""""""""""""""""""""""""""""""
-Get a list of information about the tracked repositories
-
-**Usage:**
-
-.. code-block:: python
-
-    from socketdev import socketdev
-    socket = socketdev(token="REPLACE_ME")
-    print(socket.repositories.get())
-
 Deprecated: sbom.view(report_id)
 """"""""""""""""""""""""""""""""
 Retrieve the information for a SBOM Report
@@ -1107,16 +1095,18 @@ Update an existing API token.
     from socketdev import socketdev
     socket = socketdev(token="REPLACE_ME")
     update_params = {
-        "token_id": "token_123",
+        "uuid": "token_uuid",
         "name": "Updated Token Name",
-        "permissions": ["read"]
+        "scopes": ["full-scans:create"]
     }
     print(socket.apitokens.update("org_slug", **update_params))
 
 **PARAMETERS:**
 
 - **org_slug (str)** – The organization name
-- **kwargs** – Token update parameters
+- **kwargs** – Token update parameters, sent as the request body. Identify the token
+  with exactly one of ``uuid``, ``id``, ``token`` or ``hash``. See the
+  `API reference <https://docs.socket.dev/reference>`_ for the other fields.
 
 auditlog.get(org_slug, \*\*kwargs)
 """"""""""""""""""""""""""""""""""""
@@ -1582,13 +1572,7 @@ A few rows need a note:
 - ``fullscans.finalize_tier1()``, ``uploadmanifests.upload_manifest_files()`` and
   ``sbom.view()`` call endpoints the API reference does not list. Their scopes are
   given in the table.
-- Three calls request a path the API has no route for, so they fail with a 404
-  (``APIResourceNotFound``) whatever the token: ``apitokens.update()`` when
-  ``token_id`` is passed, ``dependencies.get()`` when ``org_slug``, ``ecosystem``,
-  ``package`` and ``version`` are all passed, and ``repositories.list()``. Call
-  ``apitokens.update()`` without ``token_id``, and use ``repos.get()`` to list
-  repositories.
-- ``dependencies.get()`` otherwise calls ``POST dependencies/search``. That endpoint
+- ``dependencies.get()`` calls ``POST dependencies/search``. That endpoint
   accepts any valid token, but it returns only results from repositories the token can
   read under ``dependencies:list``. Depending on how the organization restricts
   repository access, a token without that scope gets an empty result instead of a 403,
@@ -1629,9 +1613,6 @@ A few rows need a note:
    * - ``apitokens.update()``
      - ``POST orgs/{org_slug}/api-tokens/update``
      - ``api-tokens:create``
-   * - ``apitokens.update(token_id=...)``
-     - ``PUT orgs/{org_slug}/api-tokens/{token_id}``
-     - no such route; the call fails
    * - ``apitokens.rotate()``
      - ``POST orgs/{org_slug}/api-tokens/rotate``
      - ``api-tokens:rotate``
@@ -1650,9 +1631,6 @@ A few rows need a note:
    * - ``dependencies.get()``
      - ``POST dependencies/search``
      - none; ``dependencies:list`` to get results (see the note above)
-   * - ``dependencies.get(org_slug, ecosystem, package, version)``
-     - ``GET orgs/{org_slug}/dependencies/{ecosystem}/{package}/{version}``
-     - no such route; the call fails
    * - ``diffscans.list()``
      - ``GET orgs/{org_slug}/diff-scans``
      - ``diff-scans:list``
@@ -1812,9 +1790,6 @@ A few rows need a note:
    * - ``repos.delete()``
      - ``DELETE orgs/{org_slug}/repos/{repo_slug}``
      - ``repo:delete``
-   * - ``repositories.list()``
-     - ``GET repos``
-     - no such route; the call fails
    * - ``sbom.view()``
      - ``GET sbom/view/{id}``
      - ``report:read`` (not in the API reference)

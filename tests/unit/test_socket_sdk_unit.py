@@ -28,7 +28,7 @@ class TestSocketSDKUnit(unittest.TestCase):
         expected_components = [
             'api', 'dependencies', 'export', 'fullscans', 'historical',
             'npm', 'openapi', 'org', 'purl', 'quota', 'report', 'repos',
-            'repositories', 'sbom', 'settings', 'triage', 'utils', 'labels',
+            'sbom', 'settings', 'triage', 'utils', 'labels',
             'licensemetadata', 'diffscans', 'threatfeed', 'apitokens',
             'auditlog', 'analytics', 'alerttypes'
         ]

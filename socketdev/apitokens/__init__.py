@@ -54,31 +54,22 @@ class ApiTokens:
         log.error(response.text)
         return {}
 
-    def update(self, org_slug: str, token_id: str = None, **kwargs) -> dict:
+    def update(self, org_slug: str, **kwargs) -> dict:
         """
         Update an API token.
-        
+
         Args:
             org_slug: Organization slug
-            token_id: Token ID to update (optional, can be in kwargs)
-            **kwargs: Token update parameters
-            
+            **kwargs: Token update parameters. The API reads the token to update
+                from the request body, so include exactly one of ``uuid``, ``id``,
+                ``token`` or ``hash``.
+
         Returns:
             dict: API response containing the updated token details
         """
-        # Extract token_id from kwargs if not provided as parameter
-        if token_id is None and 'token_id' in kwargs:
-            token_id = kwargs.pop('token_id')
-        
-        if token_id:
-            path = f"orgs/{org_slug}/api-tokens/{token_id}"
-            method = "PUT"
-        else:
-            path = f"orgs/{org_slug}/api-tokens/update"
-            method = "POST"
-            
+        path = f"orgs/{org_slug}/api-tokens/update"
         payload = json.dumps(kwargs) if kwargs else "{}"
-        response = self.api.do_request(path=path, method=method, payload=payload)
+        response = self.api.do_request(path=path, method="POST", payload=payload)
         if response.status_code == 200:
             return response.json()
         log.error(f"Error updating API token: {response.status_code}")
