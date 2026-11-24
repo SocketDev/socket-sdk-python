@@ -4,7 +4,11 @@
 
 ### Removed: SDK calls that requested paths the API does not route
 
-These calls failed with a 404 on every request, whatever the token.
+These calls failed with a 404 on every request, whatever the token. This is a
+minor release rather than a patch because the signatures change: passing the
+removed arguments to `dependencies.get()` raises `TypeError`, code that uses
+`repositories` can no longer find it, and positional arguments to
+`dependencies.get()` now set `limit` and `offset`.
 
 - `apitokens.update()` no longer takes `token_id`. It always calls
   `POST orgs/{org_slug}/api-tokens/update`, which reads the token to update from
