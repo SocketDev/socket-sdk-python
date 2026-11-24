@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.6.5
+## 3.7.0
 
 ### Removed: SDK calls that requested paths the API does not route
 
