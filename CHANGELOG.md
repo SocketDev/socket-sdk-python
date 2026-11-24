@@ -1,5 +1,24 @@
 # Changelog
 
+## 3.6.4
+
+### Fixed: every advisory on a package is kept
+
+- `fullscans.stream()` and `purl.post()` no longer merge different
+  vulnerabilities of the same severity on a package into one alert. Alerts are
+  now told apart by their advisory ID (`props.ghsaId`, falling back to
+  `props.cveId`) as well as type, severity, category and file location. Before,
+  a package with six Critical advisories came back with one `criticalCVE`
+  alert.
+- When the same alert does appear more than once (in one artifact, or across
+  the release files of a package in a `purl.post()` result), the merged alert
+  carries the most severe `action` (`error`, then `warn`, `monitor`, `ignore`)
+  instead of the first one seen. A blocking alert can no longer be hidden
+  behind a triaged or ignored one. The merged alert keeps the `key` of the
+  first sighting, so that `key` can come from a release whose own action was
+  less severe. `fullscans.stream()` does not merge across releases: each
+  release file is its own artifact there.
+
 ## 3.6.3
 
 ### Fixed: `settings.integration_events()` requested the wrong path
