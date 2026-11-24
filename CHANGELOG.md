@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.6.3
+## 3.6.5
 
 ### Fixed: reject duplicate multipart upload keys
 
@@ -8,6 +8,36 @@
   request when multiple files map to the same multipart field name. The error
   includes the colliding key and both source paths; files are never silently
   dropped. Key calculation is shared by lazy and eager manifest uploads.
+
+## 3.6.4
+
+### Fixed: every advisory on a package is kept
+
+- `fullscans.stream()` and `purl.post()` no longer merge different
+  vulnerabilities of the same severity on a package into one alert. Alerts are
+  now told apart by their advisory ID (`props.ghsaId`, falling back to
+  `props.cveId`) as well as type, severity, category and file location. Before,
+  a package with six Critical advisories came back with one `criticalCVE`
+  alert.
+- When the same alert does appear more than once (in one artifact, or across
+  the release files of a package in a `purl.post()` result), the merged alert
+  carries the most severe `action` (`error`, then `warn`, `monitor`, `ignore`)
+  instead of the first one seen. A blocking alert can no longer be hidden
+  behind a triaged or ignored one. The merged alert keeps the `key` of the
+  first sighting, so that `key` can come from a release whose own action was
+  less severe. `fullscans.stream()` does not merge across releases: each
+  release file is its own artifact there.
+
+## 3.6.3
+
+### Fixed: `settings.integration_events()` requested the wrong path
+
+- `settings.integration_events()` now calls
+  `GET orgs/{org_slug}/settings/integrations/{integration_id}/events`. It
+  previously requested the integration's own path, which has no `GET` route,
+  so the method always failed. It needs the `integration:list` scope.
+- Its return annotation is now `list`, matching the JSON array the endpoint
+  returns.
 
 ## 3.6.2
 

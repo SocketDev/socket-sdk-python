@@ -118,6 +118,37 @@ def test_duplicate_artifacts_merge_alerts_and_preserve_score_event(api_fixture):
     assert artifact["alerts"][0]["releases"] == ["wheel", "source"]
 
 
+def test_stream_keeps_each_advisory_and_its_action(api_fixture):
+    """Same-severity CVEs on one artifact reach the caller as separate alerts."""
+    path = "orgs/org/full-scans/scan"
+
+    def cve(ghsa, cve_id, action):
+        return {
+            "key": "key-" + ghsa, "type": "criticalCVE", "severity": "critical",
+            "category": "vulnerability", "action": action,
+            "props": {"ghsaId": ghsa, "cveId": cve_id},
+        }
+
+    artifact = {
+        "id": "artifact-1", "type": "npm", "name": "handlebars", "version": "4.0.11",
+        "alerts": [
+            cve("GHSA-w457-6q6x-cgp9", "CVE-2019-19919", "monitor"),
+            cve("GHSA-765h-qjxv-5f44", "CVE-2021-23383", "error"),
+            cve("GHSA-f2jv-r9rf-7988", "CVE-2021-23369", "ignore"),
+        ],
+    }
+    api_fixture.route("GET", path, ndjson(artifact))
+
+    typed = sdk_for(api_fixture).fullscans.stream("org", "scan", use_types=True)
+
+    alerts = typed.artifacts["artifact-1"].alerts
+    assert [(alert.props["ghsaId"], alert.action) for alert in alerts] == [
+        ("GHSA-w457-6q6x-cgp9", "monitor"),
+        ("GHSA-765h-qjxv-5f44", "error"),
+        ("GHSA-f2jv-r9rf-7988", "ignore"),
+    ]
+
+
 @pytest.mark.parametrize("status", [403, 404])
 def test_deterministic_errors_stop_immediately(api_fixture, status):
     api_fixture.route("GET", "orgs/org/full-scans/scan", SocketResponse(status, {"error": {"message": "denied"}}))
